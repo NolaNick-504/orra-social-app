@@ -1,0 +1,43 @@
+:81 {
+        @transform_port_query {
+                query XTransformPort=*
+        }
+
+        handle @transform_port_query {
+                reverse_proxy localhost:{query.XTransformPort} {
+                        header_up Host {host}
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto {scheme}
+                        header_up X-Real-IP {remote_host}
+                }
+        }
+
+        # Cache-bust for HTML pages — ensures browsers always get fresh HTML after deploys
+        @html {
+                path /
+                not path /_next/*
+                not path /api/*
+                not path /uploads/*
+        }
+
+        handle @html {
+                reverse_proxy localhost:3000 {
+                        header_up Host {host}
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto {scheme}
+                        header_up X-Real-IP {remote_host}
+                        header_down Cache-Control "no-cache, no-store, must-revalidate"
+                        header_down Pragma "no-cache"
+                        header_down Expires "0"
+                }
+        }
+
+        handle {
+                reverse_proxy localhost:3000 {
+                        header_up Host {host}
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto {scheme}
+                        header_up X-Real-IP {remote_host}
+                }
+        }
+}
