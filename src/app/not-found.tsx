@@ -4,9 +4,8 @@ import { useEffect } from 'react';
 
 export default function NotFound() {
   useEffect(() => {
-    // Auto-redirect to home — this page should never actually be seen
-    // because the middleware redirects all non-root paths to /
-    // This is just a safety net
+    // Safety net: redirect to home — this page should almost never be seen
+    // because the middleware rewrites all non-root paths to the root page
     window.location.replace('/');
   }, []);
 
@@ -16,11 +15,10 @@ export default function NotFound() {
         <meta httpEquiv="refresh" content="0;url=/" />
         <title>Redirecting to ORRA...</title>
       </head>
-      <body>
-        <noscript>
-          <meta httpEquiv="refresh" content="0;url=/" />
-        </noscript>
-        <p>Redirecting to <a href="/">ORRA</a>...</p>
+      <body style={{ background: '#050505', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'system-ui', margin: 0 }}>
+        <div style={{ textAlign: 'center' }}>
+          <p>Redirecting to <a href="/" style={{ color: '#8b5cf6' }}>ORRA</a>...</p>
+        </div>
         <script dangerouslySetInnerHTML={{ __html: 'window.location.replace("/");' }} />
       </body>
     </html>

@@ -16,16 +16,20 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // SPA route protection: redirect all non-root paths to /
+  // SPA route handling: rewrite all non-root paths to render the root page
   // ORRA is a Single-Page Application — the only real page is /
   // All "routes" like /explore, /profile, etc. are client-side state changes
-  // When a user refreshes on /explore, the server must redirect to / so the SPA can load
+  // Using rewrite (not redirect) so the browser URL stays at /explore etc.
+  // but the server renders the root page content
   if (pathname !== '/') {
-    return NextResponse.redirect(new URL('/', request.url), 307);
+    const response = NextResponse.rewrite(new URL('/', request.url));
+    response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    return response;
   }
 
   // Root path: serve the app with cache-busting headers
-  // This ensures mobile browsers always get fresh JS chunk references after deploys
   const response = NextResponse.next();
   response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
   response.headers.set('Pragma', 'no-cache');
@@ -35,13 +39,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - api (API routes)
-     * - uploads/images (file serving)
-     */
     '/((?!_next/static|_next/image|api|uploads|images).*)',
   ],
 };

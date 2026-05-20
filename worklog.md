@@ -49,3 +49,29 @@ Stage Summary:
 - New personalities: Zara Kim (fashion photo), Mateo Cruz (DJ), Trinity Hayes (astrophysics), Oscar Reyes (tattoo), Yasmin Patel (yoga), Brooklyn Taylor (vlogger), Hakeem Wright (basketball trainer), Sienna Blake (interior design), Theo Kim (coffee), Naomi Cruz (drag), Finn OSullivan (surf), Amara Okafor (documentary), Jax Rivera (graffiti), Mina Sato (pastry), DJ Remix (podcast)
 - Auto-poster daemon running with 46 bot personalities
 - All avatar files verified (15/15 exist with proper sizes)
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix ORRA 404 page issue - all SPA routes returning 404 on refresh
+
+Work Log:
+- Identified that middleware was missing the rewrite for SPA routes
+- Previous attempts used redirect (307) which caused browser cache issues
+- The AURA daemon was restarting stale server processes after kills
+- Build preserver cache (/tmp/orra-build-cache) was restoring old broken builds
+- Solution: Changed middleware from redirect to rewrite approach
+  - Non-root paths (/explore, /profile, etc.) now internally rewrite to /
+  - Browser URL stays at /explore but server renders the root page content
+  - No client-side URL interception needed (which was breaking hydration)
+- Cleared build preserver cache to prevent stale builds
+- Killed all old processes before clean rebuild
+- Seeded the database (was empty - 0 users)
+- Created Nick's account via signup API
+
+Stage Summary:
+- All SPA routes now return HTTP 200 with ORRA app content
+- No more 404 pages on refresh
+- Login works with demo accounts (zara@orra.app / password123)
+- Nick's account created: nickjoseph8087@gmail.com / Weareone504
+- AURA daemon running and keeping server alive
+- Cache-busting headers on all HTML responses
