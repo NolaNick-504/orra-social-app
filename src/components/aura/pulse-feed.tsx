@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 import { useAuraStore } from '@/store/aura-store';
 import { useInfinitePosts, useCreatePost, useToggleLike, useToggleSave, useToggleRepost, useVotePoll, useCreateComment, useComments } from '@/lib/api-hooks';
 import { resolveImageUrl } from '@/lib/utils';
@@ -1194,8 +1196,37 @@ export function PulseFeed() {
         } : post.user;
         const headerIsCurrentUser = isEcho ? echoerIsCurrentUser : isUserPost;
 
+        // Insert an ad card every 3 posts
+        const showAd = (index + 1) % 3 === 0 && index > 0;
+        const adIndex = Math.floor((index + 1) / 3) - 1;
+        const AD_PROMOS = [
+          { title: 'Level Up Your Aura', desc: 'Earn double ORRA tokens this week on every pulse and echo.', cta: 'Learn More', gradient: 'from-violet-600/40 to-fuchsia-600/40' },
+          { title: 'Prism AI is Here', desc: 'Your personal AI companion — ask anything, create anything, vibe anything.', cta: 'Try Prism', gradient: 'from-blue-600/40 to-violet-600/40' },
+          { title: 'Dance Challenge Live', desc: 'Join the weekly dance-off and win exclusive badges + 500 ORRA tokens.', cta: 'Join Now', gradient: 'from-pink-600/40 to-orange-600/40' },
+          { title: 'ORRA Marketplace', desc: 'Spend your ORRA tokens on exclusive profile themes, badges & more.', cta: 'Browse', gradient: 'from-emerald-600/40 to-cyan-600/40' },
+        ];
+        const ad = AD_PROMOS[adIndex % AD_PROMOS.length];
+
         return (
-          <div key={isEcho ? `echo-${(post as any)._echoId || post.id}` : post.id} id={`post-${post.id}`} className={`glass-panel rounded-2xl overflow-hidden hover:border-violet-500/20 transition-all relative  ${echoAnimation === post.id ? 'echo-ripple' : ''}`}>
+          <React.Fragment key={isEcho ? `echo-${(post as any)._echoId || post.id}` : post.id}>
+            {/* Ad Card — inserted every 3 posts */}
+            {showAd && (
+              <div className="glass-panel rounded-2xl overflow-hidden border border-violet-500/10">
+                <div className={`bg-gradient-to-r ${ad.gradient} p-4`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-0.5 rounded-md bg-violet-600/80 text-white text-[10px] font-bold tracking-wider">AD</span>
+                    <span className="text-xs text-slate-400">Sponsored</span>
+                  </div>
+                  <h3 className="text-white font-semibold text-sm mb-1">{ad.title}</h3>
+                  <p className="text-slate-300 text-xs mb-3">{ad.desc}</p>
+                  <button className="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-medium transition-colors backdrop-blur-sm">
+                    {ad.cta}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div id={`post-${post.id}`} className={`glass-panel rounded-2xl overflow-hidden hover:border-violet-500/20 transition-all relative  ${echoAnimation === post.id ? 'echo-ripple' : ''}`}>
             {/* Reaction Animation Burst — shows the correct emoji */}
             {likeAnimation === post.id && (() => {
               const reactionDef = REACTION_TYPES.find(r => r.key === likeAnimationReaction);
@@ -1559,6 +1590,7 @@ export function PulseFeed() {
               <PostCommentsSection postId={post.id} currentUser={{ id: currentUser.id, name: displayName, avatar: displayAvatar }} commentCount={totalComments} />
             )}
           </div>
+          </React.Fragment>
         );
       })}
 

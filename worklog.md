@@ -102,3 +102,25 @@ Stage Summary:
 - Modified: src/middleware.ts (simplified to cache-busting headers only)
 - Server now managed by PM2 with auto-restart and 500MB memory limit
 - PM2 config saved at /home/z/.pm2/dump.pm2
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Restore user profile and ads that were lost during 404 fix
+
+Work Log:
+- Analyzed 5 uploaded screenshots using VLM to understand what was lost
+- Screenshot 1 showed Nick's full profile: bio, location (New Orleans, LA), website (orra.app), Level 51, badges (Early Adopter, ORRA OG, Founder, Visionary, ORRA Architect), QR code, verified status
+- Screenshots 2-5 showed the feed with purple "AD" badge cards between posts
+- Discovered the profile data was wiped in the database (bio empty, level 1, no badges, no location)
+- Found May 19 backup at /home/z/my-project/upload/orra-backup/orra-custom-20260519_063450.db with correct data
+- Restored profile from backup: bio, location, website, badges, level 51, 5065 tokens, verified=true
+- Added ad cards back to pulse-feed.tsx: purple "AD" badges showing every 3 posts with 4 rotating promos
+- The localStorage version bump (13→14) also cleared client-side state (liked posts, follows, etc.)
+- Rebuilt app, PM2 restarted successfully, all routes return 200
+
+Stage Summary:
+- Profile restored in DB with all fields from May 19 backup
+- Ad cards added to pulse feed with rotating promotional content
+- Server running via PM2, all routes working
+- Client-side localStorage was cleared due to version bump (cannot restore remotely - user needs to re-follow/re-like)
