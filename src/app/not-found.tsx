@@ -2,10 +2,15 @@
 
 import { useEffect } from 'react';
 
+// This page should almost never be seen because:
+// 1. The catch-all route app/[...slug]/page.tsx handles all SPA paths
+// 2. PM2 auto-restarts the server if it crashes
+//
+// But as a safety net, if someone somehow lands here,
+// redirect them to the root which always works.
 export default function NotFound() {
   useEffect(() => {
-    // Safety net: redirect to home — this page should almost never be seen
-    // because the middleware rewrites all non-root paths to the root page
+    // Use replace so the 404 URL doesn't stay in browser history
     window.location.replace('/');
   }, []);
 

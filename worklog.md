@@ -75,3 +75,30 @@ Stage Summary:
 - Nick's account created: nickjoseph8087@gmail.com / Weareone504
 - AURA daemon running and keeping server alive
 - Cache-busting headers on all HTML responses
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix persistent 404 error on SPA routes (/explore, /profile, /messages)
+
+Work Log:
+- Identified root cause: Next.js client-side router doesn't recognize SPA paths as valid routes, shows not-found component
+- Middleware rewrites and next.config.ts rewrites both preserve original URL in RSC flight data, so client-side router still sees invalid route
+- Created catch-all route app/[...slug]/page.tsx using dynamic import to avoid 307 redirect conflicts
+- Added currentView persistence to localStorage (version 13→14) so view state survives page refresh
+- Fixed NextAuth NO_SECRET error by adding NEXTAUTH_SECRET to .env and fallback in auth.ts
+- Discovered server process keeps crashing after handling requests - switched to PM2 process manager for stability
+- PM2 auto-restarts the server if it crashes, keeping the app available 24/7
+- Killed aura-daemon.py (was using different NEXTAUTH_SECRET, causing JWT errors)
+- All SPA routes now return HTTP 200 with the full ORRA app
+
+Stage Summary:
+- Created: src/app/[...slug]/page.tsx (catch-all route for SPA paths)
+- Modified: src/store/aura-store.ts (added currentView to persist partialize, bumped version to 14)
+- Modified: src/app/page.tsx (bumped ORRA_STORAGE_VERSION to 14)
+- Modified: src/lib/auth.ts (added fallback NEXTAUTH_SECRET)
+- Modified: .env (added NEXTAUTH_SECRET and NEXTAUTH_URL)
+- Modified: src/app/not-found.tsx (simplified, safety net redirect)
+- Modified: next.config.ts (simplified, removed SPA rewrites - catch-all handles them)
+- Modified: src/middleware.ts (simplified to cache-busting headers only)
+- Server now managed by PM2 with auto-restart and 500MB memory limit
+- PM2 config saved at /home/z/.pm2/dump.pm2

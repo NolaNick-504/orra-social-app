@@ -65,7 +65,7 @@ function getQueryClient() {
 // Pre-render safety: clear corrupted or outdated localStorage before React even mounts
 // This prevents crashes on mobile where localStorage data can become corrupted
 // OR when the data model changes (e.g. removing user-me, adding new demo accounts)
-const ORRA_STORAGE_VERSION = 13; // Must match the version in aura-store.ts partialize function
+const ORRA_STORAGE_VERSION = 14; // Must match the version in aura-store.ts partialize function
 if (typeof window !== 'undefined') {
   try {
     const stored = localStorage.getItem('aura-storage');

@@ -1291,11 +1291,13 @@ export const useAuraStore = create<AuraState>()(
         } : null;
 
         return {
-          version: 13, // Storage version — bump when data model changes to force clean state
+          version: 14, // Bumped: added currentView persistence for SPA route restoration
           currentUserId: state.currentUserId,
           currentUserProfile: safeProfile,
           // DO NOT persist isHydrated — it must be recalculated each session
           profileSetupComplete: state.profileSetupComplete,
+          // Persist currentView so refreshing on /explore restores the explore view
+          currentView: state.currentView,
           likedPosts: Array.from(state.likedPosts),
           likedReels: Array.from(state.likedReels),
           postReactions: state.postReactions,
