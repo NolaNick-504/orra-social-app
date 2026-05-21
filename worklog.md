@@ -58,3 +58,25 @@ Stage Summary:
 - Profile restored to: 78 posts, 181 likes received, 100 comments received, 16 followers, Level 50
 - Badges: Founder, CEO, Legend, ORRA OG, Early Adopter, Visionary, ORRA Architect, Level 50, 365-Day Streak, Top Creator
 - All data persisted in database
+---
+Task ID: 3
+Agent: Main Agent
+Task: Fix profile display issues and add build ID version detection
+
+Work Log:
+- Analyzed user screenshot showing Posts: 16, Following: 4, Level: 51
+- Fixed auraXP from 10500 to 850 (XP cycles at 1000 per level, was causing auto level-ups)
+- Database data is correct: 78 posts, 16 following, 16 followers, Level 50
+- Added /api/build-id endpoint for proactive stale cache detection
+- Embedded build ID in inline script (ORRA_BUILD_ID variable)
+- Inline script now compares HTML build ID with server build ID on page load
+- If mismatch detected, forces cache-bust reload automatically
+- This prevents users from ever seeing stale cached content after a new deploy
+- Removed meta tag approach (Next.js strips it) in favor of inline variable
+
+Stage Summary:
+- Profile data is correct in database and API
+- Level display will show 50 (not 51) after XP fix
+- Build ID detection system prevents stale cached pages
+- All routes returning 200 through both direct access and Caddy proxy
+- No-cache headers confirmed on HTML pages and JS chunks

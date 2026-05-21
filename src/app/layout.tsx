@@ -1,11 +1,21 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Dancing_Script, Great_Vibes } from "next/font/google";
 import { AuthProvider } from "@/components/providers/session-provider";
+import { readFileSync } from "fs";
+import path from "path";
 import "./globals.css";
 
 // Force dynamic rendering — prevents Next.js from caching stale HTML after deploys
 // This ensures mobile browsers always get fresh JS chunk references
 export const dynamic = 'force-dynamic';
+
+// Read build ID at render time for stale cache detection
+let orraBuildId = '';
+try {
+  orraBuildId = readFileSync(path.join(process.cwd(), '.next', 'BUILD_ID'), 'utf-8').trim();
+} catch {
+  orraBuildId = 'dev';
+}
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,7 +69,7 @@ export default function RootLayout({
             and forces a cache-bust reload before the user sees a broken page. */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-            var ORRA_BUILD_KEY = 'orra_build_id';
+            var ORRA_BUILD_ID = '${orraBuildId}';
             var MAX_RETRIES = 2;
 
             // 1. Detect stale JS chunks — when the browser has old HTML cached
@@ -133,7 +143,29 @@ export default function RootLayout({
               window.location.replace('/?_cb=' + Date.now());
             }
 
-            // 4. Clear retry counter on successful load
+            // 4. Proactive stale check: fetch the server's build ID and compare
+            //    This catches the case where the browser has old HTML cached
+            //    (with old chunk references) but no JS errors occur yet.
+            //    By checking the build ID, we can force a reload BEFORE the
+            //    user sees broken content.
+            (function checkBuildId() {
+              // Compare the build ID embedded in this HTML with the server's current build ID
+              // If they differ, the browser has stale HTML cached and needs a reload
+              if (!ORRA_BUILD_ID) return;
+              fetch('/api/build-id', { cache: 'no-store' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                  if (data.buildId && ORRA_BUILD_ID && data.buildId !== ORRA_BUILD_ID) {
+                    console.warn('ORRA: Build ID mismatch (cached=' + ORRA_BUILD_ID + ', server=' + data.buildId + '), forcing reload');
+                    orraForceReload();
+                  }
+                })
+                .catch(function() {
+                  // Network error — don't force reload
+                });
+            })();
+
+            // 5. Clear retry counter on successful load
             window.addEventListener('load', function() {
               sessionStorage.removeItem('orra_reload_retries');
             });
