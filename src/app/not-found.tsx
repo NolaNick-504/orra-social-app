@@ -1,31 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
-
-// This page should almost never be seen because:
+// Root not-found page.
+// This should almost never be seen because:
 // 1. The catch-all route app/[...slug]/page.tsx handles all SPA paths
-// 2. PM2 auto-restarts the server if it crashes
+// 2. The [..slug]/not-found.tsx renders the app even if the router gets confused
 //
-// But as a safety net, if someone somehow lands here,
-// redirect them to the root which always works.
-export default function NotFound() {
-  useEffect(() => {
-    // Use replace so the 404 URL doesn't stay in browser history
-    window.location.replace('/');
-  }, []);
+// But as a final safety net, if someone lands on a truly unknown path,
+// render the full app. The AuthenticatedApp component will sync the URL
+// and show the correct view, or default to the home feed.
+import Home from './page';
 
-  return (
-    <html lang="en">
-      <head>
-        <meta httpEquiv="refresh" content="0;url=/" />
-        <title>Redirecting to ORRA...</title>
-      </head>
-      <body style={{ background: '#050505', color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'system-ui', margin: 0 }}>
-        <div style={{ textAlign: 'center' }}>
-          <p>Redirecting to <a href="/" style={{ color: '#8b5cf6' }}>ORRA</a>...</p>
-        </div>
-        <script dangerouslySetInnerHTML={{ __html: 'window.location.replace("/");' }} />
-      </body>
-    </html>
-  );
+export default function RootNotFound() {
+  return <Home />;
 }
