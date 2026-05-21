@@ -62,29 +62,25 @@ function getQueryClient() {
   return queryClientInstance;
 }
 
-// Pre-render safety: clear corrupted or outdated localStorage before React even mounts
-// This prevents crashes on mobile where localStorage data can become corrupted
-// OR when the data model changes (e.g. removing user-me, adding new demo accounts)
-const ORRA_STORAGE_VERSION = 14; // Must match the version in aura-store.ts partialize function
+// Pre-render safety: validate localStorage before React mounts.
+// IMPORTANT: We do NOT clear localStorage on version changes — the Zustand merge
+// function handles migrations gracefully. Clearing wipes the user's auth session,
+// profile data, likes, follows, etc. Only clear for truly corrupted data.
 if (typeof window !== 'undefined') {
   try {
     const stored = localStorage.getItem('aura-storage');
     if (stored) {
-      // Quick validation: if it can't be parsed, clear it
       const parsed = JSON.parse(stored);
-      // Version check: if the stored version doesn't match, clear everything
-      const storedVersion = parsed?.version ?? 1;
-      if (storedVersion < ORRA_STORAGE_VERSION) {
-        console.warn('ORRA: Storage version outdated (v' + storedVersion + ' < v' + ORRA_STORAGE_VERSION + '), clearing');
-        localStorage.removeItem('aura-storage');
-      }
-      // Also clear if the stored userId references a deleted user (user-me was removed)
+      // Only clear for the deleted user-me account — this user no longer exists
       if (parsed?.state?.currentUserId === 'user-me') {
         console.warn('ORRA: Stale user-me found in localStorage, clearing');
         localStorage.removeItem('aura-storage');
       }
+      // Only clear if data is genuinely corrupted (can't be parsed at all)
+      // The catch block below handles that case.
     }
   } catch (e) {
+    // Only clear if localStorage is truly corrupted (unparseable JSON)
     console.warn('ORRA: Corrupted localStorage detected, clearing it');
     try { localStorage.removeItem('aura-storage'); } catch {}
   }
@@ -257,6 +253,36 @@ function AuthenticatedApp() {
 
   // Auto-show Daily Digest once per day
   useDailyDigest();
+
+  // Sync URL path to currentView on mount.
+  // When the user refreshes on /explore, /profile, /messages, etc.,
+  // the catch-all route renders this component but the Zustand store
+  // might still have currentView='home'. Read the URL and set the right view.
+  useEffect(() => {
+    const pathMap: Record<string, string> = {
+      '/explore': 'explore',
+      '/reels': 'reels',
+      '/live': 'live',
+      '/dance': 'dance',
+      '/games': 'games',
+      '/hub': 'hub',
+      '/messages': 'messages',
+      '/activity': 'activity',
+      '/profile': 'profile',
+      '/wellness': 'wellness',
+      '/marketplace': 'marketplace',
+      '/settings': 'settings',
+    };
+    const path = window.location.pathname;
+    const viewFromUrl = pathMap[path];
+    if (viewFromUrl) {
+      const currentStoreView = useAuraStore.getState().currentView;
+      if (currentStoreView !== viewFromUrl) {
+        console.log('ORRA: Syncing currentView from URL path:', path, '→', viewFromUrl);
+        useAuraStore.getState().setView(viewFromUrl as any);
+      }
+    }
+  }, []);
 
   // NOTE: User hydration is handled by StoreHydrator (via AppWrapper)
   // which calls /api/me for full user data including avatar, followers, etc.

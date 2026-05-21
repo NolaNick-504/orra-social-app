@@ -647,7 +647,33 @@ export const useAuraStore = create<AuraState>()(
       }),
 
       // Navigation actions
-      setView: (view) => set({ currentView: view }),
+      setView: (view) => {
+        // Update the browser URL to match the current view
+        // This way refreshing the page will keep the user on the same view
+        if (typeof window !== 'undefined') {
+          const viewToPath: Record<string, string> = {
+            'home': '/',
+            'explore': '/explore',
+            'reels': '/reels',
+            'live': '/live',
+            'dance': '/dance',
+            'games': '/games',
+            'hub': '/hub',
+            'messages': '/messages',
+            'activity': '/activity',
+            'profile': '/profile',
+            'wellness': '/wellness',
+            'marketplace': '/marketplace',
+            'settings': '/settings',
+          };
+          const targetPath = viewToPath[view] || '/';
+          const currentPath = window.location.pathname;
+          if (currentPath !== targetPath) {
+            window.history.pushState({}, '', targetPath);
+          }
+        }
+        return set({ currentView: view });
+      },
       setHomeTab: (tab) => set({ homeTab: tab }),
       setNavVisible: (visible) => set({ navVisible: visible }),
 
@@ -1381,6 +1407,12 @@ export const useAuraStore = create<AuraState>()(
           if (persisted.currentUserId) merged.currentUserId = persisted.currentUserId;
           if (persisted.currentUserProfile && typeof persisted.currentUserProfile === 'object') {
             merged.currentUserProfile = persisted.currentUserProfile;
+          }
+          // Restore currentView so refreshing on /explore, /profile, etc. keeps the right view
+          // Only restore if it's a valid NavView value
+          const validViews = ['home', 'explore', 'reels', 'live', 'dance', 'games', 'hub', 'messages', 'activity', 'postDetail', 'profile', 'wellness', 'marketplace', 'settings'];
+          if (persisted.currentView && validViews.includes(persisted.currentView)) {
+            merged.currentView = persisted.currentView;
           }
           // Don't restore isHydrated from localStorage — it must be determined fresh each session
           // profileSetupComplete can be restored as fallback, but API value takes priority
