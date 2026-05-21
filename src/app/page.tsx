@@ -89,21 +89,13 @@ if (typeof window !== 'undefined') {
   // When a new build is deployed, the HTML references new chunk filenames,
   // but the browser may have old HTML cached. The old HTML references
   // chunk filenames that no longer exist → 404 → app silently breaks.
-  // This check fetches a tiny API endpoint to verify the server is reachable,
-  // and if the current page's JS chunks are stale, forces a hard reload.
+  // This check fetches a tiny API endpoint to verify the server is reachable.
   (async () => {
     try {
-      // Quick check: is the server alive?
       const res = await fetch('/api/me', { method: 'HEAD', cache: 'no-store' });
-      if (!res.ok) {
-        // Server returned non-200 — might be a stale route
-        // Force a cache-bust reload if we haven't already tried
-        const url = new URL(window.location.href);
-        if (!url.searchParams.has('_v')) {
-          url.searchParams.set('_v', Date.now().toString());
-          window.location.replace(url.toString());
-        }
-      }
+      // We don't force reload on non-200 because the /api/me might legitimately
+      // return 401 for unauthenticated users. The inline script in layout.tsx
+      // handles stale chunk detection via JS syntax errors instead.
     } catch {
       // Network error — server might be down, don't force reload
     }
@@ -123,20 +115,39 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
     console.warn('ORRA ErrorBoundary caught:', error?.message || error);
     const newCount = this.state.errorCount + 1;
     this.setState({ errorCount: newCount });
-    // Only clear localStorage if we get repeated crashes (3+ errors)
+
+    const msg = (error?.message || '').toLowerCase();
+    const isChunkError = (
+      msg.includes('chunk') ||
+      msg.includes('loading') ||
+      msg.includes('unexpected token') ||
+      msg.includes('syntax') ||
+      msg.includes('failed to fetch') ||
+      msg.includes('import')
+    );
+
+    // If it's a chunk/stale-cache error, force a cache-bust reload immediately
+    if (isChunkError) {
+      console.warn('ORRA: Chunk/import error in ErrorBoundary, forcing cache-bust reload');
+      setTimeout(() => {
+        window.location.replace('/?_cb=' + Date.now());
+      }, 1000);
+      return;
+    }
+
+    // Only clear localStorage if we get repeated crashes (5+ errors)
     // This preserves user data (likes, comments, follows) during one-off errors
-    if (newCount >= 3) {
+    if (newCount >= 5) {
       try {
         localStorage.removeItem('aura-storage');
-        console.warn('Auto-cleared aura-storage after 3+ repeated errors');
+        console.warn('Auto-cleared aura-storage after 5+ repeated errors');
       } catch {}
     }
-    // After 2+ errors, force a hard page reload instead of retrying the broken state
-    // This breaks the "Reconnecting..." infinite loop that happens when browser cache is stale
-    if (newCount >= 2) {
+    // After 3+ errors, force a hard page reload instead of retrying the broken state
+    if (newCount >= 3) {
       console.warn('ORRA: Multiple errors detected — forcing hard reload');
       setTimeout(() => {
-        window.location.href = window.location.pathname + '?_nocache=' + Date.now();
+        window.location.replace('/?_nocache=' + Date.now());
       }, 2000);
       return;
     }
@@ -168,7 +179,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
             <button
               onClick={() => {
                 // Force a hard reload with cache bust
-                window.location.href = window.location.pathname + '?_nocache=' + Date.now();
+                window.location.replace('/?_nocache=' + Date.now());
               }}
               className="mt-4 text-slate-500 text-xs hover:text-white transition-colors"
             >
@@ -233,24 +244,18 @@ function MainContent() {
 }
 
 function LoadingScreen() {
-  // Auto-recover: if the app is stuck on this screen for more than 5 seconds,
+  // Auto-recover: if the app is stuck on this screen for more than 8 seconds,
   // force a cache-bust reload. This handles the case where a new deploy changes
   // JS chunk filenames but the browser has old HTML cached — the old chunks
   // return 404 and the app never loads. A single cache-bust reload fixes it.
   useEffect(() => {
     const timeout = setTimeout(() => {
-      // Only force reload if we've never successfully loaded (no session cookie)
-      // If there IS a session cookie, the issue is hydration, not stale cache
-      const hasSession = document.cookie.includes('next-auth.session-token');
-      if (!hasSession) {
-        // No session = probably just logged in but JS failed to load
-        // Cache-bust reload will get fresh HTML with correct chunk names
-        const alreadyRetried = new URLSearchParams(window.location.search).has('_retry');
-        if (!alreadyRetried) {
-          window.location.href = window.location.pathname + '?_retry=' + Date.now();
-        }
+      // Only force reload if we haven't already tried a cache-bust
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has('_cb') && !params.has('_nocache') && !params.has('_retry')) {
+        window.location.replace('/?_retry=' + Date.now());
       }
-    }, 5000);
+    }, 8000);
     return () => clearTimeout(timeout);
   }, []);
 

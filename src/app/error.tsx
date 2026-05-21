@@ -15,11 +15,25 @@ export default function Error({
 
   useEffect(() => {
     console.warn('ORRA Page Error:', error?.message || error);
-    // Don't clear localStorage on every error - it wipes user's likes, comments, follows, etc.
   }, [error]);
 
-  // Auto-retry after 3 seconds — most errors after a rebuild are transient
+  // Check if this is a chunk/stale-cache error — if so, force reload immediately
   useEffect(() => {
+    const msg = (error?.message || '').toLowerCase();
+    const isChunkError = (
+      msg.includes('chunk') ||
+      msg.includes('loading') ||
+      msg.includes('unexpected token') ||
+      msg.includes('syntax') ||
+      msg.includes('failed to fetch')
+    );
+    if (isChunkError) {
+      console.warn('ORRA: Chunk/syntax error detected in error boundary, forcing cache-bust reload');
+      window.location.replace('/?_cb=' + Date.now());
+      return;
+    }
+
+    // Auto-retry after 3 seconds — most errors after a rebuild are transient
     if (!autoRetrying) return;
     const interval = setInterval(() => {
       setCountdown((prev) => {
@@ -33,7 +47,7 @@ export default function Error({
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [autoRetrying, reset]);
+  }, [autoRetrying, reset, error]);
 
   // If auto-retry is in progress, show a brief reconnecting overlay
   if (autoRetrying) {
@@ -67,7 +81,7 @@ export default function Error({
         <p className="text-slate-400 text-sm mb-4">ORRA hit a snag. Your data is safe — just reload.</p>
         <button
           onClick={() => {
-            window.location.reload();
+            window.location.replace('/?_cb=' + Date.now());
           }}
           className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold text-sm flex items-center gap-2 mx-auto"
         >

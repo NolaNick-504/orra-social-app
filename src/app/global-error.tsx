@@ -17,8 +17,23 @@ export default function GlobalError({
     console.warn('ORRA Global Error:', error?.message || error);
   }, [error]);
 
-  // Auto-retry after 3 seconds — most errors after a rebuild are transient
+  // Check if this is a chunk/stale-cache error — if so, force reload immediately
   useEffect(() => {
+    const msg = (error?.message || '').toLowerCase();
+    const isChunkError = (
+      msg.includes('chunk') ||
+      msg.includes('loading') ||
+      msg.includes('unexpected token') ||
+      msg.includes('syntax') ||
+      msg.includes('failed to fetch')
+    );
+    if (isChunkError) {
+      console.warn('ORRA: Chunk/syntax error in global error boundary, forcing cache-bust reload');
+      window.location.replace('/?_cb=' + Date.now());
+      return;
+    }
+
+    // Auto-retry after 3 seconds — most errors after a rebuild are transient
     if (!autoRetrying) return;
     const interval = setInterval(() => {
       setCountdown((prev) => {
@@ -32,7 +47,7 @@ export default function GlobalError({
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [autoRetrying, reset]);
+  }, [autoRetrying, reset, error]);
 
   // If auto-retry is in progress, show a brief reconnecting overlay
   if (autoRetrying) {
@@ -76,17 +91,17 @@ export default function GlobalError({
             <div className="flex flex-col gap-2 items-center">
               <button
                 onClick={() => {
-                  window.location.reload();
+                  window.location.replace('/?_cb=' + Date.now());
                 }}
                 className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold text-sm flex items-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" /> Reload ORRA
               </button>
               <button
-                onClick={() => window.location.href = '/'}
+                onClick={() => window.location.replace('/?_nocache=' + Date.now())}
                 className="text-slate-500 text-xs hover:text-white transition-colors"
               >
-                Go to home page
+                Hard refresh (clear cache)
               </button>
             </div>
           </div>
