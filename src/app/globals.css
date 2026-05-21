@@ -610,6 +610,17 @@
   animation: ad-neon-pulse 3s ease-in-out infinite;
 }
 
+/* QR scan line animation — sweeps up and down */
+@keyframes qr-scan {
+  0% { top: 10%; }
+  50% { top: 85%; }
+  100% { top: 10%; }
+}
+.qr-scan-line {
+  animation: qr-scan 2.5s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.6);
+}
+
 /* 3D card tilt hover effect */
 .card-3d {
   transform: perspective(1000px) rotateX(0deg) rotateY(0deg);

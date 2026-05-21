@@ -4,7 +4,8 @@ import { useChats, useChatMessages, useSendMessage } from '@/lib/api-hooks';
 import { resolveImageUrl } from '@/lib/utils';
 import { useAuraStore, type ChatMessage } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
-import { Camera, Search, MoreVertical, Phone, Video, Send, Image as ImageIcon, Smile, Heart, ThumbsUp, Laugh, X, Plus } from 'lucide-react';
+import { Camera, Search, MoreVertical, Phone, Video, Send, Image as ImageIcon, Smile, Heart, ThumbsUp, Laugh, X, Plus, QrCode, ScanLine, UserPlus, Share2 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 
@@ -29,6 +30,9 @@ export function Messages() {
   const [newChatQuery, setNewChatQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string; handle: string; avatar: string | null; verified: boolean }>>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrTab, setQrTab] = useState<'my' | 'scan'>('my');
+  const [scanResult, setScanResult] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -165,6 +169,13 @@ export function Messages() {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-white">Messages</h2>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setShowQrModal(true); setQrTab('my'); setScanResult(null); }}
+            className="p-2 rounded-xl bg-violet-600/20 text-violet-400 hover:bg-violet-600/30 transition-all"
+            title="QR Code"
+          >
+            <QrCode className="w-5 h-5" />
+          </button>
           <button
             onClick={() => setShowNewChat(!showNewChat)}
             className="p-2 rounded-xl bg-violet-600/20 text-violet-400 hover:bg-violet-600/30 transition-all"
@@ -463,6 +474,183 @@ export function Messages() {
             >
               <Send className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal — CashApp-style scan & share */}
+      {showQrModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowQrModal(false)}>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          <div
+            className="relative w-full max-w-sm glass-panel rounded-3xl overflow-hidden border border-violet-500/20 fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/5">
+              <h3 className="text-base font-bold text-white">QR Code</h3>
+              <button onClick={() => setShowQrModal(false)} className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 transition-all">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Tab switcher — My QR / Scan */}
+            <div className="flex mx-4 mt-4 rounded-xl bg-white/5 p-1">
+              <button
+                onClick={() => { setQrTab('my'); setScanResult(null); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                  qrTab === 'my' ? 'bg-violet-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <QrCode className="w-4 h-4" />
+                My QR
+              </button>
+              <button
+                onClick={() => { setQrTab('scan'); setScanResult(null); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                  qrTab === 'scan' ? 'bg-violet-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <ScanLine className="w-4 h-4" />
+                Scan
+              </button>
+            </div>
+
+            {/* My QR Tab — shows user's QR code for others to scan */}
+            {qrTab === 'my' && (
+              <div className="p-6 flex flex-col items-center">
+                {/* Avatar */}
+                <div className="relative mb-4">
+                  <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-violet-500/40 cosmic-avatar-glow">
+                    <img
+                      src={resolveImageUrl(currentUser.avatar || '/api/uploads?path=images/orra-logo.png')}
+                      alt={currentUser.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center ring-2 ring-[#0a0a0f]">
+                    <QrCode className="w-3 h-3 text-white" />
+                  </div>
+                </div>
+
+                <h4 className="text-white font-bold text-sm mb-0.5">{currentUser.name || 'ORRA User'}</h4>
+                <p className="text-slate-500 text-xs mb-5">
+                  @{currentUser.handle || 'orrauser'}
+                </p>
+
+                {/* QR Code */}
+                <div className="p-4 rounded-2xl bg-white shadow-[0_0_30px_rgba(139,92,246,0.3)] mb-5">
+                  <QRCodeSVG
+                    value={`orra://user/${currentUser.id || 'unknown'}`}
+                    size={180}
+                    bgColor="#ffffff"
+                    fgColor="#0a0a0f"
+                    level="H"
+                    includeMargin={false}
+                  />
+                </div>
+
+                <p className="text-slate-400 text-xs text-center mb-4">
+                  Have a friend scan this to add you instantly
+                </p>
+
+                {/* Share button */}
+                <button
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'Add me on ORRA',
+                        text: `Scan my QR code on ORRA or search @${currentUser.handle || 'orrauser'}`,
+                        url: `${window.location.origin}/profile`,
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(`${window.location.origin}/profile`);
+                      toast.success('Profile link copied!', { duration: 2000 });
+                    }
+                  }}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-bold hover:opacity-90 transition-all shadow-lg"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </button>
+              </div>
+            )}
+
+            {/* Scan Tab — simulated scanner to add someone */}
+            {qrTab === 'scan' && (
+              <div className="p-6 flex flex-col items-center">
+                {scanResult ? (
+                  /* Scan result — found a user */
+                  <div className="flex flex-col items-center text-center fade-in">
+                    <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-emerald-500/40 mb-4 cosmic-avatar-glow">
+                      <img
+                        src={resolveImageUrl(scanResult)}
+                        alt="Scanned user"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/api/uploads?path=images/orra-logo.png';
+                        }}
+                      />
+                    </div>
+                    <h4 className="text-white font-bold text-base mb-1">User Found!</h4>
+                    <p className="text-slate-400 text-xs mb-5">Scan complete — add this person to start chatting</p>
+                    <button
+                      onClick={() => {
+                        setShowQrModal(false);
+                        setShowNewChat(true);
+                        toast.success('Ready to start a new chat!', { duration: 2000 });
+                      }}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-bold hover:opacity-90 transition-all shadow-lg"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      Add & Chat
+                    </button>
+                    <button
+                      onClick={() => setScanResult(null)}
+                      className="mt-3 text-slate-500 text-xs hover:text-white transition-colors"
+                    >
+                      Scan again
+                    </button>
+                  </div>
+                ) : (
+                  /* Scanner UI — animated scanning frame */
+                  <div className="flex flex-col items-center">
+                    <div className="relative w-56 h-56 rounded-2xl overflow-hidden border-2 border-violet-500/30 mb-5 bg-black/40">
+                      {/* Corner brackets */}
+                      <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-violet-400 rounded-tl-lg" />
+                      <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-violet-400 rounded-tr-lg" />
+                      <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-violet-400 rounded-bl-lg" />
+                      <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-violet-400 rounded-br-lg" />
+
+                      {/* Animated scan line */}
+                      <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-violet-500 to-transparent qr-scan-line" />
+
+                      {/* Center icon */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <ScanLine className="w-10 h-10 text-violet-500/40" />
+                      </div>
+                    </div>
+
+                    <p className="text-white font-semibold text-sm mb-1">Scan a QR Code</p>
+                    <p className="text-slate-500 text-xs text-center mb-5">
+                      Point your camera at someone&apos;s ORRA QR code to add them
+                    </p>
+
+                    {/* Simulated scan button — on mobile this would use the camera API */}
+                    <button
+                      onClick={() => {
+                        setScanResult('/api/uploads?path=images/orra-logo.png');
+                        toast.success('QR Code detected!', { duration: 1500 });
+                      }}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-300 text-sm font-bold hover:bg-violet-600/30 transition-all"
+                    >
+                      <ScanLine className="w-4 h-4" />
+                      Simulate Scan
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
