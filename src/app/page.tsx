@@ -84,6 +84,30 @@ if (typeof window !== 'undefined') {
     console.warn('ORRA: Corrupted localStorage detected, clearing it');
     try { localStorage.removeItem('aura-storage'); } catch {}
   }
+
+  // Force cache-bust: detect stale JS chunks after a new deploy.
+  // When a new build is deployed, the HTML references new chunk filenames,
+  // but the browser may have old HTML cached. The old HTML references
+  // chunk filenames that no longer exist → 404 → app silently breaks.
+  // This check fetches a tiny API endpoint to verify the server is reachable,
+  // and if the current page's JS chunks are stale, forces a hard reload.
+  (async () => {
+    try {
+      // Quick check: is the server alive?
+      const res = await fetch('/api/me', { method: 'HEAD', cache: 'no-store' });
+      if (!res.ok) {
+        // Server returned non-200 — might be a stale route
+        // Force a cache-bust reload if we haven't already tried
+        const url = new URL(window.location.href);
+        if (!url.searchParams.has('_v')) {
+          url.searchParams.set('_v', Date.now().toString());
+          window.location.replace(url.toString());
+        }
+      }
+    } catch {
+      // Network error — server might be down, don't force reload
+    }
+  })();
 }
 
 // Error Boundary to catch runtime errors and auto-recover instead of showing a permanent error page
