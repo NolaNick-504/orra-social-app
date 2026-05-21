@@ -8,7 +8,7 @@ import { resolveImageUrl } from '@/lib/utils';
 import { vibeLabels } from '@/lib/data';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { useQueryClient } from '@tanstack/react-query';
-import { Heart, MessageCircle, Share2, Bookmark, Plus, Image as ImageIcon, Video, MoreHorizontal, BadgeCheck, Repeat2, BarChart3, Play, Send, X, Trash2, Zap, Waves, Sparkles, Radio, Trophy, CheckCircle2, Eye, Clock, MonitorUp, Users } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Plus, Image as ImageIcon, Video, MoreHorizontal, BadgeCheck, Repeat2, BarChart3, Play, Send, X, Trash2, Zap, Waves, Sparkles, Radio, Trophy, CheckCircle2, Eye, Clock, MonitorUp, Users, Megaphone, ExternalLink, Star } from 'lucide-react';
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Carousel, CarouselContent, CarouselItem, CarouselApi } from '@/components/ui/carousel';
@@ -1200,28 +1200,92 @@ export function PulseFeed() {
         const showAd = (index + 1) % 3 === 0 && index > 0;
         const adIndex = Math.floor((index + 1) / 3) - 1;
         const AD_PROMOS = [
-          { title: 'Level Up Your Aura', desc: 'Earn double ORRA tokens this week on every pulse and echo.', cta: 'Learn More', gradient: 'from-violet-600/40 to-fuchsia-600/40' },
-          { title: 'Prism AI is Here', desc: 'Your personal AI companion — ask anything, create anything, vibe anything.', cta: 'Try Prism', gradient: 'from-blue-600/40 to-violet-600/40' },
-          { title: 'Dance Challenge Live', desc: 'Join the weekly dance-off and win exclusive badges + 500 ORRA tokens.', cta: 'Join Now', gradient: 'from-pink-600/40 to-orange-600/40' },
-          { title: 'ORRA Marketplace', desc: 'Spend your ORRA tokens on exclusive profile themes, badges & more.', cta: 'Browse', gradient: 'from-emerald-600/40 to-cyan-600/40' },
+          {
+            badge: 'PROMOTED',
+            badgeColor: 'bg-teal-600',
+            brand: 'SURGE',
+            brandIcon: <Star className="w-3 h-3" />,
+            image: '/images/ads/surge-can.png',
+            headline: 'Fuel Your Grind',
+            subtext: 'Zero sugar. Infinite focus. The energy drink for creators who never stop.',
+            cta: 'Try It',
+            ctaColor: 'bg-teal-600 hover:bg-teal-500',
+            borderColor: 'border-teal-500/40',
+          },
+          {
+            badge: 'AD',
+            badgeColor: 'bg-purple-600',
+            brand: 'ZENITH',
+            brandIcon: <Star className="w-3 h-3" />,
+            image: '/images/ads/zenith-hoodie.png',
+            headline: 'Wear the Vibe',
+            subtext: 'Iridescent streetwear that shifts color with your mood. Drop 03 is live now.',
+            cta: 'Explore',
+            ctaColor: 'bg-purple-600 hover:bg-purple-500',
+            borderColor: 'border-purple-500/40',
+          },
+          {
+            badge: 'SPONSORED',
+            badgeColor: 'bg-orange-600',
+            brand: 'PULSE AUDIO',
+            brandIcon: <Star className="w-3 h-3" />,
+            image: '/images/ads/pulse-audio-headphones.png',
+            headline: 'Sound Redefined',
+            subtext: 'Spatial audio headphones with AI noise cancellation. Hear what you\'ve been missing.',
+            cta: 'Learn More',
+            ctaColor: 'bg-orange-600 hover:bg-orange-500',
+            borderColor: 'border-amber-500/40',
+          },
+          {
+            badge: 'AD',
+            badgeColor: 'bg-blue-600',
+            brand: 'NOVA KICKS',
+            brandIcon: <Star className="w-3 h-3" />,
+            image: '/images/ads/nova-kicks-sneakers.png',
+            headline: 'Step Into the Future',
+            subtext: 'Limited drop — holographic sole tech. Only 500 pairs made. Get yours before they vanish.',
+            cta: 'Shop Drop',
+            ctaColor: 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500',
+            borderColor: 'border-blue-500/40',
+          },
         ];
         const ad = AD_PROMOS[adIndex % AD_PROMOS.length];
 
         return (
           <React.Fragment key={isEcho ? `echo-${(post as any)._echoId || post.id}` : post.id}>
-            {/* Ad Card — inserted every 3 posts */}
+            {/* Ad Card — rich product ad matching the ORRA design spec */}
             {showAd && (
-              <div className="glass-panel rounded-2xl overflow-hidden border border-violet-500/10">
-                <div className={`bg-gradient-to-r ${ad.gradient} p-4`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 rounded-md bg-violet-600/80 text-white text-[10px] font-bold tracking-wider">AD</span>
-                    <span className="text-xs text-slate-400">Sponsored</span>
+              <div className={`rounded-2xl overflow-hidden border ${ad.borderColor} glass-panel`}>
+                {/* Ad header: badge + brand */}
+                <div className="flex items-center justify-between p-3 pb-0">
+                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${ad.badgeColor} text-white text-[10px] font-bold tracking-wider`}>
+                    <Megaphone className="w-3 h-3" />
+                    {ad.badge}
                   </div>
-                  <h3 className="text-white font-semibold text-sm mb-1">{ad.title}</h3>
-                  <p className="text-slate-300 text-xs mb-3">{ad.desc}</p>
-                  <button className="px-4 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-medium transition-colors backdrop-blur-sm">
-                    {ad.cta}
-                  </button>
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 text-white text-[10px] font-bold tracking-wider">
+                    {ad.brandIcon}
+                    {ad.brand}
+                  </div>
+                </div>
+                {/* Ad image */}
+                <div className="relative mx-3 mt-2 rounded-xl overflow-hidden max-h-[220px]">
+                  <img
+                    src={ad.image}
+                    alt={ad.brand}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Ad content */}
+                <div className="px-4 pt-3 pb-3">
+                  <h3 className="text-white font-bold text-base mb-1">{ad.headline}</h3>
+                  <p className="text-slate-400 text-xs leading-relaxed mb-3">{ad.subtext}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 text-[10px] font-medium tracking-wider">{ad.brand}</span>
+                    <button className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl ${ad.ctaColor} text-white text-xs font-bold transition-all shadow-lg`}>
+                      {ad.cta}
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
