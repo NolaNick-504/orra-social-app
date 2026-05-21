@@ -601,6 +601,15 @@
   animation: neon-border-flow 4s ease-in-out infinite;
 }
 
+/* Ad card neon glow pulse — makes the box-shadow breathe */
+@keyframes ad-neon-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.ad-neon-glow {
+  animation: ad-neon-pulse 3s ease-in-out infinite;
+}
+
 /* 3D card tilt hover effect */
 .card-3d {
   transform: perspective(1000px) rotateX(0deg) rotateY(0deg);

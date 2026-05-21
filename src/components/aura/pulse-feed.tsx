@@ -1210,7 +1210,9 @@ export function PulseFeed() {
             subtext: 'Zero sugar. Infinite focus. The energy drink for creators who never stop.',
             cta: 'Try It',
             ctaColor: 'bg-teal-600 hover:bg-teal-500',
-            borderColor: 'border-teal-500/40',
+            borderColor: 'border-teal-400/60',
+            neonShadow: '0 0 8px rgba(20,184,166,0.5), 0 0 20px rgba(20,184,166,0.25), 0 0 40px rgba(20,184,166,0.1)',
+            neonShadowHover: '0 0 12px rgba(20,184,166,0.7), 0 0 30px rgba(20,184,166,0.4), 0 0 60px rgba(20,184,166,0.15)',
           },
           {
             badge: 'AD',
@@ -1222,7 +1224,9 @@ export function PulseFeed() {
             subtext: 'Iridescent streetwear that shifts color with your mood. Drop 03 is live now.',
             cta: 'Explore',
             ctaColor: 'bg-purple-600 hover:bg-purple-500',
-            borderColor: 'border-purple-500/40',
+            borderColor: 'border-purple-400/60',
+            neonShadow: '0 0 8px rgba(147,51,234,0.5), 0 0 20px rgba(147,51,234,0.25), 0 0 40px rgba(147,51,234,0.1)',
+            neonShadowHover: '0 0 12px rgba(147,51,234,0.7), 0 0 30px rgba(147,51,234,0.4), 0 0 60px rgba(147,51,234,0.15)',
           },
           {
             badge: 'SPONSORED',
@@ -1234,7 +1238,9 @@ export function PulseFeed() {
             subtext: 'Spatial audio headphones with AI noise cancellation. Hear what you\'ve been missing.',
             cta: 'Learn More',
             ctaColor: 'bg-orange-600 hover:bg-orange-500',
-            borderColor: 'border-amber-500/40',
+            borderColor: 'border-amber-400/60',
+            neonShadow: '0 0 8px rgba(245,158,11,0.5), 0 0 20px rgba(245,158,11,0.25), 0 0 40px rgba(245,158,11,0.1)',
+            neonShadowHover: '0 0 12px rgba(245,158,11,0.7), 0 0 30px rgba(245,158,11,0.4), 0 0 60px rgba(245,158,11,0.15)',
           },
           {
             badge: 'AD',
@@ -1246,16 +1252,23 @@ export function PulseFeed() {
             subtext: 'Limited drop — holographic sole tech. Only 500 pairs made. Get yours before they vanish.',
             cta: 'Shop Drop',
             ctaColor: 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500',
-            borderColor: 'border-blue-500/40',
+            borderColor: 'border-blue-400/60',
+            neonShadow: '0 0 8px rgba(59,130,246,0.5), 0 0 20px rgba(59,130,246,0.25), 0 0 40px rgba(59,130,246,0.1)',
+            neonShadowHover: '0 0 12px rgba(59,130,246,0.7), 0 0 30px rgba(59,130,246,0.4), 0 0 60px rgba(59,130,246,0.15)',
           },
         ];
         const ad = AD_PROMOS[adIndex % AD_PROMOS.length];
 
         return (
           <React.Fragment key={isEcho ? `echo-${(post as any)._echoId || post.id}` : post.id}>
-            {/* Ad Card — rich product ad matching the ORRA design spec */}
+            {/* Ad Card — rich product ad with neon glow matching the ORRA design spec */}
             {showAd && (
-              <div className={`rounded-2xl overflow-hidden border ${ad.borderColor} glass-panel`}>
+              <div
+                className={`rounded-2xl overflow-hidden border-2 ${ad.borderColor} glass-panel transition-all duration-300 cursor-pointer group/ad ad-neon-glow`}
+                style={{ boxShadow: ad.neonShadow }}
+                onMouseEnter={(e) => { e.currentTarget.style.boxShadow = ad.neonShadowHover; e.currentTarget.style.animationPlayState = 'paused'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ad.neonShadow; e.currentTarget.style.animationPlayState = 'running'; }}
+              >
                 {/* Ad header: badge + brand */}
                 <div className="flex items-center justify-between p-3 pb-0">
                   <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${ad.badgeColor} text-white text-[10px] font-bold tracking-wider`}>
@@ -1272,7 +1285,7 @@ export function PulseFeed() {
                   <img
                     src={ad.image}
                     alt={ad.brand}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover/ad:scale-105 transition-transform duration-500"
                   />
                 </div>
                 {/* Ad content */}
