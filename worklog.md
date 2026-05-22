@@ -110,3 +110,29 @@ Stage Summary:
 - Clean rebuild deployed with both fixes verified in built chunks
 - Profile now correctly shows as own profile when clicking own name in feed
 - User's phone needs a hard refresh to load the new JavaScript
+
+---
+Task ID: 4
+Agent: Main
+Task: Fix aggressive caching preventing user's phone from getting new code
+
+Work Log:
+- Diagnosed that Samsung Internet was aggressively caching JS chunks despite no-cache headers
+- The chunk filename (2540.aaeac711f9be5287.js) stayed the same between builds, so browser served old cached version
+- Added build ID detection in layout.tsx inline script:
+  - Embeds current BUILD_ID in HTML
+  - Compares with localStorage 'orra_build_id' from last visit
+  - If different, forces a cache-bust reload with ?_cb= timestamp query parameter
+- Added service worker (/public/sw.js) with network-only strategy:
+  - Bypasses Samsung Internet's disk cache
+  - Forces all requests to go to server
+  - Clears old caches on activation
+- Did clean rebuild (rm -rf .next && npm run build) - new BUILD_ID: y3gamNkc-BtriBMGuLH0p
+- Verified through Caddy proxy: HTML includes build ID check and service worker registration
+- Tested in browser through port 81: profile shows correctly with Edit Profile button
+
+Stage Summary:
+- Added automatic cache-bust mechanism via build ID comparison
+- Added service worker to prevent aggressive caching on Samsung Internet
+- User's phone should now automatically detect the new build and force-reload
+- All previous fixes (profile as own profile, setViewingUser auto-detection) are included

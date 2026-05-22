@@ -69,12 +69,27 @@ export default function RootLayout({
             and forces a cache-bust reload before the user sees a broken page. */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-            // Only detect actual JS chunk errors (stale chunks after deploy)
-            // DO NOT proactively check build IDs — that causes infinite reload loops
-            // when the browser has cached HTML with an old build ID.
-            // The middleware's no-cache headers ensure fresh HTML on each visit.
+            // Embed current build ID so the browser can detect stale cached pages
+            window.__ORRA_BUILD_ID = '${orraBuildId}';
+
             var MAX_RETRIES = 1;
             var alreadyRetried = sessionStorage.getItem('orra_chunk_retry');
+
+            // Check if the browser has a stale build cached
+            // This happens when: HTML is fresh (no-cache headers) but JS chunks are cached
+            // We compare the build ID in the HTML with the one stored from last visit
+            var lastBuildId = localStorage.getItem('orra_build_id');
+            if (lastBuildId && lastBuildId !== '${orraBuildId}') {
+              // Build changed — clear all cached JS by forcing a cache-bust reload
+              console.warn('ORRA: Build changed from ' + lastBuildId + ' to ${orraBuildId}, forcing reload');
+              localStorage.setItem('orra_build_id', '${orraBuildId}');
+              // Only reload if not already reloaded with cache bust
+              if (!window.location.search.includes('_cb=')) {
+                window.location.replace('/?_cb=' + Date.now());
+                return;
+              }
+            }
+            localStorage.setItem('orra_build_id', '${orraBuildId}');
 
             function orraForceReload() {
               if (alreadyRetried === '1') {
@@ -117,6 +132,14 @@ export default function RootLayout({
             window.addEventListener('load', function() {
               sessionStorage.removeItem('orra_chunk_retry');
             });
+
+            // Register service worker to prevent Samsung Internet from caching stale JS
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                // Force update on every page load
+                reg.update();
+              }).catch(function() {});
+            }
           })();
         `}} />
       </head>
