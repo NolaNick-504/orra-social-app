@@ -277,7 +277,7 @@ export function Profile() {
 
   const handleShareProfile = () => {
     const handleForLink = profileHandle.replace('@', '');
-    navigator.clipboard.writeText(`https://orra.link/${handleForLink}`);
+    navigator.clipboard.writeText(`https://orra.app/${handleForLink}`);
     toast.success('Profile link copied!');
   };
 
@@ -423,7 +423,7 @@ export function Profile() {
 
         <div>
           <div className="flex items-center gap-2">
-            <h1 className={`text-xl font-bold ${profileIsFounder ? 'text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-white to-violet-300' : 'text-white'}`}>{profileName}</h1>
+            <h1 className={`text-xl font-bold ${profileIsFounder ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500' : 'text-white'}`}>{profileName}</h1>
             {profileVerified && (
               profileIsFounder ? (
                 <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 founder-badge-glow">
@@ -460,7 +460,7 @@ export function Profile() {
             })()}
           </div>
           <p className={`text-sm ${profileIsFounder ? 'text-amber-400' : 'text-slate-400'}`}>{profileHandle}</p>
-          <p className={`text-sm mt-2 leading-relaxed ${profileIsFounder ? 'text-amber-100/90 font-medium' : 'text-slate-300'}`}>{profileBio}</p>
+          <p className={`text-sm mt-2 leading-relaxed ${profileIsFounder ? 'text-slate-200 font-medium' : 'text-slate-300'}`}>{profileBio}</p>
           <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500">
             {profileLocation && <span className={`flex items-center gap-1 ${profileIsFounder ? 'text-amber-400' : ''}`}><MapPin className="w-3 h-3" /> {profileLocation}</span>}
             {profileWebsite && <span className={`flex items-center gap-1 ${profileIsFounder ? 'text-amber-400' : ''}`}><LinkIcon className="w-3 h-3" /> {profileWebsite}</span>}
