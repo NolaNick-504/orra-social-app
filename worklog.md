@@ -80,3 +80,21 @@ Stage Summary:
 - Build ID detection system prevents stale cached pages
 - All routes returning 200 through both direct access and Caddy proxy
 - No-cache headers confirmed on HTML pages and JS chunks
+---
+Task ID: 1
+Agent: Main Agent
+Task: Add purple QR code bar to header and fix @@ handle bug
+
+Work Log:
+- Added purple QR code bar in the middle of the mobile header (between logo row and search bar) - gradient violet-600 to purple-600
+- Added purple "My QR" button to desktop header
+- Added full QR Code modal with: My QR/Scan toggle, profile info, QR code with ORRA logo overlay, Share button
+- Fixed @@ double-handle bug in messages.tsx (3 places) and orra-challenges.tsx (1 place) - handles already have @ in DB
+- Did NOT touch profile page per user's explicit request
+- Rebuilt app and restarted server - both port 3000 and Caddy proxy port 81 returning 200
+
+Stage Summary:
+- Purple QR code bar added to header (mobile + desktop)
+- QR code modal opens with profile QR code, scan option, share button
+- @@ double-handle display bug fixed across all components
+- Profile page left untouched as requested

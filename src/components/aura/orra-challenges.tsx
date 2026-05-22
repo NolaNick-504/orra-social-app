@@ -1090,7 +1090,7 @@ function GameplayEngine({ game, onClose, sessionId: externalSessionId }: { game:
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-bold text-white">{opponent.name}</p>
-                  {opponent.handle && <p className="text-xs text-slate-400">@{opponent.handle}</p>}
+                  {opponent.handle && <p className="text-xs text-slate-400">{opponent.handle.startsWith('@') ? opponent.handle : `@${opponent.handle}`}</p>}
                 </div>
               </div>
             </>

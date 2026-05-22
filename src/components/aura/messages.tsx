@@ -241,7 +241,7 @@ export function Messages() {
                         </svg>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400 truncate">@{user.handle}</p>
+                    <p className="text-xs text-slate-400 truncate">{user.handle?.startsWith('@') ? user.handle : `@${user.handle}`}</p>
                   </div>
                 </button>
               ))}
@@ -535,7 +535,7 @@ export function Messages() {
 
                 <h4 className="text-white font-bold text-sm mb-0.5">{currentUser.name || 'ORRA User'}</h4>
                 <p className="text-slate-500 text-xs mb-5">
-                  @{currentUser.handle || 'orrauser'}
+                  {(currentUser.handle || 'orrauser').startsWith('@') ? (currentUser.handle || 'orrauser') : `@${currentUser.handle || 'orrauser'}`}
                 </p>
 
                 {/* QR Code */}
@@ -560,7 +560,7 @@ export function Messages() {
                     if (navigator.share) {
                       navigator.share({
                         title: 'Add me on ORRA',
-                        text: `Scan my QR code on ORRA or search @${currentUser.handle || 'orrauser'}`,
+                        text: `Scan my QR code on ORRA or search ${(currentUser.handle || 'orrauser').startsWith('@') ? currentUser.handle : `@${currentUser.handle || 'orrauser'}`}`,
                         url: `${window.location.origin}/profile`,
                       }).catch(() => {});
                     } else {
