@@ -183,7 +183,9 @@ export function Profile() {
   const totalFollowers = currentUser.followers;
 
   // Determine if we're viewing another user's profile
-  const isViewingOther = viewingUserId && viewingUserId !== currentUser.id;
+  // Safety: if viewingUserId is our own ID, treat as own profile (not "other user" mode)
+  // This can happen when clicking on your own avatar/name in a post
+  const isViewingOther = viewingUserId && viewingUserId !== currentUser.id && currentUser.id !== '';
 
   // Fetch user's posts from API (for own profile and other user's profile)
   const profileUserId = isViewingOther ? viewingUserId : currentUser.id;

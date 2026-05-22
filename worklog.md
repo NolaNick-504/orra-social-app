@@ -48,3 +48,23 @@ Stage Summary:
 - No 404 errors found after rebuild and restart
 - Profile renders correctly with all founder-specific styling and data
 - App is stable and all features are working
+---
+Task ID: 1
+Agent: Main
+Task: Fix profile showing as "other user" view (Follow/Back buttons) instead of own profile (Edit Profile)
+
+Work Log:
+- Analyzed user's uploaded screenshot via VLM — confirmed profile shows with "Follow" button and "Back" arrow instead of "Edit Profile"
+- Investigated the profile component logic: `isViewingOther = viewingUserId && viewingUserId !== currentUser.id`
+- Found root cause: when clicking on own avatar/name in a post, `setViewingUser(post.user.id)` sets viewingUserId to the user's own ID ("founder"), causing `isViewingOther` to be true if IDs don't match
+- Fixed at two levels:
+  1. Store level: Updated `setViewingUser` in aura-store.ts to automatically set `null` when userId matches currentUserId
+  2. Component level: Added safety check in profile.tsx for `isViewingOther` to also check `currentUser.id !== ''`
+- Rebuilt app and verified in browser: profile now shows "Edit Profile" and "Edit Cover" buttons
+- Tested both desktop and mobile viewport — both show correct own-profile view
+- Also tested clicking own name in a post — correctly navigates to own profile view
+
+Stage Summary:
+- Fixed profile always showing as own profile when viewing self
+- Two-layer fix: store-level auto-detection + component-level safety check
+- Verified on both desktop and mobile viewports

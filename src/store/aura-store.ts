@@ -1260,7 +1260,12 @@ export const useAuraStore = create<AuraState>()(
       }),
 
       // Viewing other user
-      setViewingUser: (userId) => set({ viewingUserId: userId }),
+      // If the user clicks their own profile, treat it as their own profile view (null)
+      // This prevents the profile from showing in "other user" mode with Follow/Back buttons
+      setViewingUser: (userId) => {
+        const currentUserId = useAuraStore.getState().currentUserId;
+        set({ viewingUserId: (userId && userId === currentUserId) ? null : userId });
+      },
       setViewingPostId: (postId) => set({ viewingPostId: postId }),
       setViewingEchoId: (echoId) => set({ viewingEchoId: echoId }),
     }),
