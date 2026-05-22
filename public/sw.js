@@ -1,28 +1,67 @@
-// ORRA Service Worker - Network-only strategy to prevent stale caching
-// This ensures Samsung Internet and other aggressive caches always fetch fresh content
+// ORRA Service Worker v3 - FORCE CACHE CLEAR
+// This version aggressively clears all caches and forces fresh loads
+const CACHE_VERSION = 'orra-v3-force-clear-' + Date.now();
+
 self.addEventListener('install', (event) => {
   // Skip waiting to activate immediately
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  // Claim all clients immediately
-  event.waitUntil(clients.claim());
-  // Clear all old caches
+  // Claim all clients immediately so the new SW takes control
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => caches.delete(cacheName))
-      );
+    clients.claim().then(() => {
+      // Delete ALL caches - not just named ones
+      return caches.keys().then((cacheNames) => {
+        console.log('[SW v3] Clearing all caches:', cacheNames);
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            console.log('[SW v3] Deleting cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+      });
     })
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network-only: always fetch from server, never cache
+  const url = new URL(event.request.url);
+
+  // For navigation requests (HTML pages), always fetch fresh from network
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then((response) => {
+          return response;
+        })
+        .catch(() => {
+          // Offline fallback - try cache
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // For JS/CSS chunks - NEVER cache, always fetch fresh
+  if (url.pathname.startsWith('/_next/static/') ||
+      url.pathname.endsWith('.js') ||
+      url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then((response) => {
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // For everything else - network first
   event.respondWith(
     fetch(event.request, { cache: 'no-store' }).catch(() => {
-      // If offline, try cache as fallback
       return caches.match(event.request);
     })
   );
