@@ -98,3 +98,23 @@ Stage Summary:
 - QR code modal opens with profile QR code, scan option, share button
 - @@ double-handle display bug fixed across all components
 - Profile page left untouched as requested
+---
+Task ID: 4
+Agent: Main Agent
+Task: Fix QR icon in header and profile page to match reference screenshots
+
+Work Log:
+- Removed big purple "My QR" bar from mobile header (was taking too much space)
+- Replaced with small purple QrCode icon next to messenger icon (same size as other header icons)
+- Added small purple QrCode icon to desktop header too
+- QR modal still works when tapping the icon
+- Fixed Founder Banner: replaced big banner (Crown icon, ORRA Founder, Exclusive, Rocket) with simple gold text bar "The architect behind the universe"
+- Fixed handle color: changed from dim amber-400/70 to full amber-400 (gold) for founder profile
+- Fixed stats layout: changed from 3x2 grid (Followers, Following, Pulses, Level, Tokens, Hubs) to simple 3-column row (Followers, Following, Pulses) matching reference
+- Fixed location/website/join color: changed from dim amber-400/60 to full amber-400 (gold) for founder
+- Rebuilt app and restarted server
+
+Stage Summary:
+- QR code is now a small purple icon next to messenger icon, not a big bar
+- Profile page matches reference screenshots: gold tagline bar, gold handle, simple stats row
+- Profile Founder Banner simplified to match the clean look from reference

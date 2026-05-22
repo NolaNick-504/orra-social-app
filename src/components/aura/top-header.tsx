@@ -158,13 +158,12 @@ export function TopHeader() {
           </div>
         )}
 
-        {/* QR Code Button - Desktop */}
+        {/* QR Code Icon - Desktop */}
         <button
           onClick={() => setShowQRView(true)}
-          className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-bold shadow-md shadow-violet-500/30 hover:from-violet-500 hover:to-purple-500 transition-all flex-shrink-0"
+          className="relative p-2 rounded-xl hover:bg-white/5 transition-all flex-shrink-0"
         >
-          <QrCode className="w-4 h-4" />
-          My QR
+          <QrCode className="w-5 h-5 text-violet-400" />
         </button>
 
         {/* Token Balance */}
@@ -215,6 +214,14 @@ export function TopHeader() {
             {viewTitle && <span className="text-slate-500 text-sm">/ {viewTitle}</span>}
           </div>
           <div className="flex items-center gap-1">
+            {/* QR Code Icon - Mobile */}
+            <button
+              onClick={() => setShowQRView(true)}
+              className="relative p-2 rounded-xl hover:bg-white/5 transition-all"
+            >
+              <QrCode className="w-5 h-5 text-violet-400" />
+            </button>
+
             {/* Mobile DM Icon */}
             <button
               onClick={() => useAuraStore.getState().setView('messages')}
@@ -265,17 +272,6 @@ export function TopHeader() {
               </div>
             </button>
           </div>
-        </div>
-
-        {/* Purple QR Code Bar - middle of header */}
-        <div className="px-3 pb-1.5">
-          <button
-            onClick={() => setShowQRView(true)}
-            className="w-full flex items-center justify-center gap-2 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-xs font-bold shadow-md shadow-violet-500/30 hover:from-violet-500 hover:to-purple-500 transition-all active:scale-[0.98]"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <span>My QR</span>
-          </button>
         </div>
 
         {/* Row 2: Search bar full width */}
