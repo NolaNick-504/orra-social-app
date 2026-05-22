@@ -151,10 +151,11 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
       }, 2000);
       return;
     }
-    // Auto-retry after 3 seconds for first error — most errors after a rebuild/restart are transient
+    // Force a cache-bust reload after 2 seconds — stale chunks after rebuild
+    // cause cascading failures that re-rendering can't fix
     this.retryTimer = setTimeout(() => {
-      this.setState({ hasError: false });
-    }, 3000);
+      window.location.replace('/?_cb=' + Date.now());
+    }, 2000);
   }
 
   componentWillUnmount() {

@@ -17,37 +17,17 @@ export default function GlobalError({
     console.warn('ORRA Global Error:', error?.message || error);
   }, [error]);
 
-  // Check if this is a chunk/stale-cache error — if so, force reload immediately
+  // ALWAYS force a cache-bust reload on any error — stale chunks after rebuild
+  // cause cascading failures that reset() can't fix. Only a full reload with
+  // a fresh HTML page (which references the new chunk filenames) works.
   useEffect(() => {
-    const msg = (error?.message || '').toLowerCase();
-    const isChunkError = (
-      msg.includes('chunk') ||
-      msg.includes('loading') ||
-      msg.includes('unexpected token') ||
-      msg.includes('syntax') ||
-      msg.includes('failed to fetch')
-    );
-    if (isChunkError) {
-      console.warn('ORRA: Chunk/syntax error in global error boundary, forcing cache-bust reload');
+    console.warn('ORRA Global Error:', error?.message || error);
+    // Force a cache-bust reload after a short delay so the user sees the message
+    const timer = setTimeout(() => {
       window.location.replace('/?_cb=' + Date.now());
-      return;
-    }
-
-    // Auto-retry after 3 seconds — most errors after a rebuild are transient
-    if (!autoRetrying) return;
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          setAutoRetrying(false);
-          reset();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [autoRetrying, reset, error]);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [error]);
 
   // If auto-retry is in progress, show a brief reconnecting overlay
   if (autoRetrying) {
