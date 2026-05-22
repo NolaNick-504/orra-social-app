@@ -315,10 +315,20 @@ export function Profile() {
 
   return (
     <div className="fade-in space-y-4 pb-4">
-      {/* Founder Tagline Bar - simple gold text like reference */}
+      {/* Founder Banner */}
       {profileIsFounder && (
-        <div className="flex items-center justify-center py-1.5 px-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-          <span className="text-[11px] font-semibold text-amber-400 tracking-wide">The architect behind the universe</span>
+        <div className="founder-banner-shimmer rounded-2xl p-3 flex items-center gap-3 border border-amber-500/20">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-violet-500/20 border border-amber-500/30 founder-badge-glow">
+            <Crown className="w-5 h-5 text-amber-400" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-amber-300">ORRA Founder</span>
+              <span className="px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400 text-[8px] font-black uppercase tracking-wider border border-amber-500/30">Exclusive</span>
+            </div>
+            <p className="text-[10px] text-amber-400/60 mt-0.5">The architect behind the universe</p>
+          </div>
+          <Rocket className="w-5 h-5 text-amber-400/40" />
         </div>
       )}
 
@@ -435,18 +445,12 @@ export function Profile() {
               )
             )}
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-              profileIsFounder ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 border border-amber-500/30' :
+              profileIsFounder ? 'bg-gradient-to-r from-amber-500/20 to-violet-500/20 text-amber-300 border border-amber-500/30' :
               profileLevel >= 75 ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30' :
               profileLevel >= 50 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
               profileLevel >= 25 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
               'bg-amber-600/20 text-amber-400 border border-amber-600/30'
             }`}>{levelTier} Tier</span>
-            {/* ORRA Profile Badge - like reference screenshot */}
-            {profileIsFounder && !isViewingOther && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-violet-600/20 text-violet-300 border border-violet-500/30 flex items-center gap-1">
-                <Music className="w-2.5 h-2.5" /> ORRA - {profileName}
-              </span>
-            )}
             {/* Profile Song Indicator */}
             {(() => {
               const songUrl = isViewingOther ? (otherUserData?.profileSongUrl || '') : (currentUser.profileSongUrl || '');
@@ -459,12 +463,12 @@ export function Profile() {
               ) : null;
             })()}
           </div>
-          <p className={`text-sm ${profileIsFounder ? 'text-amber-400' : 'text-slate-400'}`}>{profileHandle}</p>
+          <p className={`text-sm ${profileIsFounder ? 'text-amber-400/70' : 'text-slate-400'}`}>{profileHandle}</p>
           <p className={`text-sm mt-2 leading-relaxed ${profileIsFounder ? 'text-amber-100/90 font-medium' : 'text-slate-300'}`}>{profileBio}</p>
           <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500">
-            {profileLocation && <span className={`flex items-center gap-1 ${profileIsFounder ? 'text-amber-400' : ''}`}><MapPin className="w-3 h-3" /> {profileLocation}</span>}
-            {profileWebsite && <span className={`flex items-center gap-1 ${profileIsFounder ? 'text-amber-400' : ''}`}><LinkIcon className="w-3 h-3" /> {profileWebsite}</span>}
-            {!isViewingOther && <span className={`flex items-center gap-1 ${profileIsFounder ? 'text-amber-400' : ''}`}><Calendar className="w-3 h-3" /> Joined {currentUser.joinDate}</span>}
+            {profileLocation && <span className={`flex items-center gap-1 ${profileIsFounder ? 'text-amber-400/60' : ''}`}><MapPin className="w-3 h-3" /> {profileLocation}</span>}
+            {profileWebsite && <span className={`flex items-center gap-1 ${profileIsFounder ? 'text-amber-400/60' : ''}`}><LinkIcon className="w-3 h-3" /> {profileWebsite}</span>}
+            {!isViewingOther && <span className={`flex items-center gap-1 ${profileIsFounder ? 'text-amber-400/60' : ''}`}><Calendar className="w-3 h-3" /> Joined {currentUser.joinDate}</span>}
           </div>
 
           {/* Badges - Founder gets special styling */}
@@ -502,23 +506,35 @@ export function Profile() {
           <FounderQRCode handle={profileHandle || displayHandle} name={profileName || 'ORRA User'} isFounder={profileIsFounder} level={profileLevel} />
         </div>
 
-        {/* Stats - Simple 3-column row like reference */}
-        <div className={`flex items-center justify-around mt-4 py-3 ${
+        {/* Stats - 3x2 Grid for mobile-friendly layout */}
+        <div className={`grid grid-cols-3 gap-2 mt-4 py-3 ${
           profileIsFounder
-            ? 'founder-stat-highlight rounded-xl'
+            ? 'founder-stat-highlight rounded-xl px-3'
             : 'border-y border-white/5'
         }`}>
-          <button onClick={() => setShowFollowers('followers')} className="text-center hover:bg-white/5 rounded-lg px-4 py-1 transition-all">
+          <button onClick={() => setShowFollowers('followers')} className="text-center hover:bg-white/5 rounded-lg px-2 py-2 transition-all">
             <p className="font-bold text-white text-sm">{profileFollowerCount >= 1000 ? (profileFollowerCount / 1000).toFixed(1) + 'K' : profileFollowerCount}</p>
             <p className="text-[10px] text-slate-500">Followers</p>
           </button>
-          <button onClick={() => setShowFollowers('following')} className="text-center hover:bg-white/5 rounded-lg px-4 py-1 transition-all">
+          <button onClick={() => setShowFollowers('following')} className="text-center hover:bg-white/5 rounded-lg px-2 py-2 transition-all">
             <p className="font-bold text-white text-sm">{profileFollowingCount}</p>
             <p className="text-[10px] text-slate-500">Following</p>
           </button>
-          <div className="text-center px-4 py-1">
+          <div className="text-center px-2 py-2">
             <p className="font-bold text-white text-sm">{profilePostCount}</p>
             <p className="text-[10px] text-slate-500">Pulses</p>
+          </div>
+          <div className="text-center px-2 py-2">
+            <p className="font-bold gradient-text flex items-center justify-center gap-1 text-sm"><Zap className="w-3 h-3" />Lvl {profileLevel}</p>
+            <p className="text-[10px] text-slate-500">ORRA Level</p>
+          </div>
+          <div className="text-center px-2 py-2">
+            <p className="font-bold text-amber-400 text-sm">{profileTokens.toLocaleString()}</p>
+            <p className="text-[10px] text-slate-500">ORRA Tokens</p>
+          </div>
+          <div className="text-center px-2 py-2">
+            <p className="font-bold text-violet-400 text-sm">{joinedHubsList.length}</p>
+            <p className="text-[10px] text-slate-500">Hubs</p>
           </div>
         </div>
 
