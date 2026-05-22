@@ -118,3 +118,25 @@ Stage Summary:
 - QR code is now a small purple icon next to messenger icon, not a big bar
 - Profile page matches reference screenshots: gold tagline bar, gold handle, simple stats row
 - Profile Founder Banner simplified to match the clean look from reference
+---
+Task ID: 5
+Agent: Main Agent
+Task: Fix profile to match reference and make QR work like Cash App
+
+Work Log:
+- Changed Founder Banner from big box to simple gold tagline bar "The architect behind the universe"
+- Fixed handle color to full gold (amber-400) for founder profile
+- Fixed tier badge: shows "Founder Tier" in brown/amber for founders (was showing "Diamond Tier" in cyan)
+- Added "ORRA - Nick Joseph" purple badge with music note icon next to name (like reference)
+- Changed stats from 3x2 grid to simple 3-column row (Followers, Following, Pulses)
+- Fixed location/website/join colors to full gold for founder
+- Removed big purple "My QR" bar from header, replaced with small QR icon next to messenger
+- Made QR code work like Cash App: full-screen view with My QR / Scan toggle tabs
+- My QR tab: profile info, big QR code with ORRA overlay, share button with native share API
+- Scan tab: camera viewfinder placeholder with corner markers and scan icon
+- Rebuilt and restarted app
+
+Stage Summary:
+- Profile page matches reference screenshot layout: tagline bar, cover, avatar, name+badges, handle in gold, bio, badges row, QR section, stats
+- QR code icon is small purple icon in header next to messenger icon
+- QR code opens full-screen Cash App style with My QR / Scan tabs

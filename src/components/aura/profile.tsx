@@ -435,12 +435,18 @@ export function Profile() {
               )
             )}
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-              profileIsFounder ? 'bg-gradient-to-r from-amber-500/20 to-violet-500/20 text-amber-300 border border-amber-500/30' :
+              profileIsFounder ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 border border-amber-500/30' :
               profileLevel >= 75 ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30' :
               profileLevel >= 50 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
               profileLevel >= 25 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
               'bg-amber-600/20 text-amber-400 border border-amber-600/30'
             }`}>{levelTier} Tier</span>
+            {/* ORRA Profile Badge - like reference screenshot */}
+            {profileIsFounder && !isViewingOther && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-violet-600/20 text-violet-300 border border-violet-500/30 flex items-center gap-1">
+                <Music className="w-2.5 h-2.5" /> ORRA - {profileName}
+              </span>
+            )}
             {/* Profile Song Indicator */}
             {(() => {
               const songUrl = isViewingOther ? (otherUserData?.profileSongUrl || '') : (currentUser.profileSongUrl || '');

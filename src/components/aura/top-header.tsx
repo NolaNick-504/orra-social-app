@@ -14,6 +14,7 @@ export function TopHeader() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [showRecentSearches, setShowRecentSearches] = useState(false);
   const [showQRView, setShowQRView] = useState(false);
+  const [qrTab, setQrTab] = useState<'myqr' | 'scan'>('myqr');
   const lastScrollY = useRef(0);
   const { navVisible, setNavVisible } = useAuraStore();
 
@@ -341,48 +342,62 @@ export function TopHeader() {
       )}
     </header>
 
-    {/* QR Code Modal */}
+    {/* QR Code Modal - Cash App style */}
     {showQRView && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowQRView(false)} />
-        <div className="relative glass-panel rounded-2xl p-6 w-full max-w-sm fade-in border border-violet-500/20">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white">QR Code</h2>
-            <button onClick={() => setShowQRView(false)} className="p-1.5 rounded-lg hover:bg-white/10 transition-all text-slate-400 hover:text-white">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+      <div className="fixed inset-0 z-50 bg-[#0a0a0f] flex flex-col fade-in">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <h2 className="text-lg font-bold text-white">QR Code</h2>
+          <button onClick={() => { setShowQRView(false); setQrTab('myqr'); }} className="p-1.5 rounded-lg hover:bg-white/10 transition-all text-slate-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          {/* My QR / Scan Toggle */}
-          <div className="flex items-center gap-2 mb-5">
-            <button className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-bold shadow-md shadow-violet-500/30">
-              <QrCode className="w-4 h-4" />
-              My QR
-            </button>
-            <button className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-white/5 text-slate-400 text-sm font-medium hover:bg-white/10 transition-all">
-              <ScanLine className="w-4 h-4" />
-              Scan
-            </button>
-          </div>
+        {/* My QR / Scan Toggle - Cash App style */}
+        <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+          <button
+            onClick={() => setQrTab('myqr')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              qrTab === 'myqr'
+                ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-md shadow-violet-500/30'
+                : 'bg-white/5 text-slate-400 hover:bg-white/10'
+            }`}
+          >
+            <QrCode className="w-4 h-4" />
+            My QR
+          </button>
+          <button
+            onClick={() => setQrTab('scan')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              qrTab === 'scan'
+                ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-md shadow-violet-500/30'
+                : 'bg-white/5 text-slate-400 hover:bg-white/10'
+            }`}
+          >
+            <ScanLine className="w-4 h-4" />
+            Scan
+          </button>
+        </div>
 
-          {/* Profile Info */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-violet-500/30 flex-shrink-0">
-              <img src={currentUser.avatar || '/api/uploads?path=images/orra-logo.png'} alt="" className="w-full h-full object-cover" />
+        {qrTab === 'myqr' ? (
+          /* My QR Tab */
+          <div className="flex-1 flex flex-col items-center justify-center px-6">
+            {/* Profile Info */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-violet-500/40 flex-shrink-0">
+                <img src={currentUser.avatar || '/api/uploads?path=images/orra-logo.png'} alt="" className="w-full h-full object-cover" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-base font-bold text-white truncate">{currentUser.name || 'ORRA User'}</p>
+                <p className="text-sm text-slate-400 truncate">{currentUser.handle || '@orrauser'}</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-white truncate">{currentUser.name || 'ORRA User'}</p>
-              <p className="text-xs text-slate-400 truncate">{currentUser.handle || '@orrauser'}</p>
-            </div>
-          </div>
 
-          {/* QR Code */}
-          <div className="flex items-center justify-center mb-4">
-            <div className="relative bg-white rounded-2xl p-4 shadow-lg shadow-violet-500/20">
+            {/* QR Code */}
+            <div className="relative bg-white rounded-3xl p-5 shadow-xl shadow-violet-500/20 mb-6">
               <QRCodeSVG
                 value={typeof window !== 'undefined' ? `${window.location.origin}/${(currentUser.handle || 'orrauser').replace('@', '')}` : '/'}
-                size={180}
+                size={220}
                 bgColor="#ffffff"
                 fgColor="#1a1a2e"
                 level="H"
@@ -390,29 +405,54 @@ export function TopHeader() {
               />
               {/* ORRA logo overlay */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shadow-sm border border-violet-200">
-                  <span className="text-[8px] font-black text-violet-600 tracking-tight">ORRA</span>
+                <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center shadow-md border border-violet-200">
+                  <span className="text-[9px] font-black text-violet-600 tracking-tight">ORRA</span>
                 </div>
               </div>
             </div>
+
+            {/* Help text */}
+            <p className="text-center text-xs text-slate-500 mb-6">Have a friend scan this to add you instantly.</p>
+
+            {/* Share Button */}
+            <button
+              onClick={() => {
+                const handleForLink = (currentUser.handle || '@orrauser').replace('@', '');
+                const link = `https://orra.link/${handleForLink}`;
+                if (navigator.share) {
+                  navigator.share({
+                    title: 'Add me on ORRA',
+                    text: `Scan my QR code on ORRA or search ${currentUser.handle || '@orrauser'}`,
+                    url: link,
+                  }).catch(() => {
+                    navigator.clipboard.writeText(link);
+                    toast.success('Profile link copied!');
+                  });
+                } else {
+                  navigator.clipboard.writeText(link);
+                  toast.success('Profile link copied!');
+                }
+              }}
+              className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-bold shadow-md shadow-violet-500/30 hover:from-violet-500 hover:to-purple-500 transition-all"
+            >
+              <Share2 className="w-4 h-4" />
+              Share
+            </button>
           </div>
-
-          {/* Help text */}
-          <p className="text-center text-xs text-slate-500 mb-4">Have a friend scan this to add you instantly.</p>
-
-          {/* Share Button */}
-          <button
-            onClick={() => {
-              const handleForLink = (currentUser.handle || '@orrauser').replace('@', '');
-              navigator.clipboard.writeText(`https://orra.link/${handleForLink}`);
-              toast.success('Profile link copied!');
-            }}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-bold shadow-md shadow-violet-500/30 hover:from-violet-500 hover:to-purple-500 transition-all"
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </button>
-        </div>
+        ) : (
+          /* Scan Tab - Camera view placeholder */
+          <div className="flex-1 flex flex-col items-center justify-center px-6">
+            <div className="w-64 h-64 rounded-3xl border-2 border-violet-500/50 flex items-center justify-center bg-black/40 mb-6 relative overflow-hidden">
+              {/* Corner markers like a camera viewfinder */}
+              <div className="absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 border-violet-400 rounded-tl-lg" />
+              <div className="absolute top-3 right-3 w-8 h-8 border-t-2 border-r-2 border-violet-400 rounded-tr-lg" />
+              <div className="absolute bottom-3 left-3 w-8 h-8 border-b-2 border-l-2 border-violet-400 rounded-bl-lg" />
+              <div className="absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 border-violet-400 rounded-br-lg" />
+              <ScanLine className="w-12 h-12 text-violet-400/50" />
+            </div>
+            <p className="text-sm text-slate-400 text-center">Point your camera at an ORRA QR code to scan</p>
+          </div>
+        )}
       </div>
     )}
     </>
