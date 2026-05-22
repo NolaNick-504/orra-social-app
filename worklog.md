@@ -68,3 +68,22 @@ Stage Summary:
 - Fixed profile always showing as own profile when viewing self
 - Two-layer fix: store-level auto-detection + component-level safety check
 - Verified on both desktop and mobile viewports
+
+---
+Task ID: 2
+Agent: Main
+Task: Further fix for profile showing as "other user" - added auto-fix useEffect and verified
+
+Work Log:
+- Added useEffect in profile.tsx to auto-clear viewingUserId when it matches currentUser.id
+- This provides an additional safety net beyond the store-level fix
+- Rebuilt and deployed the app
+- Verified in browser: profile shows Edit Profile/Edit Cover buttons correctly
+- Verified on mobile viewport (390x844): correct own-profile display
+
+Stage Summary:
+- Profile now always shows as own profile when viewing self, with triple-layer protection:
+  1. Store level: setViewingUser auto-converts own ID to null
+  2. Component level: isViewingOther check includes currentUser.id !== '' guard
+  3. Effect level: useEffect auto-clears viewingUserId if it matches currentUser.id
+- All data intact in database: name, bio, handle, avatar, cover image, badges, posts

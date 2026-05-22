@@ -187,6 +187,15 @@ export function Profile() {
   // This can happen when clicking on your own avatar/name in a post
   const isViewingOther = viewingUserId && viewingUserId !== currentUser.id && currentUser.id !== '';
 
+  // Auto-fix: if viewingUserId matches our own ID, clear it immediately
+  // This ensures the profile always renders in "own profile" mode even if
+  // setViewingUser was called with our own ID before the fix was deployed
+  useEffect(() => {
+    if (viewingUserId && viewingUserId === currentUser.id && currentUser.id !== '') {
+      setViewingUser(null);
+    }
+  }, [viewingUserId, currentUser.id, setViewingUser]);
+
   // Fetch user's posts from API (for own profile and other user's profile)
   const profileUserId = isViewingOther ? viewingUserId : currentUser.id;
   const { data: userPostsData } = useUserPosts(profileUserId);
