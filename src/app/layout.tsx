@@ -69,105 +69,53 @@ export default function RootLayout({
             and forces a cache-bust reload before the user sees a broken page. */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-            var ORRA_BUILD_ID = '${orraBuildId}';
-            var MAX_RETRIES = 2;
+            // Only detect actual JS chunk errors (stale chunks after deploy)
+            // DO NOT proactively check build IDs — that causes infinite reload loops
+            // when the browser has cached HTML with an old build ID.
+            // The middleware's no-cache headers ensure fresh HTML on each visit.
+            var MAX_RETRIES = 1;
+            var alreadyRetried = sessionStorage.getItem('orra_chunk_retry');
 
-            // 1. Detect stale JS chunks — when the browser has old HTML cached
-            //    that references chunk filenames that no longer exist on the server.
-            //    Next.js returns HTML (the page) for missing chunk URLs, which
-            //    causes "Unexpected token" errors when the browser tries to execute
-            //    HTML as JavaScript.
+            function orraForceReload() {
+              if (alreadyRetried === '1') {
+                // Already tried once — stop retrying to prevent infinite loops
+                sessionStorage.removeItem('orra_chunk_retry');
+                return;
+              }
+              sessionStorage.setItem('orra_chunk_retry', '1');
+              window.location.replace('/?_cb=' + Date.now());
+            }
+
+            // Detect stale JS chunks — when old chunk filenames no longer exist
             window.addEventListener('error', function(e) {
               var msg = (e.message || '').toLowerCase();
               var isChunkError = (
                 msg.indexOf('unexpected token') !== -1 ||
-                msg.indexOf('expected expression') !== -1 ||
-                msg.indexOf('unexpected identifier') !== -1 ||
-                msg.indexOf('unexpected end of input') !== -1 ||
-                msg.indexOf('syntaxerror') !== -1 ||
                 msg.indexOf('loading chunk') !== -1 ||
-                msg.indexOf('loading css chunk') !== -1 ||
                 msg.indexOf('chunk load failed') !== -1 ||
                 (e.filename && e.filename.indexOf('/_next/static/chunks/') !== -1)
               );
-
               if (isChunkError) {
-                console.warn('ORRA: Stale chunk detected, forcing cache-bust reload');
+                console.warn('ORRA: Stale chunk detected, reloading once');
                 orraForceReload();
               }
             }, true);
 
-            // 2. Catch unhandled promise rejections (dynamic imports / chunk loading)
+            // Catch unhandled promise rejections from chunk loading
             window.addEventListener('unhandledrejection', function(e) {
               var msg = (e.reason && (e.reason.message || e.reason.stack || String(e.reason))).toLowerCase();
               if (
                 msg.indexOf('loading chunk') !== -1 ||
-                msg.indexOf('chunk load') !== -1 ||
-                msg.indexOf('failed to fetch dynamically imported module') !== -1 ||
-                msg.indexOf('importing a module') !== -1
+                msg.indexOf('failed to fetch dynamically imported module') !== -1
               ) {
-                console.warn('ORRA: Chunk import failed, forcing cache-bust reload');
+                console.warn('ORRA: Chunk import failed, reloading once');
                 orraForceReload();
               }
             });
 
-            // 3. Intercept script load errors via performance observer
-            if (typeof PerformanceObserver !== 'undefined') {
-              try {
-                var po = new PerformanceObserver(function(list) {
-                  list.getEntries().forEach(function(entry) {
-                    if (entry.entryType === 'resource' && entry.name.indexOf('/_next/static/chunks/') !== -1) {
-                      // Check if the chunk response was HTML instead of JS (stale chunk indicator)
-                      if (entry.transferSize > 0 && entry.decodedBodySize > 5000) {
-                        // Large response for a chunk file is suspicious — might be HTML
-                        // We verify by checking if it's a valid JS response
-                      }
-                    }
-                  });
-                });
-                po.observe({ entryTypes: ['resource'] });
-              } catch(e) {}
-            }
-
-            function orraForceReload() {
-              var retries = parseInt(sessionStorage.getItem('orra_reload_retries') || '0', 10);
-              if (retries >= MAX_RETRIES) {
-                // Too many retries — clear everything and do a hard reload
-                console.warn('ORRA: Max retries reached, clearing cache and reloading');
-                sessionStorage.removeItem('orra_reload_retries');
-                try { localStorage.removeItem('aura-storage'); } catch(e) {}
-                window.location.replace('/?_nocache=' + Date.now());
-                return;
-              }
-              sessionStorage.setItem('orra_reload_retries', String(retries + 1));
-              window.location.replace('/?_cb=' + Date.now());
-            }
-
-            // 4. Proactive stale check: fetch the server's build ID and compare
-            //    This catches the case where the browser has old HTML cached
-            //    (with old chunk references) but no JS errors occur yet.
-            //    By checking the build ID, we can force a reload BEFORE the
-            //    user sees broken content.
-            (function checkBuildId() {
-              // Compare the build ID embedded in this HTML with the server's current build ID
-              // If they differ, the browser has stale HTML cached and needs a reload
-              if (!ORRA_BUILD_ID) return;
-              fetch('/api/build-id', { cache: 'no-store' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                  if (data.buildId && ORRA_BUILD_ID && data.buildId !== ORRA_BUILD_ID) {
-                    console.warn('ORRA: Build ID mismatch (cached=' + ORRA_BUILD_ID + ', server=' + data.buildId + '), forcing reload');
-                    orraForceReload();
-                  }
-                })
-                .catch(function() {
-                  // Network error — don't force reload
-                });
-            })();
-
-            // 5. Clear retry counter on successful load
+            // Clear retry flag on successful load
             window.addEventListener('load', function() {
-              sessionStorage.removeItem('orra_reload_retries');
+              sessionStorage.removeItem('orra_chunk_retry');
             });
           })();
         `}} />

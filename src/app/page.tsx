@@ -118,44 +118,31 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 
     const msg = (error?.message || '').toLowerCase();
     const isChunkError = (
-      msg.includes('chunk') ||
-      msg.includes('loading') ||
+      msg.includes('loading chunk') ||
+      msg.includes('chunk load') ||
       msg.includes('unexpected token') ||
-      msg.includes('syntax') ||
-      msg.includes('failed to fetch') ||
-      msg.includes('import')
+      msg.includes('failed to fetch dynamically imported module')
     );
 
-    // If it's a chunk/stale-cache error, force a cache-bust reload immediately
-    if (isChunkError) {
-      console.warn('ORRA: Chunk/import error in ErrorBoundary, forcing cache-bust reload');
+    // Only auto-reload for actual chunk loading errors, and only once
+    if (isChunkError && newCount <= 1) {
+      console.warn('ORRA: Chunk error in ErrorBoundary, reloading once');
       setTimeout(() => {
         window.location.replace('/?_cb=' + Date.now());
-      }, 1000);
-      return;
-    }
-
-    // Only clear localStorage if we get repeated crashes (5+ errors)
-    // This preserves user data (likes, comments, follows) during one-off errors
-    if (newCount >= 5) {
-      try {
-        localStorage.removeItem('aura-storage');
-        console.warn('Auto-cleared aura-storage after 5+ repeated errors');
-      } catch {}
-    }
-    // After 3+ errors, force a hard page reload instead of retrying the broken state
-    if (newCount >= 3) {
-      console.warn('ORRA: Multiple errors detected — forcing hard reload');
-      setTimeout(() => {
-        window.location.replace('/?_nocache=' + Date.now());
       }, 2000);
       return;
     }
-    // Force a cache-bust reload after 2 seconds — stale chunks after rebuild
-    // cause cascading failures that re-rendering can't fix
-    this.retryTimer = setTimeout(() => {
-      window.location.replace('/?_cb=' + Date.now());
-    }, 2000);
+
+    // Only clear localStorage if we get repeated crashes (10+ errors)
+    // This is a last resort — clearing localStorage wipes the user's session
+    if (newCount >= 10) {
+      try {
+        localStorage.removeItem('aura-storage');
+        console.warn('Auto-cleared aura-storage after 10+ repeated errors');
+      } catch {}
+    }
+    // After 3+ errors, show the reconnect screen but DON'T auto-reload
+    // The user can click the button to manually reload
   }
 
   componentWillUnmount() {
@@ -245,20 +232,10 @@ function MainContent() {
 }
 
 function LoadingScreen() {
-  // Auto-recover: if the app is stuck on this screen for more than 8 seconds,
-  // force a cache-bust reload. This handles the case where a new deploy changes
-  // JS chunk filenames but the browser has old HTML cached — the old chunks
-  // return 404 and the app never loads. A single cache-bust reload fixes it.
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      // Only force reload if we haven't already tried a cache-bust
-      const params = new URLSearchParams(window.location.search);
-      if (!params.has('_cb') && !params.has('_nocache') && !params.has('_retry')) {
-        window.location.replace('/?_retry=' + Date.now());
-      }
-    }, 8000);
-    return () => clearTimeout(timeout);
-  }, []);
+  // NOTE: Removed auto-reload on loading screen timeout.
+  // The previous 8-second force-reload caused infinite reload loops
+  // when combined with the ErrorBoundary and build ID checks.
+  // If the app is truly stuck loading, the user can manually refresh.
 
   return (
     <div className="min-h-screen bg-[#050505] flex items-center justify-center">

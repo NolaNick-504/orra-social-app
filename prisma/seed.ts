@@ -11,6 +11,26 @@ const DEFAULT_PASSWORD = 'password123';
 // ============================================================
 
 const mockUsers = [
+  // ========================================
+  // FOUNDER ACCOUNT — The ORRA founder
+  // ========================================
+  {
+    id: 'founder',
+    email: 'nickjoseph8087@gmail.com',
+    name: 'Nick Orraceo',
+    handle: '@nickorraceo',
+    avatar: '/images/avatars/founder-avatar.jpg',
+    coverImage: '/images/profile-cover.png',
+    bio: 'The architect behind the universe',
+    location: 'New Orleans, LA',
+    website: 'orra.link/nickorraceo',
+    verified: true,
+    online: true,
+    auraTokens: 100000,
+    auraLevel: 51,
+    auraXP: 750,
+    badges: ['Early Adopter', 'ORRA OG', 'Founder', 'Visionary', 'ORRA Architect'],
+  },
   {
     id: 'u1',
     email: 'jessica@orra.app',
@@ -223,6 +243,18 @@ const mockUsers = [
 
 // Feed posts data
 const feedPosts = [
+  // Founder's welcome post — pinned, highest engagement
+  {
+    id: 'p0founder',
+    authorId: 'founder',
+    text: 'Welcome to ORRA! This is the future of social media — real connections, real content, real rewards. We are just getting started. The best is yet to come! 🌍✨',
+    images: [],
+    likesCount: 50000,
+    commentsCount: 2500,
+    sharesCount: 10000,
+    vibeTag: 'hyped',
+    type: 'text',
+  },
   {
     id: 'p0a',
     authorId: 'u16',
@@ -717,6 +749,34 @@ const hubPostsData: Record<string, Array<{ id: string; authorId: string; text: s
 
 // Initial chat history
 const chatHistoryData: Record<string, { otherUserId: string; unreadCount: number; messages: { senderId: string; text: string }[] }> = {
+  // Founder chats
+  mf1: {
+    otherUserId: 'u1',
+    unreadCount: 1,
+    messages: [
+      { senderId: 'u1', text: 'Hey Nick! Love what you built with ORRA!' },
+      { senderId: 'founder', text: 'Thanks! We are just getting started' },
+      { senderId: 'u1', text: 'The art community is thriving here!' },
+    ],
+  },
+  mf2: {
+    otherUserId: 'u4',
+    unreadCount: 2,
+    messages: [
+      { senderId: 'u4', text: 'The Dance Off is going crazy this year!' },
+      { senderId: 'founder', text: 'I know! The talent is insane' },
+      { senderId: 'u4', text: 'Can we collab on the next challenge?' },
+    ],
+  },
+  mf3: {
+    otherUserId: 'u16',
+    unreadCount: 0,
+    messages: [
+      { senderId: 'u16', text: 'Just dropped a new beat for ORRA!' },
+      { senderId: 'founder', text: 'Let me hear it!' },
+      { senderId: 'u16', text: 'The studio session was legendary' },
+    ],
+  },
   m1: {
     otherUserId: 'u1',
     unreadCount: 2,
@@ -802,6 +862,12 @@ const chatHistoryData: Record<string, { otherUserId: string; unreadCount: number
 
 // Notifications data
 const notificationsData = [
+  // Founder notifications
+  { id: 'nf1', userId: 'founder', triggeredByUserId: 'u1', action: 'liked your post', type: 'like', thumbnail: '/images/posts/art1.jpg' },
+  { id: 'nf2', userId: 'founder', triggeredByUserId: 'u4', action: 'started following you', type: 'follow', thumbnail: '' },
+  { id: 'nf3', userId: 'founder', triggeredByUserId: 'u13', action: 'commented: "ORRA is the future!"', type: 'comment', thumbnail: '/images/posts/dance1.jpg' },
+  { id: 'nf4', userId: 'founder', triggeredByUserId: 'u16', action: 'shared your post', type: 'share', thumbnail: '/images/posts/album1.jpg' },
+  // Other user notifications
   { id: 'n1', userId: 'u13', triggeredByUserId: 'u1', action: 'liked your dance video', type: 'like', thumbnail: '/images/posts/dance1.jpg' },
   { id: 'n2', userId: 'u13', triggeredByUserId: 'u2', action: 'started following you', type: 'follow', thumbnail: '' },
   { id: 'n3', userId: 'u13', triggeredByUserId: 'u4', action: 'commented: "Insane moves!"', type: 'comment', thumbnail: '/images/posts/dance2.jpg' },
@@ -859,6 +925,7 @@ async function main() {
   // ========================================
   console.log('👤 Creating users...');
   const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, SALT_ROUNDS);
+  const founderPassword = await bcrypt.hash('Weareone504', SALT_ROUNDS);
 
   for (const u of mockUsers) {
     await prisma.user.create({
@@ -867,7 +934,7 @@ async function main() {
         email: u.email,
         name: u.name,
         handle: u.handle,
-        password: hashedPassword,
+        password: u.id === 'founder' ? founderPassword : hashedPassword,
         avatar: u.avatar,
         coverImage: u.coverImage ?? '/images/profile-cover.png',
         bio: u.bio ?? '',
@@ -877,6 +944,7 @@ async function main() {
         online: u.online ?? false,
         auraTokens: u.auraTokens,
         auraLevel: u.auraLevel,
+        auraXP: (u as any).auraXP ?? 50,
         badges: JSON.stringify(u.badges ?? []),
         profileSetupComplete: true, // Demo users have their profiles set up
       },
@@ -912,6 +980,8 @@ async function main() {
   // ========================================
   console.log('📸 Creating stories...');
   const storyUsers = [
+    // Founder story — always first
+    { userId: 'founder', image: '/images/dance-party.png' },
     { userId: 'u13', image: '/images/dance-party.png' },
     { userId: 'u1', image: '/images/stories/story1.jpg' },
     { userId: 'u2', image: '/images/stories/story2.jpg' },
@@ -1063,6 +1133,41 @@ async function main() {
   const followPairs: Array<{ followerId: string; followingId: string }> = [];
 
   const crossFollows = [
+    // Everyone follows the founder
+    { followerId: 'u1', followingId: 'founder' },
+    { followerId: 'u2', followingId: 'founder' },
+    { followerId: 'u3', followingId: 'founder' },
+    { followerId: 'u4', followingId: 'founder' },
+    { followerId: 'u5', followingId: 'founder' },
+    { followerId: 'u6', followingId: 'founder' },
+    { followerId: 'u7', followingId: 'founder' },
+    { followerId: 'u8', followingId: 'founder' },
+    { followerId: 'u9', followingId: 'founder' },
+    { followerId: 'u10', followingId: 'founder' },
+    { followerId: 'u11', followingId: 'founder' },
+    { followerId: 'u12', followingId: 'founder' },
+    { followerId: 'u13', followingId: 'founder' },
+    { followerId: 'u14', followingId: 'founder' },
+    { followerId: 'u15', followingId: 'founder' },
+    { followerId: 'u16', followingId: 'founder' },
+    // Founder follows everyone back
+    { followerId: 'founder', followingId: 'u1' },
+    { followerId: 'founder', followingId: 'u2' },
+    { followerId: 'founder', followingId: 'u3' },
+    { followerId: 'founder', followingId: 'u4' },
+    { followerId: 'founder', followingId: 'u5' },
+    { followerId: 'founder', followingId: 'u6' },
+    { followerId: 'founder', followingId: 'u7' },
+    { followerId: 'founder', followingId: 'u8' },
+    { followerId: 'founder', followingId: 'u9' },
+    { followerId: 'founder', followingId: 'u10' },
+    { followerId: 'founder', followingId: 'u11' },
+    { followerId: 'founder', followingId: 'u12' },
+    { followerId: 'founder', followingId: 'u13' },
+    { followerId: 'founder', followingId: 'u14' },
+    { followerId: 'founder', followingId: 'u15' },
+    { followerId: 'founder', followingId: 'u16' },
+    // Cross follows between users
     { followerId: 'u1', followingId: 'u4' },
     { followerId: 'u4', followingId: 'u1' },
     { followerId: 'u1', followingId: 'u12' },
@@ -1119,11 +1224,15 @@ async function main() {
       },
     });
 
-    // Add members (u13 = Zara Miles is the conversation partner)
+    // Determine the "owner" of this chat - founder chats use 'founder', others use 'u13'
+    const isFounderChat = chatId.startsWith('mf');
+    const chatOwner = isFounderChat ? 'founder' : 'u13';
+
+    // Add chat owner member
     await prisma.chatMember.create({
       data: {
         chatId: chat.id,
-        userId: 'u13',
+        userId: chatOwner,
         unreadCount: 0,
       },
     });
