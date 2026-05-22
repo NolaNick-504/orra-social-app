@@ -87,3 +87,26 @@ Stage Summary:
   2. Component level: isViewingOther check includes currentUser.id !== '' guard
   3. Effect level: useEffect auto-clears viewingUserId if it matches currentUser.id
 - All data intact in database: name, bio, handle, avatar, cover image, badges, posts
+
+---
+Task ID: 3
+Agent: Main
+Task: Rebuild and verify profile fix after clean build
+
+Work Log:
+- Found that previous build didn't include the profile component fixes (stale cache)
+- Did a clean rebuild: rm -rf .next && npm run build
+- Verified both fixes are now in the built chunks:
+  - isViewingOther check: ee&&ee!==eo.id&&""!==eo.id
+  - Auto-fix useEffect: (0,$.useEffect)(()=>{ee&&ee===eo.id&&""!==eo.id&&et(null)},[ee,eo.id,et])
+- Restarted server with new build
+- Tested on mobile viewport (390x844):
+  - Clicking "Nick Joseph" name in a post navigates to profile with "Edit Profile" button
+  - Profile shows as own profile (not "other user" mode)
+  - 16 Followers, 16 Following, posts visible
+- User needs to hard refresh their Samsung Internet browser to get the new build
+
+Stage Summary:
+- Clean rebuild deployed with both fixes verified in built chunks
+- Profile now correctly shows as own profile when clicking own name in feed
+- User's phone needs a hard refresh to load the new JavaScript
