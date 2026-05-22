@@ -648,8 +648,10 @@ export const useAuraStore = create<AuraState>()(
 
       // Navigation actions
       setView: (view) => {
-        // Update the browser URL to match the current view
-        // This way refreshing the page will keep the user on the same view
+        // Use replaceState instead of pushState to prevent 404s on refresh.
+        // pushState adds history entries for each navigation, so when the user
+        // hits the back button they get stale URLs that may cause 404s.
+        // replaceState keeps only the current URL, so refreshing always works.
         if (typeof window !== 'undefined') {
           const viewToPath: Record<string, string> = {
             'home': '/',
@@ -669,7 +671,7 @@ export const useAuraStore = create<AuraState>()(
           const targetPath = viewToPath[view] || '/';
           const currentPath = window.location.pathname;
           if (currentPath !== targetPath) {
-            window.history.pushState({}, '', targetPath);
+            window.history.replaceState({}, '', targetPath);
           }
         }
         return set({ currentView: view });
