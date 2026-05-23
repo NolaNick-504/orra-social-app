@@ -178,7 +178,7 @@ export function Sidebar() {
             }`}
           >
             <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-violet-500/50 aura-glow-ring">
-              <img src={resolveImageUrl(displayAvatar)} alt={displayName} className="w-full h-full object-cover" />
+              <img src={resolveImageUrl(displayAvatar, true)} alt={displayName} className="w-full h-full object-cover" />
             </div>
             <div className="text-left flex-1 min-w-0">
               <p className="text-sm font-semibold text-white truncate">{displayName}</p>
@@ -280,7 +280,7 @@ export function Sidebar() {
             <div className="p-4 border-b border-white/10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-violet-500/50">
-                  <img src={resolveImageUrl(displayAvatar)} alt={displayName} className="w-full h-full object-cover" />
+                  <img src={resolveImageUrl(displayAvatar, true)} alt={displayName} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-white truncate">{displayName}</p>

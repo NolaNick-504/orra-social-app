@@ -1,6 +1,6 @@
-// ORRA Service Worker v3 - FORCE CACHE CLEAR
-// This version aggressively clears all caches and forces fresh loads
-const CACHE_VERSION = 'orra-v3-force-clear-' + Date.now();
+// ORRA Service Worker v4 - ULTRA AGGRESSIVE CACHE CLEAR + IMAGE CACHE BUSTING
+// This version aggressively clears all caches, forces fresh loads, and busts image caches
+const CACHE_VERSION = 'orra-v4-ultra-clear-' + Date.now();
 
 self.addEventListener('install', (event) => {
   // Skip waiting to activate immediately
@@ -13,10 +13,10 @@ self.addEventListener('activate', (event) => {
     clients.claim().then(() => {
       // Delete ALL caches - not just named ones
       return caches.keys().then((cacheNames) => {
-        console.log('[SW v3] Clearing all caches:', cacheNames);
+        console.log('[SW v4] Clearing all caches:', cacheNames);
         return Promise.all(
           cacheNames.map((cacheName) => {
-            console.log('[SW v3] Deleting cache:', cacheName);
+            console.log('[SW v4] Deleting cache:', cacheName);
             return caches.delete(cacheName);
           })
         );
@@ -43,10 +43,40 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // For API uploads (avatar, cover, images) - NEVER cache, always fetch fresh
+  // This is critical for Samsung Internet which aggressively caches these
+  if (url.pathname.startsWith('/api/uploads') || url.pathname.includes('nick-avatar') || url.pathname.includes('profile-cover')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then((response) => {
+          // Return the response without caching
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
   // For JS/CSS chunks - NEVER cache, always fetch fresh
   if (url.pathname.startsWith('/_next/static/') ||
       url.pathname.endsWith('.js') ||
       url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then((response) => {
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // For images (png, jpg, webp, etc.) - network first, no caching
+  if (url.pathname.match(/\.(png|jpg|jpeg|webp|gif|svg|ico)$/i)) {
     event.respondWith(
       fetch(event.request, { cache: 'no-store' })
         .then((response) => {

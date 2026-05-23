@@ -73,7 +73,7 @@ function FollowersFollowingModal({ userId, type, onClose }: { userId: string; ty
               return (
                 <div key={user.id} className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full overflow-hidden ring-1 ring-white/10 flex-shrink-0">
-                    <img src={resolveImageUrl(user.avatar || '/api/uploads?path=images/orra-logo.png')} alt={user.name} className="w-full h-full object-cover" />
+                    <img src={resolveImageUrl(user.avatar || '/api/uploads?path=images/orra-logo.png', true)} alt={user.name} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{user.name}</p>
@@ -340,7 +340,7 @@ export function Profile() {
       {/* Cover Image */}
       <div className={`relative h-40 md:h-56 rounded-2xl overflow-hidden group ${profileIsFounder ? 'founder-cover-glow' : ''}`}>
         <img
-          src={profileCover}
+          src={resolveImageUrl(profileCover, true)}
           alt="Cover"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
@@ -706,7 +706,7 @@ export function Profile() {
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-white/10 flex-shrink-0">
-                      <img src={resolveImageUrl(profileAvatar || '/api/uploads?path=images/orra-logo.png')} alt="" className="w-full h-full object-cover" />
+                      <img src={resolveImageUrl(profileAvatar || '/api/uploads?path=images/orra-logo.png', true)} alt="" className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

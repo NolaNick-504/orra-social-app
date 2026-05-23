@@ -20,9 +20,10 @@ const IMAGE_CACHE_VERSION = 'v2025.05.23-3';
  */
 export function resolveImageUrl(url: string | null | undefined, cacheBust: boolean = false): string {
   if (!url) return `/api/uploads?path=images/orra-logo.png&_v=${IMAGE_CACHE_VERSION}`;
-  // If already an API path, add cache-bust if requested
+  // If already an API path, add cache-bust for uploads paths (avatars, covers, etc.)
+  // Always cache-bust /api/uploads paths since Samsung Internet aggressively caches them
   if (url.startsWith('/api/')) {
-    if (cacheBust && !url.includes('_v=')) {
+    if (!url.includes('_v=')) {
       const sep = url.includes('?') ? '&' : '?';
       return `${url}${sep}_v=${IMAGE_CACHE_VERSION}`;
     }
