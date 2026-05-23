@@ -165,6 +165,10 @@ const otherUserTabs = [
 ];
 
 export function Profile() {
+  // Build version stamp - forces webpack to generate new chunk hashes on rebuild
+  // This ensures browsers download fresh JS after deployments instead of using stale cache
+  const _ORRA_PROFILE_VERSION = 'v2025.05.23-2';
+
   const [activeTab, setActiveTab] = useState('posts');
   const [showFollowers, setShowFollowers] = useState<'followers' | 'following' | null>(null);
   const { toggleEditProfile, userPosts, savedPosts, likedPosts, toggleLike, auraTokens, auraLevel, auraXP, joinedHubs, danceEntries, repostIds, viewingUserId, setViewingUser, setView, followedUsers, toggleFollow, setViewingPostId, setViewingEchoId, clearStaleUserPosts } = useAuraStore();
@@ -185,7 +189,7 @@ export function Profile() {
   // Determine if we're viewing another user's profile
   // Safety: if viewingUserId is our own ID, treat as own profile (not "other user" mode)
   // This can happen when clicking on your own avatar/name in a post
-  const isViewingOther = viewingUserId && viewingUserId !== currentUser.id && currentUser.id !== '';
+  const isViewingOther = !!(viewingUserId && viewingUserId !== currentUser.id && currentUser.id !== '');
 
   // Auto-fix: if viewingUserId matches our own ID, clear it immediately
   // This ensures the profile always renders in "own profile" mode even if

@@ -387,6 +387,9 @@ function calculateXPLevelUp(currentXP: number, currentLevel: number, xpToAdd: nu
   return { newXP, newLevel, levelUps };
 }
 
+// Build version stamp - forces webpack to generate new chunk hashes on rebuild
+const _ORRA_STORE_VERSION = 'v2025.05.23-2';
+
 export const useAuraStore = create<AuraState>()(
   persist(
     (set, get) => ({
