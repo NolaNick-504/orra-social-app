@@ -45,6 +45,14 @@ function StoreHydrator({ children }: { children: React.ReactNode }) {
 
         if (!res.ok) {
           console.warn('/api/me returned status:', res.status);
+          // If user not found (DB was reset), force sign out so user can re-login
+          if (res.status === 404) {
+            console.warn('ORRA: User not found in DB — forcing sign out for re-login');
+            try { await signOut({ redirect: false }); } catch {}
+            useAuraStore.setState({ isHydrated: false, profileSetupComplete: false });
+            localStorage.removeItem('aura-storage');
+            return;
+          }
           hydrateFromFallback();
           return;
         }
