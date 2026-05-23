@@ -373,7 +373,9 @@ export function Profile() {
               profileLevel >= 25 ? 'level-gold bg-gradient-to-br from-violet-600 to-fuchsia-600' :
               'level-bronze bg-gradient-to-br from-violet-600 to-fuchsia-600'
             }`}>
-              <div className="w-full h-full rounded-full overflow-hidden ring-4 ring-[#050505] bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+              <div className={`w-full h-full rounded-full overflow-hidden ring-4 ring-[#050505] flex items-center justify-center ${
+                profileIsFounder ? 'bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600' : 'bg-gradient-to-br from-violet-600 to-fuchsia-600'
+              }`}>
                 <img
                   src={resolveImageUrl(profileAvatar, true)}
                   alt={profileName}
@@ -389,7 +391,9 @@ export function Profile() {
                 />
                 {/* Initials fallback — hidden by default, shown when image fails to load */}
                 <span
-                  className="absolute inset-0 flex items-center justify-center text-white font-bold text-2xl select-none"
+                  className={`absolute inset-0 flex items-center justify-center font-bold text-2xl select-none ${
+                    profileIsFounder ? 'text-amber-100' : 'text-white'
+                  }`}
                   style={{ display: 'none' }}
                 >
                   {getInitials(profileName)}
@@ -443,11 +447,19 @@ export function Profile() {
               <>
                 <button
                   onClick={toggleEditProfile}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-bold hover:opacity-90 transition-all"
+                  className={`px-5 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition-all ${
+                    profileIsFounder
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black'
+                      : 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white'
+                  }`}
                 >
                   Edit Profile
                 </button>
-                <button onClick={handleShareProfile} className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                <button onClick={handleShareProfile} className={`p-2 rounded-xl border transition-all ${
+                  profileIsFounder
+                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:text-amber-300 hover:bg-amber-500/20'
+                    : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
+                }`}>
                   <Share2 className="w-4 h-4" />
                 </button>
               </>
@@ -469,7 +481,7 @@ export function Profile() {
               )
             )}
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-              profileIsFounder ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 border border-amber-500/30' :
+              profileIsFounder ? 'bg-gradient-to-r from-amber-500/30 to-amber-600/30 text-amber-200 border border-amber-400/50 founder-badge-glow' :
               profileLevel >= 75 ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30' :
               profileLevel >= 50 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
               profileLevel >= 25 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
@@ -477,7 +489,7 @@ export function Profile() {
             }`}>{levelTier} Tier</span>
             {/* ORRA Profile Badge - like reference screenshot */}
             {profileIsFounder && !isViewingOther && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-violet-600/20 text-violet-300 border border-violet-500/30 flex items-center gap-1">
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
                 <Music className="w-2.5 h-2.5" /> ORRA - {profileName}
               </span>
             )}
@@ -493,7 +505,7 @@ export function Profile() {
               ) : null;
             })()}
           </div>
-          <p className={`text-sm ${profileIsFounder ? 'text-amber-400' : 'text-slate-400'}`}>{profileHandle}</p>
+          <p className={`text-sm ${profileIsFounder ? 'text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 font-semibold' : 'text-slate-400'}`}>{profileHandle}</p>
           <p className={`text-sm mt-2 leading-relaxed ${profileIsFounder ? 'text-slate-200 font-medium' : 'text-slate-300'}`}>{profileBio}</p>
           <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500">
             {profileLocation && <span className={`flex items-center gap-1 ${profileIsFounder ? 'text-amber-400' : ''}`}><MapPin className="w-3 h-3" /> {profileLocation}</span>}
@@ -513,9 +525,9 @@ export function Profile() {
                     return (
                       <span key={i} className={`px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 ${
                         isFounderBadge
-                          ? 'bg-gradient-to-r from-amber-500/20 to-violet-500/20 text-amber-300 border border-amber-500/30 founder-badge-glow'
+                          ? 'bg-gradient-to-r from-amber-500/25 to-amber-600/25 text-amber-200 border border-amber-400/40 founder-badge-glow'
                           : isOGBadge
-                          ? 'bg-violet-600/20 text-violet-300 border border-violet-500/30'
+                          ? profileIsFounder ? 'bg-gradient-to-r from-amber-500/15 to-yellow-500/15 text-amber-300 border border-amber-500/30' : 'bg-violet-600/20 text-violet-300 border border-violet-500/30'
                           : 'bg-white/5 text-slate-400 border border-white/10'
                       }`}>
                         {isFounderBadge && <Star className="w-2.5 h-2.5 text-amber-400" />}
@@ -543,29 +555,33 @@ export function Profile() {
             : 'border-y border-white/5'
         }`}>
           <button onClick={() => setShowFollowers('followers')} className="text-center hover:bg-white/5 rounded-lg px-4 py-1 transition-all">
-            <p className="font-bold text-white text-sm">{profileFollowerCount >= 1000 ? (profileFollowerCount / 1000).toFixed(1) + 'K' : profileFollowerCount}</p>
-            <p className="text-[10px] text-slate-500">Followers</p>
+            <p className={`font-bold text-sm ${profileIsFounder ? 'text-amber-300' : 'text-white'}`}>{profileFollowerCount >= 1000 ? (profileFollowerCount / 1000).toFixed(1) + 'K' : profileFollowerCount}</p>
+            <p className={`text-[10px] ${profileIsFounder ? 'text-amber-500/70' : 'text-slate-500'}`}>Followers</p>
           </button>
           <button onClick={() => setShowFollowers('following')} className="text-center hover:bg-white/5 rounded-lg px-4 py-1 transition-all">
-            <p className="font-bold text-white text-sm">{profileFollowingCount}</p>
-            <p className="text-[10px] text-slate-500">Following</p>
+            <p className={`font-bold text-sm ${profileIsFounder ? 'text-amber-300' : 'text-white'}`}>{profileFollowingCount}</p>
+            <p className={`text-[10px] ${profileIsFounder ? 'text-amber-500/70' : 'text-slate-500'}`}>Following</p>
           </button>
           <div className="text-center px-4 py-1">
-            <p className="font-bold text-white text-sm">{profilePostCount}</p>
-            <p className="text-[10px] text-slate-500">Pulses</p>
+            <p className={`font-bold text-sm ${profileIsFounder ? 'text-amber-300' : 'text-white'}`}>{profilePostCount}</p>
+            <p className={`text-[10px] ${profileIsFounder ? 'text-amber-500/70' : 'text-slate-500'}`}>Pulses</p>
           </div>
         </div>
 
         {/* XP Progress Bar - only for own profile */}
         {!isViewingOther && (
           <div className="mt-2">
-            <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+            <div className={`flex items-center justify-between text-[10px] mb-1 ${profileIsFounder ? 'text-amber-500/70' : 'text-slate-500'}`}>
               <span>XP to Level {auraLevel + 1}</span>
               <span>{auraXP}/1000</span>
             </div>
             <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-full transition-all duration-500"
+                className={`h-full rounded-full transition-all duration-500 ${
+                  profileIsFounder
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-400'
+                    : 'bg-gradient-to-r from-violet-600 to-fuchsia-600'
+                }`}
                 style={{ width: `${(auraXP / 1000) * 100}%` }}
               />
             </div>
@@ -632,7 +648,9 @@ export function Profile() {
               onClick={() => setActiveTab(tab.key)}
               className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-all border-b-2 ${
                 activeTab === tab.key
-                  ? 'text-violet-400 border-violet-400'
+                  ? profileIsFounder
+                    ? 'text-amber-400 border-amber-400'
+                    : 'text-violet-400 border-violet-400'
                   : 'text-slate-500 border-transparent hover:text-white'
               }`}
             >
