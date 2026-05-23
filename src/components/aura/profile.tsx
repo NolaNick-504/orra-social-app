@@ -487,23 +487,12 @@ export function Profile() {
               profileLevel >= 25 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
               'bg-amber-600/20 text-amber-400 border border-amber-600/30'
             }`}>{levelTier} Tier</span>
-            {/* ORRA Profile Badge - like reference screenshot */}
-            {profileIsFounder && !isViewingOther && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
-                <Music className="w-2.5 h-2.5" /> ORRA - {profileName}
+            {/* Profile Song Indicator - only for other user profiles to avoid duplication with full player */}
+            {isViewingOther && (otherUserData?.profileSongUrl) && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30 flex items-center gap-1 profile-song-indicator">
+                <Music className="w-2.5 h-2.5" /> {otherUserData.profileSongTitle} - {otherUserData.profileSongArtist}
               </span>
             )}
-            {/* Profile Song Indicator */}
-            {(() => {
-              const songUrl = isViewingOther ? (otherUserData?.profileSongUrl || '') : (currentUser.profileSongUrl || '');
-              const songTitle = isViewingOther ? (otherUserData?.profileSongTitle || '') : (currentUser.profileSongTitle || '');
-              const songArtist = isViewingOther ? (otherUserData?.profileSongArtist || '') : (currentUser.profileSongArtist || '');
-              return songUrl ? (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-violet-500/20 text-violet-300 border border-violet-500/30 flex items-center gap-1 profile-song-indicator">
-                  <Music className="w-2.5 h-2.5" /> {songTitle} - {songArtist}
-                </span>
-              ) : null;
-            })()}
           </div>
           <p className={`text-sm ${profileIsFounder ? 'text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 font-semibold' : 'text-slate-400'}`}>{profileHandle}</p>
           <p className={`text-sm mt-2 leading-relaxed ${profileIsFounder ? 'text-slate-200 font-medium' : 'text-slate-300'}`}>{profileBio}</p>

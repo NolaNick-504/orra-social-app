@@ -232,3 +232,24 @@ Stage Summary:
 - No more mid-session flicker from refetchInterval
 - Custom server.js overrides Next.js's no-store headers on static assets
 - Total white screen time reduced from 5+ seconds to under 1 second
+
+---
+Task ID: 1
+Agent: main
+Task: Fix profile issues - remove ORRA Nick Joseph badge, fix duplicate song, update avatar
+
+Work Log:
+- Analyzed profile.tsx code to identify three issues:
+  1. "ORRA - {profileName}" badge showing next to Founder Tier (lines 490-495) - user wanted this removed
+  2. Song indicator badge appearing alongside full ProfileMusicPlayer, causing duplicate display
+  3. Avatar pointing to orra-logo.png instead of nick-avatar.png
+- Removed the "ORRA - Nick Joseph" badge entirely from profile.tsx
+- Changed song indicator to only show for OTHER users' profiles (isViewingOther), since the full ProfileMusicPlayer already shows on own profile
+- Updated user avatar in database from /api/uploads?path=images/orra-logo.png to /images/nick-avatar.png
+- Rebuilt and restarted the app successfully
+
+Stage Summary:
+- Profile no longer shows "ORRA Nick Joseph" text next to Founder Tier
+- Song no longer appears twice when added to profile (indicator only for other users, full player for own profile)
+- Avatar updated to use the custom nick-avatar.png
+- App rebuilt and running on port 3000
