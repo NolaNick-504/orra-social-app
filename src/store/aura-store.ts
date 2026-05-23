@@ -1382,111 +1382,96 @@ export const useAuraStore = create<AuraState>()(
         };
       },
       merge: (persisted: any, current) => {
-        // Wrap entire merge in try-catch to prevent corrupted localStorage
-        // from crashing the app on startup
-        try {
-          if (!persisted || typeof persisted !== 'object') return current;
+        // Each field is wrapped in its own try/catch so one corrupted field
+        // doesn't prevent the rest from being restored. NEVER wipe the entire
+        // localStorage on a merge error — that destroys the user's session.
+        if (!persisted || typeof persisted !== 'object') return current;
 
-          // Safety: if persisted state contains deleted user-me, skip it entirely
-          if (persisted.currentUserId === 'user-me' || persisted.state?.currentUserId === 'user-me') {
-            console.warn('ORRA: Stale user-me in persisted state, clearing');
-            try { localStorage.removeItem('aura-storage'); } catch {}
+        // Safety: if persisted state contains deleted user-me, skip it entirely
+        if (persisted.currentUserId === 'user-me' || persisted.state?.currentUserId === 'user-me') {
+          console.warn('ORRA: Stale user-me in persisted state, skipping rehydration');
+          return current;
+        }
+
+        // Safety: if persisted state is too large (>2MB), skip it entirely to prevent mobile crashes
+        try {
+          const persistedSize = JSON.stringify(persisted).length;
+          if (persistedSize > 2 * 1024 * 1024) {
+            console.warn('ORRA: Persisted state too large (' + Math.round(persistedSize / 1024 / 1024) + 'MB), skipping rehydration');
             return current;
           }
+        } catch {}
 
-          // Safety: if persisted state is too large (>2MB), skip it entirely to prevent mobile crashes
+        const merged = { ...current };
+
+        // Helper to safely convert arrays to Sets (handles corrupted data gracefully)
+        const safeSet = (arr: any): Set<string> => {
           try {
-            const persistedSize = JSON.stringify(persisted).length;
-            if (persistedSize > 2 * 1024 * 1024) {
-              console.warn('ORRA: Persisted state too large (' + Math.round(persistedSize / 1024 / 1024) + 'MB), skipping rehydration');
-              try { localStorage.removeItem('aura-storage'); } catch {}
-              return current;
-            }
-          } catch {}
-
-          const merged = { ...current };
-
-          // Helper to safely convert arrays to Sets (handles corrupted data gracefully)
-          const safeSet = (arr: any): Set<string> => {
             if (!arr) return new Set<string>();
             if (Array.isArray(arr)) return new Set(arr.filter((v): v is string => typeof v === 'string'));
-            // If it's somehow already a Set or other iterable, try to convert
             try { return new Set(Array.from(arr).filter((v: any): v is string => typeof v === 'string')); } catch { return new Set<string>(); }
-          };
+          } catch { return new Set<string>(); }
+        };
 
-          if (persisted.currentUserId) merged.currentUserId = persisted.currentUserId;
-          if (persisted.currentUserProfile && typeof persisted.currentUserProfile === 'object') {
-            merged.currentUserProfile = persisted.currentUserProfile;
-          }
-          // Restore currentView so refreshing on /explore, /profile, etc. keeps the right view
-          // Only restore if it's a valid NavView value
+        // Helper to safely merge a single field — catches errors per-field instead of killing the whole merge
+        const safeMerge = (fn: () => void, fieldName: string) => {
+          try { fn(); } catch (e) { console.warn('ORRA: Skipping corrupted field:', fieldName, e); }
+        };
+
+        safeMerge(() => { if (persisted.currentUserId) merged.currentUserId = persisted.currentUserId; }, 'currentUserId');
+        safeMerge(() => { if (persisted.currentUserProfile && typeof persisted.currentUserProfile === 'object') merged.currentUserProfile = persisted.currentUserProfile; }, 'currentUserProfile');
+        safeMerge(() => {
           const validViews = ['home', 'explore', 'reels', 'live', 'dance', 'games', 'hub', 'messages', 'activity', 'postDetail', 'profile', 'wellness', 'marketplace', 'settings'];
-          if (persisted.currentView && validViews.includes(persisted.currentView)) {
-            merged.currentView = persisted.currentView;
-          }
-          // Don't restore isHydrated from localStorage — it must be determined fresh each session
-          // profileSetupComplete can be restored as fallback, but API value takes priority
-          if (persisted.profileSetupComplete !== undefined) merged.profileSetupComplete = persisted.profileSetupComplete;
-          merged.likedPosts = safeSet(persisted.likedPosts);
-          merged.likedReels = safeSet(persisted.likedReels);
-          merged.followedUsers = safeSet(persisted.followedUsers);
-          merged.savedPosts = safeSet(persisted.savedPosts);
-          merged.savedReels = safeSet(persisted.savedReels);
-          merged.likedPostsEarned = safeSet(persisted.likedPostsEarned);
-          merged.likedReelsEarned = safeSet(persisted.likedReelsEarned);
-          merged.followedUsersEarned = safeSet(persisted.followedUsersEarned);
-          merged.repostedEarned = safeSet(persisted.repostedEarned);
-          merged.sharedViaDMEarned = safeSet(persisted.sharedViaDMEarned);
-          merged.votedEntriesEarned = safeSet(persisted.votedEntriesEarned);
-          // DO NOT restore comments from localStorage — API is the single source of truth.
-          // Old local comments with temp IDs (c-xxx) caused duplicate display bugs.
-          // if (persisted.comments && typeof persisted.comments === 'object') merged.comments = persisted.comments;
-          if (persisted.chatMessages && typeof persisted.chatMessages === 'object') merged.chatMessages = persisted.chatMessages;
-          if (persisted.chatReactions && typeof persisted.chatReactions === 'object') merged.chatReactions = persisted.chatReactions;
-          if (Array.isArray(persisted.userPosts)) merged.userPosts = persisted.userPosts;
-          // Don't restore profileEdits from localStorage — they can be stale and override fresh API data.
-          // profileEdits should only exist during an active edit session and are always cleared on API hydration.
-          // Restoring old edits causes the user to see wrong profile data (wrong bio, name, etc.)
-          // merged.profileEdits = persisted.profileEdits;
-          if (persisted.currentVibe) merged.currentVibe = persisted.currentVibe;
-          if (Array.isArray(persisted.customNotifications)) merged.customNotifications = persisted.customNotifications;
-          if (persisted.auraTokens !== undefined && typeof persisted.auraTokens === 'number') merged.auraTokens = persisted.auraTokens;
-          if (persisted.auraLevel !== undefined && typeof persisted.auraLevel === 'number') merged.auraLevel = persisted.auraLevel;
-          if (persisted.auraXP !== undefined && typeof persisted.auraXP === 'number') merged.auraXP = persisted.auraXP;
-          if (persisted.dailyStreak !== undefined && typeof persisted.dailyStreak === 'number') merged.dailyStreak = persisted.dailyStreak;
-          if (persisted.lastActiveDate) merged.lastActiveDate = persisted.lastActiveDate;
-          merged.joinedHubs = safeSet(persisted.joinedHubs);
-          if (Array.isArray(persisted.danceEntries)) merged.danceEntries = persisted.danceEntries;
-          merged.votedEntries = safeSet(persisted.votedEntries);
-          merged.viewedStories = safeSet(persisted.viewedStories);
-          merged.repostIds = safeSet(persisted.repostIds);
-          merged.sharedViaDM = safeSet(persisted.sharedViaDM);
-          merged.followedHubs = safeSet(persisted.followedHubs);
-          merged.viewedReels = safeSet(persisted.viewedReels);
-          if (persisted.unreadMessages && typeof persisted.unreadMessages === 'object') merged.unreadMessages = persisted.unreadMessages;
-          if (Array.isArray(persisted.recentSearches)) merged.recentSearches = persisted.recentSearches;
-          // Restore userSettings with safe fallback + migration from digestTime → digestTimes
+          if (persisted.currentView && validViews.includes(persisted.currentView)) merged.currentView = persisted.currentView;
+        }, 'currentView');
+        safeMerge(() => { if (persisted.profileSetupComplete !== undefined) merged.profileSetupComplete = persisted.profileSetupComplete; }, 'profileSetupComplete');
+        safeMerge(() => { merged.likedPosts = safeSet(persisted.likedPosts); }, 'likedPosts');
+        safeMerge(() => { merged.likedReels = safeSet(persisted.likedReels); }, 'likedReels');
+        safeMerge(() => { merged.followedUsers = safeSet(persisted.followedUsers); }, 'followedUsers');
+        safeMerge(() => { merged.savedPosts = safeSet(persisted.savedPosts); }, 'savedPosts');
+        safeMerge(() => { merged.savedReels = safeSet(persisted.savedReels); }, 'savedReels');
+        safeMerge(() => { merged.likedPostsEarned = safeSet(persisted.likedPostsEarned); }, 'likedPostsEarned');
+        safeMerge(() => { merged.likedReelsEarned = safeSet(persisted.likedReelsEarned); }, 'likedReelsEarned');
+        safeMerge(() => { merged.followedUsersEarned = safeSet(persisted.followedUsersEarned); }, 'followedUsersEarned');
+        safeMerge(() => { merged.repostedEarned = safeSet(persisted.repostedEarned); }, 'repostedEarned');
+        safeMerge(() => { merged.sharedViaDMEarned = safeSet(persisted.sharedViaDMEarned); }, 'sharedViaDMEarned');
+        safeMerge(() => { merged.votedEntriesEarned = safeSet(persisted.votedEntriesEarned); }, 'votedEntriesEarned');
+        safeMerge(() => { if (persisted.chatMessages && typeof persisted.chatMessages === 'object') merged.chatMessages = persisted.chatMessages; }, 'chatMessages');
+        safeMerge(() => { if (persisted.chatReactions && typeof persisted.chatReactions === 'object') merged.chatReactions = persisted.chatReactions; }, 'chatReactions');
+        safeMerge(() => { if (Array.isArray(persisted.userPosts)) merged.userPosts = persisted.userPosts; }, 'userPosts');
+        safeMerge(() => { if (persisted.currentVibe) merged.currentVibe = persisted.currentVibe; }, 'currentVibe');
+        safeMerge(() => { if (Array.isArray(persisted.customNotifications)) merged.customNotifications = persisted.customNotifications; }, 'customNotifications');
+        safeMerge(() => { if (persisted.auraTokens !== undefined && typeof persisted.auraTokens === 'number') merged.auraTokens = persisted.auraTokens; }, 'auraTokens');
+        safeMerge(() => { if (persisted.auraLevel !== undefined && typeof persisted.auraLevel === 'number') merged.auraLevel = persisted.auraLevel; }, 'auraLevel');
+        safeMerge(() => { if (persisted.auraXP !== undefined && typeof persisted.auraXP === 'number') merged.auraXP = persisted.auraXP; }, 'auraXP');
+        safeMerge(() => { if (persisted.dailyStreak !== undefined && typeof persisted.dailyStreak === 'number') merged.dailyStreak = persisted.dailyStreak; }, 'dailyStreak');
+        safeMerge(() => { if (persisted.lastActiveDate) merged.lastActiveDate = persisted.lastActiveDate; }, 'lastActiveDate');
+        safeMerge(() => { merged.joinedHubs = safeSet(persisted.joinedHubs); }, 'joinedHubs');
+        safeMerge(() => { if (Array.isArray(persisted.danceEntries)) merged.danceEntries = persisted.danceEntries; }, 'danceEntries');
+        safeMerge(() => { merged.votedEntries = safeSet(persisted.votedEntries); }, 'votedEntries');
+        safeMerge(() => { merged.viewedStories = safeSet(persisted.viewedStories); }, 'viewedStories');
+        safeMerge(() => { merged.repostIds = safeSet(persisted.repostIds); }, 'repostIds');
+        safeMerge(() => { merged.sharedViaDM = safeSet(persisted.sharedViaDM); }, 'sharedViaDM');
+        safeMerge(() => { merged.followedHubs = safeSet(persisted.followedHubs); }, 'followedHubs');
+        safeMerge(() => { merged.viewedReels = safeSet(persisted.viewedReels); }, 'viewedReels');
+        safeMerge(() => { if (persisted.unreadMessages && typeof persisted.unreadMessages === 'object') merged.unreadMessages = persisted.unreadMessages; }, 'unreadMessages');
+        safeMerge(() => { if (Array.isArray(persisted.recentSearches)) merged.recentSearches = persisted.recentSearches; }, 'recentSearches');
+        safeMerge(() => {
           if (persisted.userSettings && typeof persisted.userSettings === 'object') {
             const migrated = { ...persisted.userSettings };
-            // Migrate old single-value digestTime to array digestTimes
             if (migrated.digestTime && !migrated.digestTimes) {
               migrated.digestTimes = [migrated.digestTime];
               delete migrated.digestTime;
             } else if (!migrated.digestTimes) {
               migrated.digestTimes = ['morning'];
             }
-            // Clean up legacy digestTime if it still exists
             delete migrated.digestTime;
             merged.userSettings = { ...current.userSettings, ...migrated };
           }
-          if (persisted.lastDigestDate) merged.lastDigestDate = persisted.lastDigestDate;
-          return merged;
-        } catch (error) {
-          // If merge fails for any reason, clear corrupted storage and return defaults
-          console.error('ORRA store merge failed — clearing corrupted localStorage:', error);
-          try { localStorage.removeItem('aura-storage'); } catch {}
-          return current;
-        }
+        }, 'userSettings');
+        safeMerge(() => { if (persisted.lastDigestDate) merged.lastDigestDate = persisted.lastDigestDate; }, 'lastDigestDate');
+
+        return merged;
       },
     }
   )

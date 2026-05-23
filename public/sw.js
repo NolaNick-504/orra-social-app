@@ -1,6 +1,9 @@
-// ORRA Service Worker v4 - ULTRA AGGRESSIVE CACHE CLEAR + IMAGE CACHE BUSTING
-// This version aggressively clears all caches, forces fresh loads, and busts image caches
-const CACHE_VERSION = 'orra-v4-ultra-clear-' + Date.now();
+// ORRA Service Worker v5 - Smart Caching Strategy
+// - Cache-first for /_next/static/ chunks (content-hashed filenames, safe to cache)
+// - Cache-first for images (avatars, covers, etc.)
+// - Network-first for API calls and HTML pages (always fresh data)
+const STATIC_CACHE = 'orra-static-v5';
+const IMAGE_CACHE = 'orra-images-v5';
 
 self.addEventListener('install', (event) => {
   // Skip waiting to activate immediately
@@ -11,14 +14,15 @@ self.addEventListener('activate', (event) => {
   // Claim all clients immediately so the new SW takes control
   event.waitUntil(
     clients.claim().then(() => {
-      // Delete ALL caches - not just named ones
+      // Delete OLD caches (previous versions only)
       return caches.keys().then((cacheNames) => {
-        console.log('[SW v4] Clearing all caches:', cacheNames);
         return Promise.all(
-          cacheNames.map((cacheName) => {
-            console.log('[SW v4] Deleting cache:', cacheName);
-            return caches.delete(cacheName);
-          })
+          cacheNames
+            .filter((name) => name !== STATIC_CACHE && name !== IMAGE_CACHE)
+            .map((cacheName) => {
+              console.log('[SW v5] Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            })
         );
       });
     })
@@ -31,7 +35,7 @@ self.addEventListener('fetch', (event) => {
   // For navigation requests (HTML pages), always fetch fresh from network
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request, { cache: 'no-store' })
+      fetch(event.request)
         .then((response) => {
           return response;
         })
@@ -43,28 +47,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For API uploads (avatar, cover, images) - NEVER cache, always fetch fresh
-  // This is critical for Samsung Internet which aggressively caches these
-  if (url.pathname.startsWith('/api/uploads') || url.pathname.includes('nick-avatar') || url.pathname.includes('profile-cover')) {
+  // For API calls (including uploads) - network first, never cache
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(
-      fetch(event.request, { cache: 'no-store' })
-        .then((response) => {
-          // Return the response without caching
-          return response;
-        })
-        .catch(() => {
-          return caches.match(event.request);
-        })
-    );
-    return;
-  }
-
-  // For JS/CSS chunks - NEVER cache, always fetch fresh
-  if (url.pathname.startsWith('/_next/static/') ||
-      url.pathname.endsWith('.js') ||
-      url.pathname.endsWith('.css')) {
-    event.respondWith(
-      fetch(event.request, { cache: 'no-store' })
+      fetch(event.request)
         .then((response) => {
           return response;
         })
@@ -75,10 +61,61 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For images (png, jpg, webp, etc.) - network first, no caching
+  // For /_next/static/ chunks - CACHE FIRST strategy
+  // These files have content-hash filenames, so cached versions are always valid.
+  // Caching them prevents re-downloading MB of JS on every page load.
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        // Not in cache — fetch from network and cache for next time
+        return fetch(event.request).then((networkResponse) => {
+          // Only cache successful responses
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(STATIC_CACHE).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        }).catch(() => {
+          // Network failed and no cache — return offline page for navigations
+          return new Response('Network error', { status: 503 });
+        });
+      })
+    );
+    return;
+  }
+
+  // For images - cache first, with network fallback
   if (url.pathname.match(/\.(png|jpg|jpeg|webp|gif|svg|ico)$/i)) {
     event.respondWith(
-      fetch(event.request, { cache: 'no-store' })
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(IMAGE_CACHE).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        }).catch(() => {
+          return caches.match(event.request);
+        });
+      })
+    );
+    return;
+  }
+
+  // For CSS/JS not in /_next/static/ (e.g. third-party) - network first
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(event.request)
         .then((response) => {
           return response;
         })
@@ -91,7 +128,7 @@ self.addEventListener('fetch', (event) => {
 
   // For everything else - network first
   event.respondWith(
-    fetch(event.request, { cache: 'no-store' }).catch(() => {
+    fetch(event.request).catch(() => {
       return caches.match(event.request);
     })
   );

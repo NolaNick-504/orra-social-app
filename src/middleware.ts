@@ -21,16 +21,14 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // 3. Next.js static chunks — CRITICAL: prevent browser caching of stale chunks
-  //    After a rebuild, old chunk filenames no longer exist. If the browser has
-  //    old HTML cached, it requests old chunks → gets HTML (200) instead of JS → crash.
-  //    Solution: no-store on chunks so the browser always validates with the server.
+  // 3. Next.js static chunks — CACHE FOREVER (content-hashed filenames)
+  //    These files have content hashes in their names (e.g. webpack-abc123.js).
+  //    When content changes, the filename changes, so caching is ALWAYS safe.
+  //    Caching these is CRITICAL for performance — without it, browsers re-download
+  //    ALL JavaScript on every page load, causing 5+ second white screens.
   if (pathname.startsWith('/_next/static/')) {
     const response = NextResponse.next();
-    // Use no-store for chunk requests — ensures the browser always gets fresh chunks
-    // If a chunk is gone (stale), the server will return a proper 404 or redirect
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
     return response;
   }
 
@@ -40,11 +38,14 @@ export function middleware(request: NextRequest) {
   }
 
   // 5. File extensions (likely static assets like .css, .js, .map, .woff, etc.)
-  //    Pass through — these are usually Next.js managed
+  //    Cache font files aggressively — they never change
   if (pathname.includes('.') && !pathname.endsWith('/')) {
     const response = NextResponse.next();
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-    response.headers.set('Pragma', 'no-cache');
+    if (pathname.match(/\.(woff2?|ttf|otf|eot)$/i)) {
+      response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      response.headers.set('Cache-Control', 'public, max-age=3600');
+    }
     return response;
   }
 

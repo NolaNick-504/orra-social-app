@@ -37,7 +37,7 @@ const SettingsPage = dynamic(() => import('@/components/aura/settings-page').the
 const PrismCompanion = dynamic(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanion })), { ssr: false });
 const PrismCompanionButton = dynamic(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanionButton })), { ssr: false });
 import { Toaster } from 'sonner';
-import { useEffect, useState, Component } from 'react';
+import { useEffect, useState, Component, useRef } from 'react';
 import { Sparkles, RefreshCw } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -80,26 +80,11 @@ if (typeof window !== 'undefined') {
       // The catch block below handles that case.
     }
   } catch (e) {
-    // Only clear if localStorage is truly corrupted (unparseable JSON)
-    console.warn('ORRA: Corrupted localStorage detected, clearing it');
+    // JSON parse failed — localStorage is genuinely corrupted.
+    // Only remove the aura-storage key, never wipe ALL localStorage.
+    console.warn('ORRA: Corrupted aura-storage detected, removing it');
     try { localStorage.removeItem('aura-storage'); } catch {}
   }
-
-  // Force cache-bust: detect stale JS chunks after a new deploy.
-  // When a new build is deployed, the HTML references new chunk filenames,
-  // but the browser may have old HTML cached. The old HTML references
-  // chunk filenames that no longer exist → 404 → app silently breaks.
-  // This check fetches a tiny API endpoint to verify the server is reachable.
-  (async () => {
-    try {
-      const res = await fetch('/api/me', { method: 'HEAD', cache: 'no-store' });
-      // We don't force reload on non-200 because the /api/me might legitimately
-      // return 401 for unauthenticated users. The inline script in layout.tsx
-      // handles stale chunk detection via JS syntax errors instead.
-    } catch {
-      // Network error — server might be down, don't force reload
-    }
-  })();
 }
 
 // Error Boundary to catch runtime errors and auto-recover instead of showing a permanent error page
@@ -250,6 +235,20 @@ function LoadingScreen() {
   );
 }
 
+function SkeletonContent() {
+  // Lightweight skeleton shown while hydrating — shows the app shell structure immediately
+  return (
+    <div className="space-y-4 p-4">
+      <div className="h-8 w-48 rounded-lg bg-white/5 animate-pulse" />
+      <div className="space-y-3">
+        <div className="h-40 rounded-xl bg-white/5 animate-pulse" />
+        <div className="h-40 rounded-xl bg-white/5 animate-pulse" />
+        <div className="h-40 rounded-xl bg-white/5 animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 function AuthenticatedApp() {
   const profileSetupComplete = useAuraStore((s) => s.profileSetupComplete);
   const isHydrated = useAuraStore((s) => s.isHydrated);
@@ -262,9 +261,6 @@ function AuthenticatedApp() {
   useDailyDigest();
 
   // Sync URL path to currentView on mount.
-  // When the user refreshes on /explore, /profile, /messages, etc.,
-  // the catch-all route renders this component but the Zustand store
-  // might still have currentView='home'. Read the URL and set the right view.
   useEffect(() => {
     const pathMap: Record<string, string> = {
       '/explore': 'explore',
@@ -291,45 +287,30 @@ function AuthenticatedApp() {
     }
   }, []);
 
-  // NOTE: User hydration is handled by StoreHydrator (via AppWrapper)
-  // which calls /api/me for full user data including avatar, followers, etc.
-  // StoreHydrator also has its own 4-second safety timeout.
-  //
-  // We keep a 3-second backup timeout here as an extra safety net.
+  // Failsafe hydration timeout: 1 second MAX
+  // After 1s, force isHydrated=true so the user is NEVER stuck on a skeleton screen
   useEffect(() => {
-    // Check daily streak on app load
     useAuraStore.getState().checkDailyStreak();
 
-    // Backup safety timeout: if hydration hasn't completed in 2 seconds, force it
-    // This ensures users are NEVER stuck on a loading screen
     const timeout = setTimeout(() => {
       if (!useAuraStore.getState().isHydrated) {
         console.warn('ORRA: Backup hydration timeout — forcing isHydrated=true');
         useAuraStore.setState({
           isHydrated: true,
-          profileSetupComplete: true, // Always true — never force profile setup screen on timeout
+          profileSetupComplete: true,
         });
       }
-    }, 2000);
+    }, 1000);
 
     return () => clearTimeout(timeout);
   }, []);
 
   // Show profile setup modal ONLY for new users who haven't completed setup
-  // Only show AFTER hydration is complete, so existing users aren't flashed this screen
-  // AND only if they actually have a currentUserProfile (meaning API hydration succeeded)
-  // This prevents existing users from getting stuck on profile setup if the API is slow
   if (isHydrated && !profileSetupComplete && useAuraStore.getState().currentUserProfile !== null) {
-    // Double check: only show if profileSetupComplete is explicitly false in the DB
     const profile = useAuraStore.getState().currentUserProfile;
     if (profile && !(profile as any).profileSetupComplete) {
       return <ProfileSetupModal />;
     }
-  }
-
-  // While hydration is in progress, show loading
-  if (!isHydrated) {
-    return <LoadingScreen />;
   }
 
   return (
@@ -348,7 +329,14 @@ function AuthenticatedApp() {
       <main className="lg:ml-64 xl:mr-80 relative z-10 min-h-screen pb-20 lg:pb-4">
         <TopHeader />
         <div className={`mx-auto px-4 py-4 ${currentView === 'live' ? 'max-w-2xl' : 'max-w-3xl'}`}>
-          <MainContent />
+          {/* Show skeleton while hydrating, real content once done */}
+          {isHydrated ? (
+            <ErrorBoundary>
+              <MainContent />
+            </ErrorBoundary>
+          ) : (
+            <SkeletonContent />
+          )}
         </div>
       </main>
 
@@ -402,27 +390,42 @@ export default function Home() {
 
   const isAuthenticated = status === 'authenticated' && session;
 
-  // Safety timeout: if session check takes longer than 3 seconds, check for cookie
-  // If a session cookie exists, assume authenticated and proceed — avoids users
-  // getting stuck on loading screen if NextAuth API is slow/unreachable
+  // Determine if the initial session check is done.
+  // Key insight: during a session refetch, `status` briefly goes back to 'loading',
+  // but `session` retains its previous value. So we check both:
+  // - If status is not 'loading', the check is done
+  // - If we still have a session from a previous check, the initial check was done
+  // This prevents the UI from flickering to a loading screen during refetches.
+  const initialCheckDone = status !== 'loading' || !!session || sessionTimedOut;
+
+  // Safety timeout: if session check takes longer than 800ms, proceed anyway.
+  // The app should NEVER show a blank screen for more than 800ms.
+  // If we have a session cookie, treat as authenticated. If not, show auth page.
   useEffect(() => {
-    if (status === 'loading') {
+    if (status === 'loading' && !sessionTimedOut) {
       const timeout = setTimeout(() => {
-        const hasSessionCookie = document.cookie.includes('next-auth.session-token');
-        if (hasSessionCookie) {
-          console.warn('ORRA: Session check timed out but cookie exists — proceeding as authenticated');
+        if (!sessionTimedOut) {
+          console.warn('ORRA: Session check timed out — proceeding');
           setSessionTimedOut(true);
         }
-      }, 3000);
+      }, 800);
       return () => clearTimeout(timeout);
     }
-  }, [status]);
+  }, [status, sessionTimedOut]);
 
-  // Show loading screen while session is being verified.
-  // This prevents the login page from flashing for already-authenticated users
-  // on every page reload. The session check typically takes <500ms.
-  if (status === 'loading' && !sessionTimedOut) {
-    return <LoadingScreen />;
+  // If the initial session check hasn't completed yet, show the ORRA logo
+  // spinner — but ONLY for a maximum of 800ms. After that, we proceed.
+  if (!initialCheckDone) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-4 animate-pulse">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <p className="text-slate-400 text-sm">Loading ORRA...</p>
+        </div>
+      </div>
+    );
   }
 
   // If session timed out but cookie exists, treat as authenticated

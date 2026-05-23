@@ -11,7 +11,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   return (
     <SessionProvider
       refetchOnWindowFocus={false}
-      refetchInterval={5 * 60} // Refetch session every 5 minutes
+      refetchInterval={0} // Disable automatic refetch — prevents mid-session flicker
+      // When refetch fails (network blip), status briefly becomes 'loading' or 'unauthenticated',
+      // which triggers the loading screen or auth page. This is disorienting for users.
+      // Session will still be validated on page refresh and navigation.
       basePath="/api/auth"
     >
       {children}

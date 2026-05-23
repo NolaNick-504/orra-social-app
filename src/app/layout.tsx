@@ -1,21 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Dancing_Script, Great_Vibes } from "next/font/google";
 import { AuthProvider } from "@/components/providers/session-provider";
-import { readFileSync } from "fs";
-import path from "path";
 import "./globals.css";
 
-// Force dynamic rendering — prevents Next.js from caching stale HTML after deploys
-// This ensures mobile browsers always get fresh JS chunk references
-export const dynamic = 'force-dynamic';
-
-// Read build ID at render time for stale cache detection
-let orraBuildId = '';
-try {
-  orraBuildId = readFileSync(path.join(process.cwd(), '.next', 'BUILD_ID'), 'utf-8').trim();
-} catch {
-  orraBuildId = 'dev';
-}
+// Use Next.js default static generation — no force-dynamic.
+// force-dynamic caused SSR on every request, making TTFB slow.
+// Next.js will generate HTML at build time and revalidate as needed.
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,36 +54,17 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
-        {/* Inline script that runs BEFORE any React/Next.js JS loads.
-            This catches stale chunk errors at the earliest possible moment
-            and forces a cache-bust reload before the user sees a broken page. */}
+        {/* Minimal inline script: only catches stale chunk errors and registers SW.
+            No build ID comparison or force-reload logic — that caused infinite reload loops.
+            When a new deploy happens, the new HTML references new chunk filenames (content hashes),
+            and the browser naturally loads the new chunks on the next navigation. */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-            // Embed current build ID so the browser can detect stale cached pages
-            window.__ORRA_BUILD_ID = '${orraBuildId}';
-
             var MAX_RETRIES = 1;
             var alreadyRetried = sessionStorage.getItem('orra_chunk_retry');
 
-            // Check if the browser has a stale build cached
-            // This happens when: HTML is fresh (no-cache headers) but JS chunks are cached
-            // We compare the build ID in the HTML with the one stored from last visit
-            var lastBuildId = localStorage.getItem('orra_build_id');
-            if (lastBuildId && lastBuildId !== '${orraBuildId}') {
-              // Build changed — clear all cached JS by forcing a cache-bust reload
-              console.warn('ORRA: Build changed from ' + lastBuildId + ' to ${orraBuildId}, forcing reload');
-              localStorage.setItem('orra_build_id', '${orraBuildId}');
-              // Only reload if not already reloaded with cache bust
-              if (!window.location.search.includes('_cb=')) {
-                window.location.replace('/?_cb=' + Date.now());
-                return;
-              }
-            }
-            localStorage.setItem('orra_build_id', '${orraBuildId}');
-
             function orraForceReload() {
               if (alreadyRetried === '1') {
-                // Already tried once — stop retrying to prevent infinite loops
                 sessionStorage.removeItem('orra_chunk_retry');
                 return;
               }
@@ -131,14 +102,16 @@ export default function RootLayout({
             // Clear retry flag on successful load
             window.addEventListener('load', function() {
               sessionStorage.removeItem('orra_chunk_retry');
+              // Also clear error retry counters from error.tsx / global-error.tsx
+              try {
+                sessionStorage.removeItem('orra_error_retry_count');
+                sessionStorage.removeItem('orra_global_error_retry_count');
+              } catch {}
             });
 
-            // Register service worker to prevent Samsung Internet from caching stale JS
+            // Register service worker for smart caching
             if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.register('/sw.js').then(function(reg) {
-                // Force update on every page load
-                reg.update();
-              }).catch(function() {});
+              navigator.serviceWorker.register('/sw.js').catch(function() {});
             }
           })();
         `}} />

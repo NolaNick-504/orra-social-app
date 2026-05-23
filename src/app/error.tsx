@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Sparkles, RefreshCw } from 'lucide-react';
 
+const MAX_AUTO_RETRIES = 2;
+const RETRY_KEY = 'orra_error_retry_count';
+
 export default function Error({
   error,
   reset,
@@ -10,27 +13,62 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const [autoRetrying, setAutoRetrying] = useState(true);
   const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
     console.warn('ORRA Page Error:', error?.message || error);
   }, [error]);
 
-  // ALWAYS force a cache-bust reload on any error — stale chunks after rebuild
-  // cause cascading failures that reset() can't fix. Only a full reload with
-  // a fresh HTML page (which references the new chunk filenames) works.
+  // Auto-reload with retry counter to prevent infinite loops
   useEffect(() => {
-    console.warn('ORRA Page Error:', error?.message || error);
-    // Force a cache-bust reload after a short delay so the user sees the message
+    let retryCount = 0;
+    try {
+      retryCount = parseInt(sessionStorage.getItem(RETRY_KEY) || '0', 10);
+    } catch {}
+
+    if (retryCount >= MAX_AUTO_RETRIES) {
+      // Already retried too many times — stop auto-reloading
+      console.warn('ORRA: Max auto-retries reached, showing manual error page');
+      return;
+    }
+
+    // Increment retry counter
+    try {
+      sessionStorage.setItem(RETRY_KEY, String(retryCount + 1));
+    } catch {}
+
+    // Countdown timer
+    const countdownInterval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Auto-reload after delay
     const timer = setTimeout(() => {
       window.location.replace('/?_cb=' + Date.now());
     }, 2000);
-    return () => clearTimeout(timer);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(countdownInterval);
+    };
   }, [error]);
 
-  // If auto-retry is in progress, show a brief reconnecting overlay
-  if (autoRetrying) {
+  // Check if we've exceeded retries
+  let retryCount = 0;
+  try {
+    retryCount = parseInt(sessionStorage.getItem(RETRY_KEY) || '0', 10);
+  } catch {}
+
+  const hasExceededRetries = retryCount > MAX_AUTO_RETRIES;
+
+  if (!hasExceededRetries) {
+    // Show auto-reconnecting overlay with countdown
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
         <div className="text-center max-w-md">
@@ -46,11 +84,13 @@ export default function Error({
             />
           </div>
           <p className="text-slate-600 text-xs mt-2">{countdown}s</p>
+          <p className="text-slate-700 text-xs mt-3">Attempt {retryCount} of {MAX_AUTO_RETRIES}</p>
         </div>
       </div>
     );
   }
 
+  // Exceeded retries — show error with manual reload only
   return (
     <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
       <div className="text-center max-w-md">
@@ -61,6 +101,8 @@ export default function Error({
         <p className="text-slate-400 text-sm mb-4">ORRA hit a snag. Your data is safe — just reload.</p>
         <button
           onClick={() => {
+            // Clear retry counter on manual reload
+            try { sessionStorage.removeItem(RETRY_KEY); } catch {}
             window.location.replace('/?_cb=' + Date.now());
           }}
           className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold text-sm flex items-center gap-2 mx-auto"

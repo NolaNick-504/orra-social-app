@@ -1,9 +1,36 @@
-// ORRA Production Server — uses standalone build for correct static file serving
-const { join } = require('path');
-const port = parseInt(process.env.PORT || '3000', 10);
-const hostname = process.env.HOSTNAME || '0.0.0.0';
+const { createServer } = require('http');
+const { parse } = require('url');
+const next = require('next');
 
-// The standalone server is the correct way to run Next.js with output: "standalone"
-// It properly serves .next/static/chunks/* files
-process.env.NODE_ENV = 'production';
-require(join(__dirname, '.next/standalone/server.js'));
+const port = parseInt(process.env.PORT || '3000', 10);
+const app = next({ dev: false });
+const handle = app.getRequestHandler();
+
+app.prepare().then(() => {
+  createServer((req, res) => {
+    const parsedUrl = parse(req.url, true);
+    const { pathname } = parsedUrl;
+
+    // For /_next/static/ paths, override cache headers after Next.js sends them
+    if (pathname && pathname.startsWith('/_next/static/')) {
+      // Intercept setHeader to override cache headers
+      const originalSetHeader = res.setHeader.bind(res);
+      res.setHeader = function(name, value) {
+        if (name.toLowerCase() === 'cache-control') {
+          return originalSetHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+        if (name.toLowerCase() === 'pragma') {
+          return originalSetHeader('Pragma', '');
+        }
+        if (name.toLowerCase() === 'expires') {
+          return originalSetHeader('Expires', '');
+        }
+        return originalSetHeader(name, value);
+      };
+    }
+
+    handle(req, res, parsedUrl);
+  }).listen(port, () => {
+    console.log(`> ORRA Server running on http://localhost:${port}`);
+  });
+});

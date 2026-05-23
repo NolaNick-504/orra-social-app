@@ -5,10 +5,10 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // Force a unique build ID to bust browser caches
-  // This ensures chunk filenames change after each build
+  // Use a stable build ID so browsers don't force-reload on every deploy
+  // Next.js chunk filenames already include content hashes, so caching is safe
   generateBuildId: async () => {
-    return 'orra-build-' + Date.now();
+    return 'orra-stable-v1';
   },
   experimental: {
     serverActions: {
@@ -18,20 +18,19 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Apply aggressive no-cache headers to ALL routes
+        // No-cache for HTML pages only — ensures fresh HTML on every visit
         source: '/(.*)',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, proxy-revalidate' },
-          { key: 'Pragma', value: 'no-cache' },
-          { key: 'Expires', value: '0' },
+          { key: 'Cache-Control', value: 'no-cache, must-revalidate' },
         ],
       },
       {
-        // Extra aggressive for static chunks
+        // Static chunks have content-hash filenames — safe to cache forever
+        // This is critical for performance: without caching, browsers re-download
+        // ALL JavaScript on every page load, causing 5+ second white screens
         source: '/_next/static/(.*)',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate' },
-          { key: 'Pragma', value: 'no-cache' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
     ];

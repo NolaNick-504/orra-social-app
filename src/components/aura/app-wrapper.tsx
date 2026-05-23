@@ -193,9 +193,9 @@ function StoreHydrator({ children }: { children: React.ReactNode }) {
     }
   }, [status]);
 
-  // SAFETY NET: If hydration hasn't completed after 2 seconds, force isHydrated=true
-  // so the user is NEVER stuck on a loading screen. Do NOT create a fallback user
-  // with empty data — that would overwrite the real profile if the API is just slow.
+  // SAFETY NET: If hydration hasn't completed after 1 second, force isHydrated=true
+  // so the user is NEVER stuck on a loading screen. The app shows skeleton content
+  // while !isHydrated, so we want to transition to real content ASAP.
   // The real API data will arrive shortly after and populate the profile correctly.
   useEffect(() => {
     if (status !== 'authenticated') return;
@@ -205,7 +205,7 @@ function StoreHydrator({ children }: { children: React.ReactNode }) {
         console.warn('ORRA: Hydration timeout in StoreHydrator — forcing isHydrated=true without fallback user');
         useAuraStore.setState({ isHydrated: true, profileSetupComplete: true });
       }
-    }, 2000);
+    }, 1000);
     return () => clearTimeout(timeout);
   }, [status]);
 
