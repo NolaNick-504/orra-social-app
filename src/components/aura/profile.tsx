@@ -3,7 +3,7 @@
 import { useAuraStore } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { usePosts, useUserPosts, useHubs } from '@/lib/api-hooks';
-import { resolveImageUrl } from '@/lib/utils';
+import { resolveImageUrl, getInitials } from '@/lib/utils';
 import { MapPin, Link as LinkIcon, Calendar, Grid3X3, Clapperboard, Trophy, Bookmark, Heart, Share2, Edit3, Zap, Users, X, MessageCircle, Waves, Sparkles, ArrowLeft, Crown, Star, Rocket, Music, QrCode } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -167,7 +167,7 @@ const otherUserTabs = [
 export function Profile() {
   // Build version stamp - forces webpack to generate new chunk hashes on rebuild
   // This ensures browsers download fresh JS after deployments instead of using stale cache
-  const _ORRA_PROFILE_VERSION = 'v2025.05.23-2';
+  const _ORRA_PROFILE_VERSION = 'v2025.05.23-3';
 
   const [activeTab, setActiveTab] = useState('posts');
   const [showFollowers, setShowFollowers] = useState<'followers' | 'following' | null>(null);
@@ -373,8 +373,27 @@ export function Profile() {
               profileLevel >= 25 ? 'level-gold bg-gradient-to-br from-violet-600 to-fuchsia-600' :
               'level-bronze bg-gradient-to-br from-violet-600 to-fuchsia-600'
             }`}>
-              <div className="w-full h-full rounded-full overflow-hidden ring-4 ring-[#050505]">
-                <img src={resolveImageUrl(profileAvatar)} alt={profileName} className="w-full h-full object-cover" />
+              <div className="w-full h-full rounded-full overflow-hidden ring-4 ring-[#050505] bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
+                <img
+                  src={resolveImageUrl(profileAvatar, true)}
+                  alt={profileName}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Hide broken image, show initials fallback behind it
+                    const img = e.currentTarget;
+                    img.style.display = 'none';
+                    // Show the initials fallback that's behind the image
+                    const fallback = img.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+                {/* Initials fallback — hidden by default, shown when image fails to load */}
+                <span
+                  className="absolute inset-0 flex items-center justify-center text-white font-bold text-2xl select-none"
+                  style={{ display: 'none' }}
+                >
+                  {getInitials(profileName)}
+                </span>
               </div>
             </div>
             {/* Level Badge / Founder Crown */}

@@ -87,8 +87,14 @@ export async function GET(req: NextRequest) {
       headers: {
         'Content-Type': contentType,
         'Content-Length': String(data.length),
-        'Cache-Control': 'public, max-age=0, must-revalidate',
+        // Aggressive no-cache for Samsung Internet and other aggressive caching browsers
+        // This ensures avatar/cover images are always re-validated
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         'X-Content-Type-Options': 'nosniff',
+        // Allow the _v cache-bust param without affecting the response
+        'Vary': 'Accept-Encoding',
       },
     });
   } catch (error) {
