@@ -10,22 +10,19 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const [countdown, setCountdown] = useState(3);
-  const [retrying, setRetrying] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const [autoRecovering, setAutoRecovering] = useState(true);
 
   useEffect(() => {
     console.warn('ORRA Page Error:', error?.message || error);
   }, [error]);
 
-  // Try in-place recovery FIRST (using Next.js reset), only full-reload as fallback
+  // Try in-place recovery FIRST (using Next.js reset)
   useEffect(() => {
-    // First attempt: try Next.js reset() which re-renders the page component
-    // without a full page reload. This recovers from most transient errors.
     const retryTimer = setTimeout(() => {
       try {
         reset();
       } catch (e) {
-        // reset() failed — will fall through to countdown below
         console.warn('ORRA: reset() failed, will do full reload');
       }
     }, 1500);
@@ -41,7 +38,8 @@ export default function Error({
     } catch {}
 
     if (alreadyReloaded) {
-      // Already reloaded once — don't loop. Show manual button.
+      // Already tried once — show manual button
+      setAutoRecovering(false);
       return;
     }
 
@@ -72,15 +70,24 @@ export default function Error({
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-4 animate-pulse">
           <Sparkles className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-xl font-bold text-white mb-2">Reconnecting...</h2>
-        <p className="text-slate-400 text-sm mb-2">ORRA hit a snag. Auto-recovering...</p>
-        <div className="w-32 h-1 bg-white/10 rounded-full mx-auto overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all duration-1000"
-            style={{ width: `${((3 - countdown) / 3) * 100}%` }}
-          />
-        </div>
-        <p className="text-slate-600 text-xs mt-2">{countdown}s</p>
+        {autoRecovering ? (
+          <>
+            <h2 className="text-xl font-bold text-white mb-2">Reconnecting...</h2>
+            <p className="text-slate-400 text-sm mb-2">ORRA hit a snag. Auto-recovering...</p>
+            <div className="w-32 h-1 bg-white/10 rounded-full mx-auto overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all duration-1000"
+                style={{ width: `${((5 - countdown) / 5) * 100}%` }}
+              />
+            </div>
+            <p className="text-slate-600 text-xs mt-2">{countdown}s</p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-xl font-bold text-white mb-2">Something went wrong</h2>
+            <p className="text-slate-400 text-sm mb-4">ORRA hit a snag. Tap below to refresh.</p>
+          </>
+        )}
         <button
           onClick={() => {
             try { sessionStorage.removeItem('orra_error_reload'); } catch {}

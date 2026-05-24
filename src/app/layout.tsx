@@ -59,8 +59,6 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             // 1. KILL OLD SERVICE WORKERS
-            //    Instead of just unregistering (which requires the old SW to cooperate),
-            //    we try to unregister them directly, and also clear all caches.
             if ('serviceWorker' in navigator) {
               navigator.serviceWorker.getRegistrations().then(function(regs) {
                 for (var i = 0; i < regs.length; i++) {
@@ -91,23 +89,66 @@ export default function RootLayout({
               try { localStorage.removeItem('aura-storage'); } catch(x) {}
             }
 
-            // 4. KEEP-ALIVE: Ping the server every 25 seconds to prevent
+            // 4. KEEP-ALIVE: Ping the server every 15 seconds to prevent
             //    proxy/platform idle connection timeouts.
+            //    Uses a dedicated endpoint that's fast and lightweight.
             var keepAliveUrl = '/api/build-id';
-            var keepAliveInterval = 25000;
+            var lastKeepAliveOk = Date.now();
 
             function doKeepAlive() {
               fetch(keepAliveUrl, {
                 method: 'GET',
                 cache: 'no-store',
                 headers: { 'X-Keep-Alive': '1' }
-              }).then(function(res) {}).catch(function() {});
+              }).then(function(res) {
+                if (res.ok) {
+                  lastKeepAliveOk = Date.now();
+                }
+              }).catch(function() {
+                // Keep-alive failed — connection might be dead.
+                // If we haven't had a successful ping in 60+ seconds,
+                // the proxy has likely dropped us. Try a fresh connection.
+                if (Date.now() - lastKeepAliveOk > 60000) {
+                  console.warn('ORRA: No successful keep-alive in 60s — connection likely dead');
+                }
+              });
             }
 
-            setInterval(doKeepAlive, keepAliveInterval);
+            // Start keep-alive immediately, then every 15 seconds
+            doKeepAlive();
+            setInterval(doKeepAlive, 15000);
 
-            // 5. GLOBAL FETCH ERROR RECOVERY
-            //    Auto-retry failed API requests once before showing errors.
+            // 5. VISIBILITY RECOVERY: When user comes back to the tab after
+            //    being away, the proxy may have dropped the connection.
+            //    Force a keep-alive ping immediately and check health.
+            document.addEventListener('visibilitychange', function() {
+              if (!document.hidden) {
+                // Tab became visible — immediately ping
+                doKeepAlive();
+                // If we've been hidden for more than 2 minutes, do a health check
+                // and auto-recover if the connection is dead
+                setTimeout(function() {
+                  fetch('/api/build-id', { cache: 'no-store' })
+                    .then(function(res) {
+                      if (!res.ok) throw new Error('bad status');
+                    })
+                    .catch(function() {
+                      console.warn('ORRA: Health check failed on tab focus — reloading');
+                      window.location.replace('/?_cb=' + Date.now());
+                    });
+                }, 1000);
+              }
+            });
+
+            // 6. ONLINE EVENT: When browser reports we're back online,
+            //    auto-refresh the page to get a fresh connection
+            window.addEventListener('online', function() {
+              console.log('ORRA: Back online — refreshing connection');
+              doKeepAlive();
+            });
+
+            // 7. GLOBAL FETCH ERROR RECOVERY
+            //    Auto-retry failed requests (API + dynamic imports) before showing errors
             var originalFetch = window.fetch;
 
             window.fetch = function(input, init) {
@@ -123,12 +164,20 @@ export default function RootLayout({
               }
 
               return originalFetch.apply(this, arguments).catch(function(err) {
-                if (url.startsWith('/api/') || url.startsWith(window.location.origin + '/api/')) {
+                var isApi = url.startsWith('/api/') || url.startsWith(window.location.origin + '/api/');
+                var isChunk = url.includes('/_next/static/') || url.includes('chunk');
+
+                if (isApi || isChunk) {
                   console.warn('ORRA: Fetch failed, retrying in 2s:', url, err.message || err);
                   return new Promise(function(resolve) {
                     setTimeout(function() {
                       originalFetch.apply(window, [input, init]).then(resolve).catch(function() {
-                        resolve(originalFetch.apply(window, [input, init]));
+                        // Second retry failed too — wait longer and try once more
+                        setTimeout(function() {
+                          originalFetch.apply(window, [input, init]).then(resolve).catch(function(finalErr) {
+                            resolve(originalFetch.apply(window, [input, init]));
+                          });
+                        }, 3000);
                       });
                     }, 2000);
                   });
@@ -137,7 +186,7 @@ export default function RootLayout({
               });
             };
 
-            // 6. Prevent chunk load errors from crashing the app
+            // 8. Prevent chunk load errors from crashing the app
             window.addEventListener('error', function(e) {
               var msg = (e.message || '').toLowerCase();
               if (msg.includes('loading chunk') || msg.includes('chunk load') ||
@@ -150,7 +199,7 @@ export default function RootLayout({
               }
             });
 
-            // 7. Clean up retry guard on successful navigation
+            // 9. Clean up retry guard on successful navigation
             window.addEventListener('load', function() {
               try { sessionStorage.removeItem('orra_chunk_reload'); } catch(e) {}
             });

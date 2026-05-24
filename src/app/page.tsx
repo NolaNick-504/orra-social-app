@@ -87,10 +87,12 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// Error Boundary to catch runtime errors and auto-recover instead of showing a permanent error page
-class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; error?: string; errorCount: number }> {
+// Error Boundary — auto-recovers from transient errors instead of showing a dead error page
+// After 3 seconds, it auto-retries by clearing the error state.
+// If errors keep happening (5+ in a row), it shows a manual reload button.
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean; error?: string; errorCount: number; autoRecovering: boolean }> {
   retryTimer: ReturnType<typeof setTimeout> | null = null;
-  state = { hasError: false, error: undefined as string | undefined, errorCount: 0 };
+  state = { hasError: false, error: undefined as string | undefined, errorCount: 0, autoRecovering: false };
 
   static getDerivedStateFromError(error: any) {
     return { hasError: true, error: error?.message || 'Unknown error' };
@@ -101,49 +103,77 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
     const newCount = this.state.errorCount + 1;
     this.setState({ errorCount: newCount });
 
-    const msg = (error?.message || '').toLowerCase();
-    const isChunkError = (
-      msg.includes('loading chunk') ||
-      msg.includes('chunk load') ||
-      msg.includes('unexpected token') ||
-      msg.includes('failed to fetch dynamically imported module')
-    );
-
-    // Only clear localStorage if we get repeated crashes (10+ errors)
-    // This is a last resort — clearing localStorage wipes the user's session
-    if (newCount >= 10) {
-      try {
-        localStorage.removeItem('aura-storage');
-        console.warn('Auto-cleared aura-storage after 10+ repeated errors');
-      } catch {}
+    // Auto-recover after a short delay (unless we've crashed 5+ times in a row)
+    if (newCount < 5) {
+      this.setState({ autoRecovering: true });
+      this.retryTimer = setTimeout(() => {
+        console.log('ORRA: Auto-recovering from error (attempt', newCount, ')');
+        this.setState({ hasError: false, autoRecovering: false });
+      }, 3000);
     }
-    // Show the reconnect screen but DON'T auto-reload
-    // The user can click the button to manually reload
-    // NO automatic reloads — they cause infinite loops and data loss
   }
 
   componentWillUnmount() {
     if (this.retryTimer) clearTimeout(this.retryTimer);
   }
 
+  handleManualRetry = () => {
+    this.setState({ hasError: false, errorCount: 0, autoRecovering: false });
+  };
+
+  handleFullReload = () => {
+    window.location.href = '/?_cb=' + Date.now();
+  };
+
   render() {
     if (this.state.hasError) {
+      const isTransient = this.state.errorCount < 5;
+      const msg = (this.state.error || '').toLowerCase();
+      const isNetworkError = (
+        msg.includes('failed to fetch') ||
+        msg.includes('network') ||
+        msg.includes('load') ||
+        msg.includes('chunk') ||
+        msg.includes('timeout') ||
+        msg.includes('abort')
+      );
+
       return (
         <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
           <div className="text-center max-w-md">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-4 animate-pulse">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">Something went wrong</h2>
-            <p className="text-slate-400 text-sm mb-4">ORRA hit a snag. Tap below to refresh.</p>
-            <button
-              onClick={() => {
-                window.location.href = '/';
-              }}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-violet-500/30 transition-all"
-            >
-              Refresh ORRA
-            </button>
+            {this.state.autoRecovering ? (
+              <>
+                <h2 className="text-xl font-bold text-white mb-2">Reconnecting...</h2>
+                <p className="text-slate-400 text-sm mb-4">
+                  {isNetworkError ? 'Network hiccup — ORRA is auto-recovering' : 'ORRA hit a snag — auto-recovering'}
+                </p>
+                <div className="w-48 h-1 bg-white/10 rounded-full mx-auto overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full animate-[pulse_2s_ease-in-out_infinite]" style={{ width: '60%' }} />
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-xl font-bold text-white mb-2">Something went wrong</h2>
+                <p className="text-slate-400 text-sm mb-4">ORRA hit a snag. Tap below to refresh.</p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={this.handleManualRetry}
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-violet-500/30 transition-all"
+                  >
+                    <RefreshCw className="w-4 h-4 inline mr-1" /> Try Again
+                  </button>
+                  <button
+                    onClick={this.handleFullReload}
+                    className="px-6 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition-all"
+                  >
+                    Reload ORRA
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       );
