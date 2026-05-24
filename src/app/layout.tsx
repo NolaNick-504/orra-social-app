@@ -61,20 +61,30 @@ export default function RootLayout({
             and the browser naturally loads them on the next navigation. */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
+            var BUILD = 'orra_v2_mpk35fko';
+            // 1. Kill all service workers immediately
             if ('serviceWorker' in navigator) {
-              // Immediately unregister ALL service workers to clear any stale caches
-              navigator.serviceWorker.getRegistrations().then(function(regs) {
-                regs.forEach(function(reg) { reg.unregister(); });
+              navigator.serviceWorker.getRegistrations().then(function(r) {
+                r.forEach(function(s) { s.unregister(); });
               }).catch(function() {});
-              // Then register the self-destructing SW (v104) as a backup cleaner
-              navigator.serviceWorker.register('/sw.js').catch(function() {});
             }
-            // Also clear ALL caches immediately
+            // 2. Clear all caches immediately
             if ('caches' in window) {
-              caches.keys().then(function(names) {
-                names.forEach(function(name) { caches.delete(name); });
+              caches.keys().then(function(n) {
+                n.forEach(function(k) { caches.delete(k); });
               }).catch(function() {});
             }
+            // 3. If we're stuck on "Loading ORRA" for more than 5 seconds, force reload with cache bust
+            // This handles the case where the browser loaded stale JS that can't hydrate
+            // Guard: only reload once (check URL for _v param to avoid infinite loops)
+            setTimeout(function() {
+              var el = document.querySelector('p');
+              if (el && el.textContent && el.textContent.indexOf('Loading ORRA') !== -1
+                  && window.location.href.indexOf('_v=') === -1) {
+                var url = window.location.href.split('?')[0] + '?_v=' + BUILD + '&_t=' + Date.now();
+                window.location.replace(url);
+              }
+            }, 5000);
           })();
         `}} />
       </head>
