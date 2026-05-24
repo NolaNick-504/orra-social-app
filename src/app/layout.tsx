@@ -51,11 +51,12 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         {/* Bootstrap script — runs BEFORE React hydrates.
-            1. Kills old service workers by registering a "killer" SW that self-destructs
+            1. Kills old service workers
             2. Clears all Cache Storage
             3. Starts keep-alive pings to prevent proxy timeouts
             4. Adds global fetch error recovery
-            5. Catches chunk load errors */}
+            5. Catches chunk load errors
+            10. Watchdog: if app is stuck on loading for 10s, force reload via clear-cache */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             // 1. KILL OLD SERVICE WORKERS
@@ -91,7 +92,6 @@ export default function RootLayout({
 
             // 4. KEEP-ALIVE: Ping the server every 15 seconds to prevent
             //    proxy/platform idle connection timeouts.
-            //    Uses a dedicated endpoint that's fast and lightweight.
             var keepAliveUrl = '/api/build-id';
             var lastKeepAliveOk = Date.now();
 
@@ -105,28 +105,19 @@ export default function RootLayout({
                   lastKeepAliveOk = Date.now();
                 }
               }).catch(function() {
-                // Keep-alive failed — connection might be dead.
-                // If we haven't had a successful ping in 60+ seconds,
-                // the proxy has likely dropped us. Try a fresh connection.
                 if (Date.now() - lastKeepAliveOk > 60000) {
                   console.warn('ORRA: No successful keep-alive in 60s — connection likely dead');
                 }
               });
             }
 
-            // Start keep-alive immediately, then every 15 seconds
             doKeepAlive();
             setInterval(doKeepAlive, 15000);
 
-            // 5. VISIBILITY RECOVERY: When user comes back to the tab after
-            //    being away, the proxy may have dropped the connection.
-            //    Force a keep-alive ping immediately and check health.
+            // 5. VISIBILITY RECOVERY
             document.addEventListener('visibilitychange', function() {
               if (!document.hidden) {
-                // Tab became visible — immediately ping
                 doKeepAlive();
-                // If we've been hidden for more than 2 minutes, do a health check
-                // and auto-recover if the connection is dead
                 setTimeout(function() {
                   fetch('/api/build-id', { cache: 'no-store' })
                     .then(function(res) {
@@ -140,21 +131,18 @@ export default function RootLayout({
               }
             });
 
-            // 6. ONLINE EVENT: When browser reports we're back online,
-            //    auto-refresh the page to get a fresh connection
+            // 6. ONLINE EVENT
             window.addEventListener('online', function() {
               console.log('ORRA: Back online — refreshing connection');
               doKeepAlive();
             });
 
             // 7. GLOBAL FETCH ERROR RECOVERY
-            //    Auto-retry failed requests (API + dynamic imports) before showing errors
             var originalFetch = window.fetch;
 
             window.fetch = function(input, init) {
               var url = typeof input === 'string' ? input : (input instanceof Request ? input.url : String(input));
 
-              // Don't retry keep-alive pings
               if (init && init.headers && typeof init.headers === 'object') {
                 try {
                   if (init.headers['X-Keep-Alive'] || init.headers['x-keep-alive']) {
@@ -172,7 +160,6 @@ export default function RootLayout({
                   return new Promise(function(resolve) {
                     setTimeout(function() {
                       originalFetch.apply(window, [input, init]).then(resolve).catch(function() {
-                        // Second retry failed too — wait longer and try once more
                         setTimeout(function() {
                           originalFetch.apply(window, [input, init]).then(resolve).catch(function(finalErr) {
                             resolve(originalFetch.apply(window, [input, init]));
@@ -199,10 +186,40 @@ export default function RootLayout({
               }
             });
 
+            // Also catch unhandled promise rejections from dynamic imports
+            window.addEventListener('unhandledrejection', function(e) {
+              var msg = (e.reason && (e.reason.message || String(e.reason)) || '').toLowerCase();
+              if (msg.includes('loading chunk') || msg.includes('chunk load') ||
+                  msg.includes('failed to fetch') || msg.includes('dynamically imported module')) {
+                e.preventDefault();
+                if (!sessionStorage.getItem('orra_chunk_reload')) {
+                  sessionStorage.setItem('orra_chunk_reload', '1');
+                  window.location.replace('/?_cb=' + Date.now());
+                }
+              }
+            });
+
             // 9. Clean up retry guard on successful navigation
             window.addEventListener('load', function() {
               try { sessionStorage.removeItem('orra_chunk_reload'); } catch(e) {}
             });
+
+            // 10. LOADING SCREEN WATCHDOG
+            //     If the app is still showing "Loading ORRA..." after 10 seconds,
+            //     something is fundamentally broken (stale JS, blocked network, etc.)
+            //     Redirect to clear-cache.html which will nuke everything and retry.
+            setTimeout(function() {
+              // Check if the React root has any real content (not just the loading spinner)
+              var root = document.getElementById('__next');
+              if (root) {
+                var text = root.innerText || root.textContent || '';
+                // If we're still showing the loading message after 10s, bail out
+                if (text.includes('Loading ORRA') && !text.includes('Sign In') && !text.includes('Home')) {
+                  console.warn('ORRA: App stuck on loading screen for 10s — redirecting to clear cache');
+                  window.location.replace('/clear-cache.html');
+                }
+              }
+            }, 10000);
           })();
         `}} />
       </head>
