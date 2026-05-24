@@ -4,8 +4,8 @@ import { useAuraStore } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { usePosts, useUserPosts, useHubs } from '@/lib/api-hooks';
 import { resolveImageUrl, getInitials } from '@/lib/utils';
-import { MapPin, Link as LinkIcon, Calendar, Grid3X3, Clapperboard, Trophy, Bookmark, Heart, Share2, Edit3, Zap, Users, X, MessageCircle, Waves, Sparkles, ArrowLeft, Crown, Star, Rocket, Music, QrCode } from 'lucide-react';
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { MapPin, Link as LinkIcon, Calendar, Grid3X3, Clapperboard, Trophy, Bookmark, Heart, Share2, Edit3, Zap, Users, X, MessageCircle, Waves, Sparkles, ArrowLeft, Crown, Star, Rocket, Music, QrCode, ScanLine } from 'lucide-react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -99,8 +99,143 @@ function FollowersFollowingModal({ userId, type, onClose }: { userId: string; ty
   );
 }
 
+// QR Scanner Modal - Camera-based QR code scanning
+function QRScannerModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const scannerRef = useRef<HTMLDivElement>(null);
+  const [scannerInstance, setScannerInstance] = useState<any>(null);
+  const [scanResult, setScanResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      // Clean up scanner when modal closes
+      if (scannerInstance) {
+        scannerInstance.clear();
+        setScannerInstance(null);
+      }
+      setScanResult(null);
+      setError(null);
+      return;
+    }
+
+    // Start scanner when modal opens
+    const startScanner = async () => {
+      setIsStarting(true);
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode');
+        const scanner = new Html5Qrcode('orra-qr-scanner');
+        setScannerInstance(scanner);
+
+        await scanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+          },
+          (decodedText: string) => {
+            // On successful scan
+            setScanResult(decodedText);
+            scanner.stop();
+            // If it's an ORRA profile URL, navigate to it
+            if (decodedText.includes(window.location.origin) || decodedText.includes('orra.app')) {
+              const handle = decodedText.split('/').pop();
+              if (handle) {
+                // Close after a brief delay to show success
+                setTimeout(() => {
+                  onClose();
+                }, 1500);
+              }
+            }
+          },
+          () => {
+            // QR code scan failure - ignore, keep scanning
+          }
+        );
+      } catch (err: any) {
+        setError(err?.message || 'Could not access camera. Please allow camera permissions.');
+      } finally {
+        setIsStarting(false);
+      }
+    };
+
+    startScanner();
+
+    return () => {
+      if (scannerInstance) {
+        try { scannerInstance.stop(); } catch {}
+      }
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+      <div className="relative w-full max-w-sm mx-4 rounded-2xl overflow-hidden bg-slate-900 border border-white/10">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <QrCode className="w-4 h-4 text-violet-400" />
+            <span className="text-sm font-bold text-white">Scan QR Code</span>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </div>
+
+        {/* Scanner area */}
+        <div className="p-4">
+          {error ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-3">
+                <X className="w-6 h-6 text-red-400" />
+              </div>
+              <p className="text-red-400 text-sm mb-2">Camera Error</p>
+              <p className="text-slate-500 text-xs">{error}</p>
+              <button
+                onClick={onClose}
+                className="mt-4 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-500 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          ) : scanResult ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3">
+                <QrCode className="w-6 h-6 text-emerald-400" />
+              </div>
+              <p className="text-emerald-400 text-sm font-bold mb-2">QR Code Found!</p>
+              <p className="text-slate-400 text-xs break-all">{scanResult}</p>
+              {scanResult.includes('orra') && (
+                <button
+                  onClick={onClose}
+                  className="mt-4 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 transition-colors"
+                >
+                  Open Profile
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div id="orra-qr-scanner" ref={scannerRef} className="w-full rounded-xl overflow-hidden" style={{ minHeight: '280px' }} />
+              {isStarting && (
+                <div className="flex items-center justify-center py-4 gap-2">
+                  <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-slate-400 text-xs">Starting camera...</span>
+                </div>
+              )}
+              <p className="text-slate-500 text-[10px] text-center mt-3">Point your camera at a QR code to scan</p>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Founder QR Code - Quick scan to follow/become friends
-function FounderQRCode({ handle, name, isFounder, level }: { handle: string; name: string; isFounder?: boolean; level: number }) {
+function FounderQRCode({ handle, name, isFounder, level, onScanClick }: { handle: string; name: string; isFounder?: boolean; level: number; onScanClick: () => void }) {
   const profileUrl = typeof window !== 'undefined' ? `${window.location.origin}/${handle.replace('@', '')}` : `/${handle.replace('@', '')}`;
 
   return (
@@ -111,6 +246,14 @@ function FounderQRCode({ handle, name, isFounder, level }: { handle: string; nam
           {isFounder ? 'Founder QR Code' : 'QR Code'}
         </span>
         <span className="text-[8px] text-slate-500 ml-auto">Scan to follow</span>
+        {/* Scan QR Button */}
+        <button
+          onClick={onScanClick}
+          className="ml-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-600/80 hover:bg-violet-500 transition-colors text-white text-[8px] font-bold uppercase tracking-wider"
+        >
+          <ScanLine className="w-2.5 h-2.5" />
+          Scan
+        </button>
       </div>
 
       <div className="flex items-center justify-center p-4 gap-4">
@@ -170,6 +313,7 @@ export function Profile() {
   const _ORRA_PROFILE_VERSION = 'v2025.05.23-3';
 
   const [activeTab, setActiveTab] = useState('posts');
+  const [showQRScanner, setShowQRScanner] = useState(false);
   const [showFollowers, setShowFollowers] = useState<'followers' | 'following' | null>(null);
   const { toggleEditProfile, userPosts, savedPosts, likedPosts, toggleLike, auraTokens, auraLevel, auraXP, joinedHubs, danceEntries, repostIds, viewingUserId, setViewingUser, setView, followedUsers, toggleFollow, setViewingPostId, setViewingEchoId, clearStaleUserPosts } = useAuraStore();
   const currentUser = useCurrentUser();
@@ -542,7 +686,7 @@ export function Profile() {
 
         {/* Founder QR Code - Scan to follow */}
         <div className="mt-4">
-          <FounderQRCode handle={profileHandle || displayHandle} name={profileName || 'ORRA User'} isFounder={profileIsFounder} level={profileLevel} />
+          <FounderQRCode handle={profileHandle || displayHandle} name={profileName || 'ORRA User'} isFounder={profileIsFounder} level={profileLevel} onScanClick={() => setShowQRScanner(true)} />
         </div>
 
         {/* Stats - 3-column row like reference screenshot */}
@@ -844,6 +988,9 @@ export function Profile() {
           onClose={() => setShowFollowers(null)}
         />
       )}
+
+      {/* QR Scanner Modal */}
+      <QRScannerModal isOpen={showQRScanner} onClose={() => setShowQRScanner(false)} />
     </div>
   );
 }

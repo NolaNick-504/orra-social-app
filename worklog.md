@@ -89,3 +89,35 @@ Stage Summary:
 - All 61 posts, 90 comments, 110 likes verified in database
 - All static assets (avatars, ads, cover, banner, songs) verified accessible
 - App running on port 3000, Caddy proxy on port 81
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix multiple ORRA app issues - comments, posts, ads, QR scanner, live banner
+
+Work Log:
+- Examined current project state: Prisma schema, seed data (71 posts, 90 comments, 26 users), pulse-feed.tsx, profile.tsx
+- Fixed LiveBanner to show only 3 comments at a time (changed from 4)
+- Redesigned ads with real business information: website, phone, address, hours, product details, star ratings
+- Strengthened neon glow borders on ads (increased shadow layers and intensity)
+- Generated 26 gender-appropriate avatar images for all bots and founder
+- Generated 30 context-appropriate post images (nurse-shift.jpg, coaching-field.jpg, dog-sandals.jpg, etc.)
+- Updated seed data with 71 posts (up from 61), all images matched to poster identity
+- Added 3rd posts for many bots (more content variety, no duplicates)
+- Removed old generic image references (sunset1.jpg, art1.jpg, sports1.jpg used across multiple bots)
+- Fixed comments and likes to reference correct new post IDs
+- Added QR scanner to profile using html5-qrcode library
+- Added ScanLine icon import and useRef hook
+- Created QRScannerModal component with camera-based scanning
+- Added "Scan" button to FounderQRCode component
+- Re-seeded database successfully with all new data
+- Built and verified app running on port 3000 (Caddy proxy on port 81)
+
+Stage Summary:
+- 71 unique posts with gender/identity-matched images (no duplicates)
+- 90 comments with realistic conversation threads
+- 4 realistic business ads with full company info and strong neon borders
+- Live banner shows exactly 3 comments at a time
+- QR scanner added with camera-based scanning capability
+- Founder avatar fixed to use correct path
+- App building and running successfully

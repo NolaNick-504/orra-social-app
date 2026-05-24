@@ -271,11 +271,11 @@ function LiveBanner() {
 
           {/* Simulated live chat overlay — looks like real live comments */}
           <div className="absolute bottom-16 left-3 w-48 z-10 space-y-1 pointer-events-none">
-            {SIMULATED_CHAT.slice(chatIdx, chatIdx + 4).map((msg, i) => (
+            {SIMULATED_CHAT.slice(chatIdx, chatIdx + 3).map((msg, i) => (
               <div
                 key={`${chatIdx}-${i}`}
                 className="chat-overlay-glass rounded-lg px-2 py-1 flex items-center gap-1.5"
-                style={{ opacity: 1 - i * 0.2, animation: `fade-in 0.3s ease-out` }}
+                style={{ opacity: 1 - i * 0.25, animation: `fade-in 0.3s ease-out` }}
               >
                 <span className={`text-[9px] font-bold ${msg.color} whitespace-nowrap`}>{msg.user}</span>
                 <span className="text-[9px] text-white/90 truncate">{msg.text}</span>
@@ -1239,12 +1239,19 @@ export function PulseFeed() {
             image: '/images/ads/surge-can.jpg',
             headline: 'Fuel Your Grind',
             subtext: 'Zero sugar. Infinite focus. The energy drink for creators who never stop.',
-            cta: 'Try It Free',
+            details: '3 flavors | $2.99/can | Free shipping on 12-packs',
+            website: 'surgeenergy.com',
+            phone: '1-800-SURGE-UP',
+            address: 'Austin, TX',
+            hours: 'Order 24/7 online',
+            rating: '4.8',
+            reviews: '12.4K',
+            cta: 'Get a Free Sample',
             ctaColor: 'bg-teal-600 hover:bg-teal-500',
             glowColor: 'teal',
             borderColor: 'border-teal-300',
-            neonShadow: '0 0 15px rgba(20,184,166,0.8), 0 0 40px rgba(20,184,166,0.5), 0 0 80px rgba(20,184,166,0.25), inset 0 0 15px rgba(20,184,166,0.15)',
-            neonShadowHover: '0 0 20px rgba(20,184,166,1), 0 0 60px rgba(20,184,166,0.7), 0 0 100px rgba(20,184,166,0.35), inset 0 0 20px rgba(20,184,166,0.2)',
+            neonShadow: '0 0 20px rgba(20,184,166,1), 0 0 50px rgba(20,184,166,0.7), 0 0 100px rgba(20,184,166,0.4), 0 0 150px rgba(20,184,166,0.2), inset 0 0 20px rgba(20,184,166,0.2)',
+            neonShadowHover: '0 0 25px rgba(20,184,166,1), 0 0 70px rgba(20,184,166,0.9), 0 0 120px rgba(20,184,166,0.5), 0 0 180px rgba(20,184,166,0.3), inset 0 0 25px rgba(20,184,166,0.25)',
           },
           {
             badge: 'SPONSORED',
@@ -1254,12 +1261,19 @@ export function PulseFeed() {
             image: '/images/ads/zenith-hoodie.jpg',
             headline: 'Wear the Vibe',
             subtext: 'Iridescent streetwear that shifts color with your mood. Drop 03 is live now.',
-            cta: 'Shop Now',
+            details: 'Sizes XS-3XL | Starting at $89 | Free returns',
+            website: 'zenithapparel.co',
+            phone: '1-833-ZENITH-1',
+            address: 'Los Angeles, CA',
+            hours: 'Mon-Fri 9AM-6PM PT',
+            rating: '4.9',
+            reviews: '8.7K',
+            cta: 'Shop Drop 03',
             ctaColor: 'bg-purple-600 hover:bg-purple-500',
             glowColor: 'purple',
             borderColor: 'border-purple-300',
-            neonShadow: '0 0 15px rgba(147,51,234,0.8), 0 0 40px rgba(147,51,234,0.5), 0 0 80px rgba(147,51,234,0.25), inset 0 0 15px rgba(147,51,234,0.15)',
-            neonShadowHover: '0 0 20px rgba(147,51,234,1), 0 0 60px rgba(147,51,234,0.7), 0 0 100px rgba(147,51,234,0.35), inset 0 0 20px rgba(147,51,234,0.2)',
+            neonShadow: '0 0 20px rgba(147,51,234,1), 0 0 50px rgba(147,51,234,0.7), 0 0 100px rgba(147,51,234,0.4), 0 0 150px rgba(147,51,234,0.2), inset 0 0 20px rgba(147,51,234,0.2)',
+            neonShadowHover: '0 0 25px rgba(147,51,234,1), 0 0 70px rgba(147,51,234,0.9), 0 0 120px rgba(147,51,234,0.5), 0 0 180px rgba(147,51,234,0.3), inset 0 0 25px rgba(147,51,234,0.25)',
           },
           {
             badge: 'AD',
@@ -1269,12 +1283,19 @@ export function PulseFeed() {
             image: '/images/ads/pulse-audio.jpg',
             headline: 'Sound Redefined',
             subtext: 'Spatial audio headphones with AI noise cancellation. Hear what you\'ve been missing.',
-            cta: 'Learn More',
+            details: 'Model PX-7 Pro | $299.99 | 30-day guarantee',
+            website: 'pulseaudio.io',
+            phone: '1-800-PULSE-3D',
+            address: 'Seattle, WA',
+            hours: 'Support 24/7',
+            rating: '4.7',
+            reviews: '23.1K',
+            cta: 'Order Now — $50 Off',
             ctaColor: 'bg-orange-600 hover:bg-orange-500',
             glowColor: 'orange',
             borderColor: 'border-orange-300',
-            neonShadow: '0 0 15px rgba(245,158,11,0.8), 0 0 40px rgba(245,158,11,0.5), 0 0 80px rgba(245,158,11,0.25), inset 0 0 15px rgba(245,158,11,0.15)',
-            neonShadowHover: '0 0 20px rgba(245,158,11,1), 0 0 60px rgba(245,158,11,0.7), 0 0 100px rgba(245,158,11,0.35), inset 0 0 20px rgba(245,158,11,0.2)',
+            neonShadow: '0 0 20px rgba(245,158,11,1), 0 0 50px rgba(245,158,11,0.7), 0 0 100px rgba(245,158,11,0.4), 0 0 150px rgba(245,158,11,0.2), inset 0 0 20px rgba(245,158,11,0.2)',
+            neonShadowHover: '0 0 25px rgba(245,158,11,1), 0 0 70px rgba(245,158,11,0.9), 0 0 120px rgba(245,158,11,0.5), 0 0 180px rgba(245,158,11,0.3), inset 0 0 25px rgba(245,158,11,0.25)',
           },
           {
             badge: 'AD',
@@ -1284,12 +1305,19 @@ export function PulseFeed() {
             image: '/images/ads/nova-kicks.jpg',
             headline: 'Step Into the Future',
             subtext: 'Limited drop — holographic sole tech. Only 500 pairs made. Get yours before they vanish.',
-            cta: 'Shop Drop',
+            details: 'Sizes 5-14 | $249.99 | Ships worldwide',
+            website: 'novakicks.com',
+            phone: '1-888-NOVA-KIK',
+            address: 'Portland, OR',
+            hours: 'Drop live: Friday 12AM ET',
+            rating: '4.9',
+            reviews: '5.2K',
+            cta: 'Shop the Drop',
             ctaColor: 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500',
             glowColor: 'blue',
             borderColor: 'border-blue-300',
-            neonShadow: '0 0 15px rgba(59,130,246,0.8), 0 0 40px rgba(59,130,246,0.5), 0 0 80px rgba(59,130,246,0.25), inset 0 0 15px rgba(59,130,246,0.15)',
-            neonShadowHover: '0 0 20px rgba(59,130,246,1), 0 0 60px rgba(59,130,246,0.7), 0 0 100px rgba(59,130,246,0.35), inset 0 0 20px rgba(59,130,246,0.2)',
+            neonShadow: '0 0 20px rgba(59,130,246,1), 0 0 50px rgba(59,130,246,0.7), 0 0 100px rgba(59,130,246,0.4), 0 0 150px rgba(59,130,246,0.2), inset 0 0 20px rgba(59,130,246,0.2)',
+            neonShadowHover: '0 0 25px rgba(59,130,246,1), 0 0 70px rgba(59,130,246,0.9), 0 0 120px rgba(59,130,246,0.5), 0 0 180px rgba(59,130,246,0.3), inset 0 0 25px rgba(59,130,246,0.25)',
           },
         ];
 
@@ -1309,10 +1337,10 @@ export function PulseFeed() {
 
         return (
           <React.Fragment key={isEcho ? `echo-${(post as any)._echoId || post.id}` : post.id}>
-            {/* Ad Card — realistic company ad with strong glowing neon border */}
+            {/* Ad Card — realistic business ad with strong glowing neon border */}
             {actualShowAd && (
               <div
-                className={`rounded-2xl overflow-hidden border-[3px] ${ad.borderColor} bg-black/60 backdrop-blur-xl transition-all duration-300 cursor-pointer group/ad`}
+                className={`rounded-2xl overflow-hidden border-[3px] ${ad.borderColor} bg-black/80 backdrop-blur-xl transition-all duration-300 cursor-pointer group/ad`}
                 style={{
                   boxShadow: ad.neonShadow,
                   animation: `ad-pulse-${ad.glowColor} 2s ease-in-out infinite alternate`,
@@ -1320,11 +1348,18 @@ export function PulseFeed() {
                 onMouseEnter={(e) => { e.currentTarget.style.boxShadow = ad.neonShadowHover; e.currentTarget.style.animationPlayState = 'paused'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ad.neonShadow; e.currentTarget.style.animationPlayState = 'running'; }}
               >
-                {/* Ad header: badge + brand */}
+                {/* Ad header: badge + brand + rating */}
                 <div className="flex items-center justify-between p-3 pb-0">
-                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${ad.badgeColor} text-white text-[10px] font-bold tracking-wider shadow-lg`}>
-                    <Megaphone className="w-3 h-3" />
-                    {ad.badge}
+                  <div className="flex items-center gap-2">
+                    <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${ad.badgeColor} text-white text-[10px] font-bold tracking-wider shadow-lg`}>
+                      <Megaphone className="w-3 h-3" />
+                      {ad.badge}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                      <span className="text-amber-400 text-[10px] font-bold">{ad.rating}</span>
+                      <span className="text-slate-500 text-[9px]">({ad.reviews})</span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/80 text-white text-[11px] font-bold tracking-wider">
                     {ad.brandIcon}
@@ -1332,7 +1367,7 @@ export function PulseFeed() {
                   </div>
                 </div>
                 {/* Ad image */}
-                <div className="relative mx-3 mt-2 rounded-xl overflow-hidden max-h-[240px]">
+                <div className="relative mx-3 mt-2 rounded-xl overflow-hidden max-h-[200px]">
                   <img
                     src={ad.image}
                     alt={ad.brand}
@@ -1343,12 +1378,21 @@ export function PulseFeed() {
                     }}
                   />
                 </div>
-                {/* Ad content */}
+                {/* Ad content with full business details */}
                 <div className="px-4 pt-3 pb-4">
                   <h3 className="text-white font-bold text-lg mb-1">{ad.headline}</h3>
-                  <p className="text-slate-300 text-sm leading-relaxed mb-4">{ad.subtext}</p>
+                  <p className="text-slate-300 text-sm leading-relaxed mb-2">{ad.subtext}</p>
+                  {/* Product details */}
+                  <p className="text-slate-400 text-xs leading-relaxed mb-3 font-medium">{ad.details}</p>
+                  {/* Business info row */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 text-[10px] text-slate-500">
+                    <span className="flex items-center gap-1"><ExternalLink className="w-2.5 h-2.5" />{ad.website}</span>
+                    <span className="flex items-center gap-1">{ad.phone}</span>
+                    <span className="flex items-center gap-1">{ad.address}</span>
+                  </div>
+                  {/* CTA row */}
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400 text-[11px] font-semibold tracking-wider uppercase">{ad.brand}</span>
+                    <span className="text-slate-500 text-[10px] font-medium">{ad.hours}</span>
                     <button className={`flex items-center gap-2 px-5 py-2 rounded-xl ${ad.ctaColor} text-white text-sm font-bold transition-all shadow-xl`}>
                       {ad.cta}
                       <ExternalLink className="w-3.5 h-3.5" />
