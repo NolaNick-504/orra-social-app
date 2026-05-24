@@ -175,12 +175,16 @@ function LiveBanner() {
   const [chatIdx, setChatIdx] = useState(0);
 
   const SIMULATED_CHAT = [
-    { user: 'Luna', text: 'Hey everyone! 🔥' },
-    { user: 'Kai', text: 'This is amazing!' },
-    { user: 'Zara', text: 'Love this stream 💜' },
-    { user: 'Neo', text: 'Vibes are immaculate ✨' },
-    { user: 'Mira', text: 'ORRA fam! 💯' },
-    { user: 'Alex', text: "Let's gooo 🔥🔥" },
+    { user: 'Tasha', color: 'text-pink-400', text: 'Yooo this is fire!! 🔥🔥' },
+    { user: 'Marcus', color: 'text-blue-400', text: 'Letss gooo 💪' },
+    { user: 'Aaliyah', color: 'text-emerald-400', text: 'W stream!! 💜' },
+    { user: 'Chris', color: 'text-amber-400', text: 'Vibes are immaculate ✨' },
+    { user: 'Destiny', color: 'text-fuchsia-400', text: 'ORRA fam in the building 💯' },
+    { user: 'Jay', color: 'text-red-400', text: 'Can not miss this!! 🎶' },
+    { user: 'Nina', color: 'text-cyan-400', text: 'First time here!! 🙌' },
+    { user: 'Deon', color: 'text-orange-400', text: 'This whole stream hits different 💯' },
+    { user: 'Kiara', color: 'text-violet-400', text: 'Wish I could be there live 😭' },
+    { user: 'Trey', color: 'text-teal-400', text: 'Who else is watching from NOLA?? 🎷' },
   ];
 
   // Fetch live streams from API
@@ -202,11 +206,11 @@ function LiveBanner() {
     return () => { cancelled = true; };
   }, []);
 
-  // Rotate simulated chat messages
+  // Rotate simulated chat messages — faster like a real live chat
   useEffect(() => {
     const interval = setInterval(() => {
       setChatIdx((prev) => (prev + 1) % SIMULATED_CHAT.length);
-    }, 3000);
+    }, 2500);
     return () => clearInterval(interval);
   }, []);
 
@@ -224,11 +228,25 @@ function LiveBanner() {
       {topStream ? (
         // Active live streams — show preview with stream count
         <div className="relative h-44 md:h-52">
-          {/* Background */}
+          {/* Background - use thumbnail or live-banner.jpg fallback */}
           {topStream.thumbnail ? (
-            <img src={resolveImageUrl(topStream.thumbnail)} alt="" className="w-full h-full object-cover" />
+            <img
+              src={resolveImageUrl(topStream.thumbnail)}
+              alt=""
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to live-banner.jpg if the thumbnail doesn't load
+                const img = e.currentTarget;
+                if (!img.dataset.retried) {
+                  img.dataset.retried = '1';
+                  img.src = '/images/live-banner.jpg';
+                }
+              }}
+            />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-red-950/60 via-black/80 to-violet-950/60" />
+            <div className="w-full h-full bg-gradient-to-br from-red-950/60 via-black/80 to-violet-950/60">
+              <img src="/images/live-banner.jpg" alt="" className="w-full h-full object-cover opacity-60" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+            </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
@@ -251,16 +269,16 @@ function LiveBanner() {
             </div>
           </div>
 
-          {/* Simulated chat overlay — compact like a real live chat */}
-          <div className="absolute bottom-16 left-3 w-40 z-10 space-y-0.5 pointer-events-none">
-            {SIMULATED_CHAT.slice(chatIdx, chatIdx + 3).map((msg, i) => (
+          {/* Simulated live chat overlay — looks like real live comments */}
+          <div className="absolute bottom-16 left-3 w-48 z-10 space-y-1 pointer-events-none">
+            {SIMULATED_CHAT.slice(chatIdx, chatIdx + 4).map((msg, i) => (
               <div
                 key={`${chatIdx}-${i}`}
-                className="chat-overlay-glass rounded-md px-1.5 py-0.5 flex items-center gap-1"
-                style={{ opacity: 1 - i * 0.25 }}
+                className="chat-overlay-glass rounded-lg px-2 py-1 flex items-center gap-1.5"
+                style={{ opacity: 1 - i * 0.2, animation: `fade-in 0.3s ease-out` }}
               >
-                <span className="text-[8px] font-bold text-violet-300 whitespace-nowrap">{msg.user}</span>
-                <span className="text-[8px] text-white/80 truncate">{msg.text}</span>
+                <span className={`text-[9px] font-bold ${msg.color} whitespace-nowrap`}>{msg.user}</span>
+                <span className="text-[9px] text-white/90 truncate">{msg.text}</span>
               </div>
             ))}
           </div>
@@ -307,9 +325,11 @@ function LiveBanner() {
           )}
         </div>
       ) : (
-        // No active streams — Go Live promo banner
-        <div className="p-4">
-          <div className="flex items-center gap-4">
+        // No active streams — Go Live promo banner with background image
+        <div className="relative p-4 overflow-hidden">
+          <img src="/images/live-banner.jpg" alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/80" />
+          <div className="relative flex items-center gap-4">
             <div className="relative w-14 h-14 rounded-full flex items-center justify-center bg-gradient-to-br from-red-600 to-fuchsia-600 cosmic-avatar-glow">
               <MonitorUp className="w-6 h-6 text-white" />
             </div>
@@ -1196,107 +1216,142 @@ export function PulseFeed() {
         } : post.user;
         const headerIsCurrentUser = isEcho ? echoerIsCurrentUser : isUserPost;
 
-        // Insert an ad card every 3 posts
-        const showAd = (index + 1) % 3 === 0 && index > 0;
-        const adIndex = Math.floor((index + 1) / 3) - 1;
+        // Insert an ad card every 10-15 posts (randomized interval per ad slot)
+        const AD_INTERVALS = [10, 12, 11, 13, 10, 14, 12, 11, 15, 13];
+        let adSlot = 0;
+        let adThreshold = AD_INTERVALS[0];
+        const showAd = (index + 1) >= adThreshold && (index + 1) === adThreshold;
+        // Calculate which ad slot we're at based on cumulative thresholds
+        let cumThreshold = 0;
+        let currentAdSlot = 0;
+        for (let s = 0; s < AD_INTERVALS.length; s++) {
+          cumThreshold += AD_INTERVALS[s];
+          if ((index + 1) <= cumThreshold) { currentAdSlot = s; break; }
+        }
+        const adIndex = currentAdSlot;
+
         const AD_PROMOS = [
           {
             badge: 'PROMOTED',
             badgeColor: 'bg-teal-600',
-            brand: 'SURGE',
-            brandIcon: <Star className="w-3 h-3" />,
-            image: '/images/ads/surge-can.png',
+            brand: 'SURGE ENERGY',
+            brandIcon: <Zap className="w-3 h-3" />,
+            image: '/images/ads/surge-can.jpg',
             headline: 'Fuel Your Grind',
             subtext: 'Zero sugar. Infinite focus. The energy drink for creators who never stop.',
-            cta: 'Try It',
+            cta: 'Try It Free',
             ctaColor: 'bg-teal-600 hover:bg-teal-500',
-            borderColor: 'border-teal-400/60',
-            neonShadow: '0 0 8px rgba(20,184,166,0.5), 0 0 20px rgba(20,184,166,0.25), 0 0 40px rgba(20,184,166,0.1)',
-            neonShadowHover: '0 0 12px rgba(20,184,166,0.7), 0 0 30px rgba(20,184,166,0.4), 0 0 60px rgba(20,184,166,0.15)',
-          },
-          {
-            badge: 'AD',
-            badgeColor: 'bg-purple-600',
-            brand: 'ZENITH',
-            brandIcon: <Star className="w-3 h-3" />,
-            image: '/images/ads/zenith-hoodie.png',
-            headline: 'Wear the Vibe',
-            subtext: 'Iridescent streetwear that shifts color with your mood. Drop 03 is live now.',
-            cta: 'Explore',
-            ctaColor: 'bg-purple-600 hover:bg-purple-500',
-            borderColor: 'border-purple-400/60',
-            neonShadow: '0 0 8px rgba(147,51,234,0.5), 0 0 20px rgba(147,51,234,0.25), 0 0 40px rgba(147,51,234,0.1)',
-            neonShadowHover: '0 0 12px rgba(147,51,234,0.7), 0 0 30px rgba(147,51,234,0.4), 0 0 60px rgba(147,51,234,0.15)',
+            glowColor: 'teal',
+            borderColor: 'border-teal-300',
+            neonShadow: '0 0 15px rgba(20,184,166,0.8), 0 0 40px rgba(20,184,166,0.5), 0 0 80px rgba(20,184,166,0.25), inset 0 0 15px rgba(20,184,166,0.15)',
+            neonShadowHover: '0 0 20px rgba(20,184,166,1), 0 0 60px rgba(20,184,166,0.7), 0 0 100px rgba(20,184,166,0.35), inset 0 0 20px rgba(20,184,166,0.2)',
           },
           {
             badge: 'SPONSORED',
+            badgeColor: 'bg-purple-600',
+            brand: 'ZENITH APPAREL',
+            brandIcon: <Star className="w-3 h-3" />,
+            image: '/images/ads/zenith-hoodie.jpg',
+            headline: 'Wear the Vibe',
+            subtext: 'Iridescent streetwear that shifts color with your mood. Drop 03 is live now.',
+            cta: 'Shop Now',
+            ctaColor: 'bg-purple-600 hover:bg-purple-500',
+            glowColor: 'purple',
+            borderColor: 'border-purple-300',
+            neonShadow: '0 0 15px rgba(147,51,234,0.8), 0 0 40px rgba(147,51,234,0.5), 0 0 80px rgba(147,51,234,0.25), inset 0 0 15px rgba(147,51,234,0.15)',
+            neonShadowHover: '0 0 20px rgba(147,51,234,1), 0 0 60px rgba(147,51,234,0.7), 0 0 100px rgba(147,51,234,0.35), inset 0 0 20px rgba(147,51,234,0.2)',
+          },
+          {
+            badge: 'AD',
             badgeColor: 'bg-orange-600',
             brand: 'PULSE AUDIO',
-            brandIcon: <Star className="w-3 h-3" />,
-            image: '/images/ads/pulse-audio-headphones.png',
+            brandIcon: <Waves className="w-3 h-3" />,
+            image: '/images/ads/pulse-audio.jpg',
             headline: 'Sound Redefined',
             subtext: 'Spatial audio headphones with AI noise cancellation. Hear what you\'ve been missing.',
             cta: 'Learn More',
             ctaColor: 'bg-orange-600 hover:bg-orange-500',
-            borderColor: 'border-amber-400/60',
-            neonShadow: '0 0 8px rgba(245,158,11,0.5), 0 0 20px rgba(245,158,11,0.25), 0 0 40px rgba(245,158,11,0.1)',
-            neonShadowHover: '0 0 12px rgba(245,158,11,0.7), 0 0 30px rgba(245,158,11,0.4), 0 0 60px rgba(245,158,11,0.15)',
+            glowColor: 'orange',
+            borderColor: 'border-orange-300',
+            neonShadow: '0 0 15px rgba(245,158,11,0.8), 0 0 40px rgba(245,158,11,0.5), 0 0 80px rgba(245,158,11,0.25), inset 0 0 15px rgba(245,158,11,0.15)',
+            neonShadowHover: '0 0 20px rgba(245,158,11,1), 0 0 60px rgba(245,158,11,0.7), 0 0 100px rgba(245,158,11,0.35), inset 0 0 20px rgba(245,158,11,0.2)',
           },
           {
             badge: 'AD',
             badgeColor: 'bg-blue-600',
             brand: 'NOVA KICKS',
-            brandIcon: <Star className="w-3 h-3" />,
-            image: '/images/ads/nova-kicks-sneakers.png',
+            brandIcon: <Sparkles className="w-3 h-3" />,
+            image: '/images/ads/nova-kicks.jpg',
             headline: 'Step Into the Future',
             subtext: 'Limited drop — holographic sole tech. Only 500 pairs made. Get yours before they vanish.',
             cta: 'Shop Drop',
             ctaColor: 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500',
-            borderColor: 'border-blue-400/60',
-            neonShadow: '0 0 8px rgba(59,130,246,0.5), 0 0 20px rgba(59,130,246,0.25), 0 0 40px rgba(59,130,246,0.1)',
-            neonShadowHover: '0 0 12px rgba(59,130,246,0.7), 0 0 30px rgba(59,130,246,0.4), 0 0 60px rgba(59,130,246,0.15)',
+            glowColor: 'blue',
+            borderColor: 'border-blue-300',
+            neonShadow: '0 0 15px rgba(59,130,246,0.8), 0 0 40px rgba(59,130,246,0.5), 0 0 80px rgba(59,130,246,0.25), inset 0 0 15px rgba(59,130,246,0.15)',
+            neonShadowHover: '0 0 20px rgba(59,130,246,1), 0 0 60px rgba(59,130,246,0.7), 0 0 100px rgba(59,130,246,0.35), inset 0 0 20px rgba(59,130,246,0.2)',
           },
         ];
-        const ad = AD_PROMOS[adIndex % AD_PROMOS.length];
+
+        // Check if this post index hits an ad threshold
+        let actualShowAd = false;
+        let actualAdIdx = 0;
+        let cumSum = 0;
+        for (let s = 0; s < AD_INTERVALS.length; s++) {
+          cumSum += AD_INTERVALS[s];
+          if ((index + 1) === cumSum) {
+            actualShowAd = true;
+            actualAdIdx = s;
+            break;
+          }
+        }
+        const ad = AD_PROMOS[actualAdIdx % AD_PROMOS.length];
 
         return (
           <React.Fragment key={isEcho ? `echo-${(post as any)._echoId || post.id}` : post.id}>
-            {/* Ad Card — rich product ad with neon glow matching the ORRA design spec */}
-            {showAd && (
+            {/* Ad Card — realistic company ad with strong glowing neon border */}
+            {actualShowAd && (
               <div
-                className={`rounded-2xl overflow-hidden border-2 ${ad.borderColor} glass-panel transition-all duration-300 cursor-pointer group/ad ad-neon-glow`}
-                style={{ boxShadow: ad.neonShadow }}
+                className={`rounded-2xl overflow-hidden border-[3px] ${ad.borderColor} bg-black/60 backdrop-blur-xl transition-all duration-300 cursor-pointer group/ad`}
+                style={{
+                  boxShadow: ad.neonShadow,
+                  animation: `ad-pulse-${ad.glowColor} 2s ease-in-out infinite alternate`,
+                }}
                 onMouseEnter={(e) => { e.currentTarget.style.boxShadow = ad.neonShadowHover; e.currentTarget.style.animationPlayState = 'paused'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ad.neonShadow; e.currentTarget.style.animationPlayState = 'running'; }}
               >
                 {/* Ad header: badge + brand */}
                 <div className="flex items-center justify-between p-3 pb-0">
-                  <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${ad.badgeColor} text-white text-[10px] font-bold tracking-wider`}>
+                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${ad.badgeColor} text-white text-[10px] font-bold tracking-wider shadow-lg`}>
                     <Megaphone className="w-3 h-3" />
                     {ad.badge}
                   </div>
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 text-white text-[10px] font-bold tracking-wider">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/80 text-white text-[11px] font-bold tracking-wider">
                     {ad.brandIcon}
                     {ad.brand}
                   </div>
                 </div>
                 {/* Ad image */}
-                <div className="relative mx-3 mt-2 rounded-xl overflow-hidden max-h-[220px]">
+                <div className="relative mx-3 mt-2 rounded-xl overflow-hidden max-h-[240px]">
                   <img
                     src={ad.image}
                     alt={ad.brand}
                     className="w-full h-full object-cover group-hover/ad:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.style.display = 'none';
+                    }}
                   />
                 </div>
                 {/* Ad content */}
-                <div className="px-4 pt-3 pb-3">
-                  <h3 className="text-white font-bold text-base mb-1">{ad.headline}</h3>
-                  <p className="text-slate-400 text-xs leading-relaxed mb-3">{ad.subtext}</p>
+                <div className="px-4 pt-3 pb-4">
+                  <h3 className="text-white font-bold text-lg mb-1">{ad.headline}</h3>
+                  <p className="text-slate-300 text-sm leading-relaxed mb-4">{ad.subtext}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500 text-[10px] font-medium tracking-wider">{ad.brand}</span>
-                    <button className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl ${ad.ctaColor} text-white text-xs font-bold transition-all shadow-lg`}>
+                    <span className="text-slate-400 text-[11px] font-semibold tracking-wider uppercase">{ad.brand}</span>
+                    <button className={`flex items-center gap-2 px-5 py-2 rounded-xl ${ad.ctaColor} text-white text-sm font-bold transition-all shadow-xl`}>
                       {ad.cta}
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

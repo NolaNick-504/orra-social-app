@@ -53,3 +53,39 @@ Stage Summary:
 - If there's an error, user sees a manual "Refresh ORRA" button — they control when to refresh
 - The app should never auto-reload on the user again
 - Database data from last night is unfortunately gone (no backups existed) — re-seeded with Nick's account and demo users
+---
+Task ID: 1
+Agent: Main Agent
+Task: Major ORRA app overhaul - 25 realistic bots, profile redesign, live banner, neon ads
+
+Work Log:
+- Generated 25 diverse bot profile avatars using AI image generation (bot01-bot25.jpg)
+- Generated founder-avatar.jpg, profile-cover.jpg, live-banner.jpg
+- Generated 4 realistic product ad images (surge-can.jpg, zenith-hoodie.jpg, pulse-audio.jpg, nova-kicks.jpg)
+- Rewrote prisma/seed.ts with 25 realistic emotion bots:
+  - Each bot has: unique name, handle, meaningful bio, avatar, cover image, location, website, profile song, varied levels/tokens/badges
+  - 61 everyday people posts with real emotions (gratitude, frustration, excitement, nostalgia, humor, hope)
+  - 90 realistic comments, 110 likes, 88 follow relationships
+  - 26 stories, 12 reels, 10 dance entries, 6 hubs, 12 chats, 27 notifications
+- Updated pulse-feed.tsx Live Banner:
+  - Added live-banner.jpg as background/fallback image
+  - Enhanced simulated chat with 10 diverse users, color-coded names, bigger messages
+  - Added image fallback for broken thumbnails
+  - Faster chat rotation (2.5s)
+- Updated ads system in pulse-feed.tsx:
+  - Changed from every 3 posts to every 10-15 posts (varied intervals)
+  - Stronger neon glow borders (3px border, 4-layer box-shadow with inset glow)
+  - Added per-color CSS animation keyframes (ad-pulse-teal/purple/orange/blue)
+  - Updated ad images to use new AI-generated product photos
+  - Larger ad cards with bigger CTA buttons
+- Added CSS keyframes for ad neon pulse animations in globals.css
+- Rebuilt and restarted the app
+
+Stage Summary:
+- 25 bots with profile pictures, bios, songs all working
+- Founder profile has correct bio, badges, location, cover image, profile song
+- Live Banner shows background image with animated live chat
+- Ads display every 10-15 posts with strong glowing neon borders
+- All 61 posts, 90 comments, 110 likes verified in database
+- All static assets (avatars, ads, cover, banner, songs) verified accessible
+- App running on port 3000, Caddy proxy on port 81

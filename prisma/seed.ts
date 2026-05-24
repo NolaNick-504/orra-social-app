@@ -7,247 +7,508 @@ const SALT_ROUNDS = 12;
 const DEFAULT_PASSWORD = 'password123';
 
 // ============================================================
-// Mock user data (from src/lib/data.ts)
+// ORRA Profile Songs (from /public/music/orra/)
+// ============================================================
+const ORRA_SONGS = [
+  { url: '/music/orra/orra-gives-me-everything.mp3', title: 'ORRA Gives Me Everything', artist: 'ORRA' },
+  { url: '/music/orra/like-and-follow.mp3', title: 'Like and Follow', artist: 'ORRA' },
+  { url: '/music/orra/welcome-to-my-page.mp3', title: 'Welcome to My Page', artist: 'ORRA' },
+  { url: '/music/orra/orra.mp3', title: 'ORRA', artist: 'ORRA' },
+  { url: '/music/orra/back-of-the-tracks.mp3', title: 'Back of the Tracks', artist: 'ORRA' },
+];
+
+// ============================================================
+// 25 Realistic Emotion Bots + Founder
 // ============================================================
 
 const mockUsers = [
   // ========================================
-  // FOUNDER ACCOUNT — The ORRA founder
+  // FOUNDER ACCOUNT
   // ========================================
   {
     id: 'founder',
     email: 'nickjoseph8087@gmail.com',
     name: 'Nick Orraceo',
     handle: '@nickorraceo',
-    avatar: '/images/avatars/founder-avatar.jpg',
-    coverImage: '/images/profile-cover.png',
-    bio: 'The architect behind the universe',
+    avatar: '/images/avatars/bots/founder-avatar.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Founder & CEO of ORRA — building the next-gen social universe where creativity meets connection. Turning vision into reality, one pulse at a time. New Orleans born, worldwide impact.',
     location: 'New Orleans, LA',
-    website: 'orra.link/nickorraceo',
+    website: 'orra.app',
     verified: true,
     online: true,
     auraTokens: 100000,
     auraLevel: 51,
     auraXP: 750,
     badges: ['Early Adopter', 'ORRA OG', 'Founder', 'Visionary', 'ORRA Architect'],
+    profileSong: ORRA_SONGS[3], // "ORRA"
   },
+
+  // ========================================
+  // 25 EMOTION BOTS
+  // ========================================
   {
-    id: 'u1',
-    email: 'jessica@orra.app',
-    name: 'Jessica Art',
-    handle: '@jessart',
-    avatar: '/images/avatars/jess-avatar.jpg',
-    verified: true,
-    online: true,
-    auraTokens: 250,
-    auraLevel: 3,
-    badges: ['Top Creator'],
-  },
-  {
-    id: 'u4',
-    email: 'marcus@orra.app',
-    name: 'Marcus Rivera',
-    handle: '@marcusr',
-    avatar: '/images/avatars/marcus-avatar.jpg',
-    verified: true,
-    online: true,
-    auraTokens: 180,
-    auraLevel: 2,
-    badges: [],
-  },
-  {
-    id: 'u10',
-    email: 'lunasky@orra.app',
-    name: 'Luna Sky',
-    handle: '@lunasky',
-    avatar: '/images/avatars/luna-avatar.jpg',
-    verified: true,
+    id: 'bot01',
+    email: 'bot01@orra.app',
+    name: 'Amira Johnson',
+    handle: '@amiraj',
+    avatar: '/images/avatars/bots/bot01.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Pediatric nurse by day, plant mom always. Trying to keep my succulents alive and my heart full. Coffee is a food group.',
+    location: 'Houston, TX',
+    website: 'amiraj.orra.app',
+    verified: false,
     online: true,
     auraTokens: 320,
     auraLevel: 4,
-    badges: ['Trendsetter'],
+    auraXP: 180,
+    badges: ['Early Adopter', 'Plant Parent'],
+    profileSong: ORRA_SONGS[4],
   },
   {
-    id: 'u13',
-    email: 'zara@orra.app',
-    name: 'Zara Miles',
-    handle: '@zaramiles',
-    avatar: '/images/avatars/zara-avatar.jpg',
-    coverImage: '/images/profile-cover.png',
-    bio: 'Fashion & lifestyle | NYC to LA | Living out loud and styling every moment',
-    location: 'Los Angeles, CA',
-    website: 'orra.link/zaramiles',
+    id: 'bot02',
+    email: 'bot02@orra.app',
+    name: 'Devin Mitchell',
+    handle: '@devinmitch',
+    avatar: '/images/avatars/bots/bot02.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'High school football coach. Still think about that one play in 2019. Raising two wild boys and trying to be the man they deserve.',
+    location: 'Birmingham, AL',
+    website: '',
+    verified: false,
+    online: false,
+    auraTokens: 145,
+    auraLevel: 2,
+    auraXP: 90,
+    badges: [],
+    profileSong: ORRA_SONGS[2],
+  },
+  {
+    id: 'bot03',
+    email: 'bot03@orra.app',
+    name: 'Sofia Reyes',
+    handle: '@sofiareyes',
+    avatar: '/images/avatars/bots/bot03.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'First-gen college grad. Marketing coordinator who spends too much on iced matcha. My dog Bruno is my entire personality.',
+    location: 'Phoenix, AZ',
+    website: 'sofiareyes.orra.app',
     verified: true,
     online: true,
-    auraTokens: 410,
-    auraLevel: 5,
-    badges: ['Style Icon'],
+    auraTokens: 480,
+    auraLevel: 6,
+    auraXP: 310,
+    badges: ['Trendsetter', 'Early Adopter'],
+    profileSong: ORRA_SONGS[1],
   },
   {
-    id: 'u14',
-    email: 'jay@orra.app',
-    name: 'Jay Parker',
-    handle: '@jayparker',
-    avatar: '/images/avatars/jay-avatar.jpg',
-    coverImage: '/images/profile-cover.png',
-    bio: 'Gamer & streamer | Competitive FPS | Catch me live on ORRA Prism',
-    location: 'Atlanta, GA',
-    website: 'orra.link/jayparker',
+    id: 'bot04',
+    email: 'bot04@orra.app',
+    name: 'Marcus Rivera',
+    handle: '@marcusr',
+    avatar: '/images/avatars/bots/bot04.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Dance instructor and choreographer. If my body can move, I am creating. Every beat tells a story and I am just trying to translate it.',
+    location: 'Miami, FL',
+    website: 'marcusr.orra.app',
+    verified: true,
+    online: true,
+    auraTokens: 650,
+    auraLevel: 8,
+    auraXP: 420,
+    badges: ['Top Creator', 'Dance King'],
+    profileSong: ORRA_SONGS[0],
+  },
+  {
+    id: 'bot05',
+    email: 'bot05@orra.app',
+    name: 'Raj Patel',
+    handle: '@rajp',
+    avatar: '/images/avatars/bots/bot05.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Software engineer who accidentally became a food blogger. My code compiles, my curries simmer. Life is about balance.',
+    location: 'Austin, TX',
+    website: 'rajp.orra.app',
     verified: false,
     online: true,
-    auraTokens: 150,
-    auraLevel: 2,
-    badges: [],
+    auraTokens: 210,
+    auraLevel: 3,
+    auraXP: 140,
+    badges: ['Foodie Elite'],
+    profileSong: ORRA_SONGS[4],
   },
   {
-    id: 'u15',
-    email: 'maya@orra.app',
+    id: 'bot06',
+    email: 'bot06@orra.app',
+    name: 'Tasha Washington',
+    handle: '@tashawash',
+    avatar: '/images/avatars/bots/bot06.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Hair stylist and salon owner. Been doing hair since I was 12. Your crown is my canvas. Black girl magic is not a trend, it is a lifestyle.',
+    location: 'Atlanta, GA',
+    website: 'tashawash.orra.app',
+    verified: true,
+    online: true,
+    auraTokens: 530,
+    auraLevel: 7,
+    auraXP: 380,
+    badges: ['Style Icon', 'ORRA OG'],
+    profileSong: ORRA_SONGS[1],
+  },
+  {
+    id: 'bot07',
+    email: 'bot07@orra.app',
+    name: 'Chris Nakamura',
+    handle: '@chrisnaka',
+    avatar: '/images/avatars/bots/bot07.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Electrician by trade, gamer by night. My van has more RGB than my PC and I am not sorry about it. Catch me on ORRA Prism at midnight.',
+    location: 'Portland, OR',
+    website: '',
+    verified: false,
+    online: false,
+    auraTokens: 95,
+    auraLevel: 1,
+    auraXP: 55,
+    badges: [],
+    profileSong: ORRA_SONGS[2],
+  },
+  {
+    id: 'bot08',
+    email: 'bot08@orra.app',
+    name: 'Elena Vasquez',
+    handle: '@elenav',
+    avatar: '/images/avatars/bots/bot08.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Wanderlust is my default setting. 23 countries and counting. I collect sunsets and questionable street food. Life is too short for boring meals.',
+    location: 'San Diego, CA',
+    website: 'elenav.orra.app',
+    verified: true,
+    online: true,
+    auraTokens: 390,
+    auraLevel: 5,
+    auraXP: 250,
+    badges: ['Explorer', 'Early Adopter'],
+    profileSong: ORRA_SONGS[4],
+  },
+  {
+    id: 'bot09',
+    email: 'bot09@orra.app',
+    name: 'Donte Jackson',
+    handle: '@dontej',
+    avatar: '/images/avatars/bots/bot09.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Aspiring music producer working out of my bedroom. My mama says my beats slap and she is never wrong. Chicago born, raised on house music.',
+    location: 'Chicago, IL',
+    website: 'dontej.orra.app',
+    verified: false,
+    online: true,
+    auraTokens: 175,
+    auraLevel: 2,
+    auraXP: 110,
+    badges: ['Beat Maker'],
+    profileSong: ORRA_SONGS[0],
+  },
+  {
+    id: 'bot10',
+    email: 'bot10@orra.app',
+    name: 'Luna Kim',
+    handle: '@lunakim',
+    avatar: '/images/avatars/bots/bot10.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Freelance illustrator and cat enthusiast. I draw things that make people feel something. My two cats supervise all my work and they are harsh critics.',
+    location: 'Seattle, WA',
+    website: 'lunakim.art',
+    verified: true,
+    online: true,
+    auraTokens: 420,
+    auraLevel: 5,
+    auraXP: 290,
+    badges: ['Top Creator', 'Art Soul'],
+    profileSong: ORRA_SONGS[3],
+  },
+  {
+    id: 'bot11',
+    email: 'bot11@orra.app',
+    name: 'Terrence Brooks',
+    handle: '@terryb',
+    avatar: '/images/avatars/bots/bot11.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Warehouse supervisor and weekend mechanic. I fix things for a living and for fun. My truck is my baby. Married 15 years, still smiling.',
+    location: 'Memphis, TN',
+    website: '',
+    verified: false,
+    online: false,
+    auraTokens: 80,
+    auraLevel: 1,
+    auraXP: 45,
+    badges: [],
+    profileSong: ORRA_SONGS[4],
+  },
+  {
+    id: 'bot12',
+    email: 'bot12@orra.app',
     name: 'Maya Chen',
     handle: '@mayachen',
-    avatar: '/images/avatars/maya-avatar.jpg',
-    coverImage: '/images/profile-cover.png',
-    bio: 'Food blogger & home chef | Sharing recipes that bring people together',
+    avatar: '/images/avatars/bots/bot12.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Food blogger and home chef. My kitchen is my therapy. Sharing recipes that bring people together because food is love made visible.',
     location: 'San Francisco, CA',
-    website: 'orra.link/mayachen',
+    website: 'mayachen.orra.app',
     verified: true,
     online: false,
     auraTokens: 275,
     auraLevel: 3,
+    auraXP: 200,
     badges: ['Foodie Elite'],
+    profileSong: ORRA_SONGS[2],
   },
   {
-    id: 'u16',
-    email: 'dre@orra.app',
+    id: 'bot13',
+    email: 'bot13@orra.app',
+    name: 'Zara Miles',
+    handle: '@zaramiles',
+    avatar: '/images/avatars/bots/bot13.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Fashion & lifestyle | NYC to LA | Living out loud and styling every moment. Every sidewalk is a runway if you walk with purpose.',
+    location: 'Los Angeles, CA',
+    website: 'zaramiles.orra.app',
+    verified: true,
+    online: true,
+    auraTokens: 410,
+    auraLevel: 5,
+    auraXP: 280,
+    badges: ['Style Icon', 'Trendsetter'],
+    profileSong: ORRA_SONGS[1],
+  },
+  {
+    id: 'bot14',
+    email: 'bot14@orra.app',
+    name: 'Jaylen Parker',
+    handle: '@jayparker',
+    avatar: '/images/avatars/bots/bot14.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Gamer & streamer | Competitive FPS | Catch me live on ORRA Prism. I talk trash but I back it up. Diamond rank or nothing.',
+    location: 'Atlanta, GA',
+    website: 'jayparker.orra.app',
+    verified: false,
+    online: true,
+    auraTokens: 150,
+    auraLevel: 2,
+    auraXP: 95,
+    badges: [],
+    profileSong: ORRA_SONGS[0],
+  },
+  {
+    id: 'bot15',
+    email: 'bot15@orra.app',
     name: 'Dre Williams',
     handle: '@drewilliams',
-    avatar: '/images/avatars/dre-avatar.jpg',
-    coverImage: '/images/profile-cover.png',
-    bio: 'Music producer & DJ | Beats that move the culture | ORRA Dance Off judge',
+    avatar: '/images/avatars/bots/bot15.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Music producer & DJ | Beats that move the culture. Been in the studio since I was 15. Chicago raised me, music saved me.',
     location: 'Chicago, IL',
-    website: 'orra.link/drewilliams',
+    website: 'drewilliams.orra.app',
     verified: true,
     online: true,
     auraTokens: 500,
     auraLevel: 6,
+    auraXP: 350,
     badges: ['Beat Maker', 'Judge'],
+    profileSong: ORRA_SONGS[0],
   },
   {
-    id: 'u2',
-    email: 'david@orra.app',
-    name: 'David Chen',
-    handle: '@davchen',
-    avatar: '/images/avatars/david-avatar.jpg',
-    verified: false,
-    online: true,
-    auraTokens: 0,
-    auraLevel: 1,
-    badges: [],
-  },
-  {
-    id: 'u3',
-    email: 'sarah@orra.app',
-    name: 'Sarah Kim',
-    handle: '@sarahkim',
-    avatar: '/images/avatars/sarah-avatar.jpg',
-    verified: false,
-    online: false,
-    auraTokens: 0,
-    auraLevel: 1,
-    badges: [],
-  },
-  {
-    id: 'u5',
-    email: 'elena@orra.app',
-    name: 'Elena Rodriguez',
-    handle: '@elenarod',
-    avatar: '/images/avatars/elena-avatar.jpg',
-    verified: false,
-    online: false,
-    auraTokens: 0,
-    auraLevel: 1,
-    badges: [],
-  },
-  {
-    id: 'u6',
-    email: 'techdaily@orra.app',
-    name: 'Tech Daily',
-    handle: '@techdaily',
-    avatar: '/images/avatars/tech-avatar.jpg',
-    verified: true,
-    online: false,
-    auraTokens: 0,
-    auraLevel: 1,
-    badges: [],
-  },
-  {
-    id: 'u7',
-    email: 'wellness@orra.app',
-    name: 'Wellness Guru',
-    handle: '@wellnessg',
-    avatar: '/images/avatars/wellness-avatar.jpg',
+    id: 'bot16',
+    email: 'bot16@orra.app',
+    name: 'Nia Okafor',
+    handle: '@niaokafor',
+    avatar: '/images/avatars/bots/bot16.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Yoga instructor and wellness advocate. Healing is not linear and that is okay. Be gentle with yourself today. Breath first, everything else second.',
+    location: 'Denver, CO',
+    website: 'niaokafor.orra.app',
     verified: true,
     online: true,
-    auraTokens: 0,
-    auraLevel: 1,
-    badges: [],
+    auraTokens: 340,
+    auraLevel: 4,
+    auraXP: 230,
+    badges: ['Wellness Warrior'],
+    profileSong: ORRA_SONGS[3],
   },
   {
-    id: 'u8',
-    email: 'cyberdrift@orra.app',
-    name: 'Cyber Drifter',
-    handle: '@cyberdrift',
-    avatar: '/images/avatars/cyber-avatar.jpg',
+    id: 'bot17',
+    email: 'bot17@orra.app',
+    name: 'Trevon Harris',
+    handle: '@trevonh',
+    avatar: '/images/avatars/bots/bot17.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Community college student figuring it out. Some days I feel like I am failing, other days I know I am just growing. Either way, I keep showing up.',
+    location: 'Detroit, MI',
+    website: '',
     verified: false,
     online: false,
-    auraTokens: 0,
+    auraTokens: 60,
     auraLevel: 1,
+    auraXP: 35,
     badges: [],
+    profileSong: ORRA_SONGS[2],
   },
   {
-    id: 'u9',
-    email: 'musiccentral@orra.app',
-    name: 'Music Central',
-    handle: '@musiccentral',
-    avatar: '/images/avatars/music-avatar.jpg',
+    id: 'bot18',
+    email: 'bot18@orra.app',
+    name: 'Isla Brennan',
+    handle: '@islabrennan',
+    avatar: '/images/avatars/bots/bot18.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Barista by morning, poet by midnight. Words are the only thing that have never let me down. Currently writing my first chapbook.',
+    location: 'Minneapolis, MN',
+    website: 'islabrennan.orra.app',
+    verified: false,
+    online: true,
+    auraTokens: 190,
+    auraLevel: 2,
+    auraXP: 130,
+    badges: ['Word Smith'],
+    profileSong: ORRA_SONGS[3],
+  },
+  {
+    id: 'bot19',
+    email: 'bot19@orra.app',
+    name: 'Kai Tanaka',
+    handle: '@kaitanaka',
+    avatar: '/images/avatars/bots/bot19.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Skater, artist, chaos enthusiast. I paint decks and break bones. The road rash is worth it. Living life on the edge of a grip tape.',
+    location: 'Sacramento, CA',
+    website: 'kaitanaka.orra.app',
+    verified: false,
+    online: true,
+    auraTokens: 230,
+    auraLevel: 3,
+    auraXP: 160,
+    badges: ['Thrill Seeker'],
+    profileSong: ORRA_SONGS[4],
+  },
+  {
+    id: 'bot20',
+    email: 'bot20@orra.app',
+    name: 'Brianna Taylor',
+    handle: '@briannt',
+    avatar: '/images/avatars/bots/bot20.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Single mom, full-time accountant, part-time superhero. My kids think I am cool and that is the only validation I need. Also I make killer mac and cheese.',
+    location: 'Charlotte, NC',
+    website: '',
+    verified: false,
+    online: false,
+    auraTokens: 110,
+    auraLevel: 1,
+    auraXP: 70,
+    badges: [],
+    profileSong: ORRA_SONGS[2],
+  },
+  {
+    id: 'bot21',
+    email: 'bot21@orra.app',
+    name: 'Omar Hassan',
+    handle: '@omarhassan',
+    avatar: '/images/avatars/bots/bot21.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Architecture student with too many sketches and not enough sleep. Dreaming in blueprints. Every building tells a story, I want to write them.',
+    location: 'Philadelphia, PA',
+    website: 'omarhassan.orra.app',
+    verified: false,
+    online: true,
+    auraTokens: 165,
+    auraLevel: 2,
+    auraXP: 100,
+    badges: ['Dreamer'],
+    profileSong: ORRA_SONGS[1],
+  },
+  {
+    id: 'bot22',
+    email: 'bot22@orra.app',
+    name: 'Rosa Delgado',
+    handle: '@rosadelgado',
+    avatar: '/images/avatars/bots/bot22.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Retired teacher, professional gardener, amateur comedian. My grandkids say I am dramatic and they are absolutely right. Life is too short to be subtle.',
+    location: 'San Antonio, TX',
+    website: '',
+    verified: false,
+    online: true,
+    auraTokens: 200,
+    auraLevel: 2,
+    auraXP: 120,
+    badges: ['Golden Heart'],
+    profileSong: ORRA_SONGS[4],
+  },
+  {
+    id: 'bot23',
+    email: 'bot23@orra.app',
+    name: 'Liam O\'Connor',
+    handle: '@liamoconnor',
+    avatar: '/images/avatars/bots/bot23.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'Firefighter and amateur chef. I run into burning buildings and then go home and make risotto. Adrenaline and butter, that is my love language.',
+    location: 'Boston, MA',
+    website: '',
+    verified: true,
+    online: false,
+    auraTokens: 285,
+    auraLevel: 3,
+    auraXP: 190,
+    badges: ['Hero', 'Foodie Elite'],
+    profileSong: ORRA_SONGS[0],
+  },
+  {
+    id: 'bot24',
+    email: 'bot24@orra.app',
+    name: 'Jade Thompson',
+    handle: '@jadethompson',
+    avatar: '/images/avatars/bots/bot24.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'College athlete turned personal trainer. I believe in showing up even when you do not want to. Your only competition is who you were yesterday.',
+    location: 'Nashville, TN',
+    website: 'jadethompson.orra.app',
     verified: true,
     online: true,
-    auraTokens: 0,
-    auraLevel: 1,
-    badges: [],
+    auraTokens: 360,
+    auraLevel: 4,
+    auraXP: 240,
+    badges: ['Fitness First', 'Motivator'],
+    profileSong: ORRA_SONGS[1],
   },
   {
-    id: 'u11',
-    email: 'kaistorm@orra.app',
-    name: 'Kai Storm',
-    handle: '@kaistorm',
-    avatar: '/images/avatars/kai-avatar.jpg',
-    verified: false,
-    online: false,
-    auraTokens: 0,
-    auraLevel: 1,
-    badges: [],
-  },
-  {
-    id: 'u12',
-    email: 'novablaze@orra.app',
-    name: 'Nova Blaze',
-    handle: '@novablaze',
-    avatar: '/images/avatars/nova-avatar.jpg',
+    id: 'bot25',
+    email: 'bot25@orra.app',
+    name: 'Ethan Park',
+    handle: '@ethanpark',
+    avatar: '/images/avatars/bots/bot25.jpg',
+    coverImage: '/images/profile-cover.jpg',
+    bio: 'High school math teacher who makes dank memes on the side. Yes I am the teacher students actually like. No I will not bump your grade.',
+    location: 'Columbus, OH',
+    website: 'ethanpark.orra.app',
     verified: false,
     online: true,
-    auraTokens: 0,
-    auraLevel: 1,
-    badges: [],
+    auraTokens: 255,
+    auraLevel: 3,
+    auraXP: 170,
+    badges: ['Meme Lord'],
+    profileSong: ORRA_SONGS[3],
   },
 ];
 
-// Feed posts data
+// ============================================================
+// POSTS — 50+ everyday people content
+// ============================================================
+
 const feedPosts = [
-  // Founder's welcome post — pinned, highest engagement
+  // ---- Founder posts ----
   {
     id: 'p0founder',
     authorId: 'founder',
-    text: 'Welcome to ORRA! This is the future of social media — real connections, real content, real rewards. We are just getting started. The best is yet to come! 🌍✨',
+    text: 'Welcome to ORRA! This is the future of social media — real connections, real content, real rewards. We are just getting started. The best is yet to come!',
     images: [],
     likesCount: 50000,
     commentsCount: 2500,
@@ -256,53 +517,94 @@ const feedPosts = [
     type: 'text',
   },
   {
-    id: 'p0a',
-    authorId: 'u16',
-    text: 'Welcome to ORRA! This is the future of social media — real connections, real content, real rewards. We are just getting started. The best is yet to come!',
+    id: 'p0founder2',
+    authorId: 'founder',
+    text: 'Late night in the studio working on something special for the ORRA community. The updates coming this month are going to change everything. Stay tuned.',
+    images: ['/images/posts/sunset1.jpg'],
+    likesCount: 32400,
+    commentsCount: 1800,
+    sharesCount: 7200,
+    vibeTag: 'focused',
+    type: 'image',
+  },
+
+  // ---- Amira (bot01) — nurse, plant mom ----
+  {
+    id: 'p01a',
+    authorId: 'bot01',
+    text: '12 hour shift done and my snake plant is still alive. Honestly one of those days where the little wins are everything. Grateful for my coworkers who kept me sane today.',
     images: [],
-    likesCount: 25000,
+    likesCount: 845,
+    commentsCount: 67,
+    sharesCount: 23,
+    vibeTag: 'chill',
+    type: 'text',
+  },
+  {
+    id: 'p01b',
+    authorId: 'bot01',
+    text: 'My patient today told me I made her hospital stay bearable. I almost cried right there at the nurses station. This is why I do what I do.',
+    images: ['/images/posts/art1.jpg'],
+    likesCount: 2100,
+    commentsCount: 189,
+    sharesCount: 340,
+    vibeTag: 'peaceful',
+    type: 'image',
+  },
+
+  // ---- Devin (bot02) — football coach, dad ----
+  {
+    id: 'p02a',
+    authorId: 'bot02',
+    text: 'One of my kids asked me if I ever get tired of coaching. Told him I get tired of LOSING. But seriously, watching these boys grow into young men makes every 5 AM worth it.',
+    images: ['/images/posts/sports1.jpg'],
+    likesCount: 1567,
+    commentsCount: 98,
+    sharesCount: 45,
+    vibeTag: 'focused',
+    type: 'image',
+  },
+  {
+    id: 'p02b',
+    authorId: 'bot02',
+    text: 'My youngest just beat me in Madden. I am not even mad, I am terrified for the future. This kid has no mercy.',
+    images: [],
+    likesCount: 4200,
+    commentsCount: 312,
+    sharesCount: 890,
+    vibeTag: 'laughing',
+    type: 'text',
+  },
+
+  // ---- Sofia (bot03) — marketing, matcha, dog ----
+  {
+    id: 'p03a',
+    authorId: 'bot03',
+    text: 'Bruno ate my favorite sandals and I still kissed him goodnight. This is what unconditional love looks like and it is embarrassing.',
+    images: ['/images/posts/sunset1.jpg'],
+    likesCount: 5600,
+    commentsCount: 234,
+    sharesCount: 670,
+    vibeTag: 'laughing',
+    type: 'image',
+  },
+  {
+    id: 'p03b',
+    authorId: 'bot03',
+    text: 'First gen grads, where you at? Just paid off my last student loan and I am literally crying at my desk. Three jobs, no sleep, but we made it. Mama, we made it.',
+    images: [],
+    likesCount: 18500,
     commentsCount: 1200,
-    sharesCount: 5000,
+    sharesCount: 4500,
     vibeTag: 'hyped',
     type: 'text',
   },
+
+  // ---- Marcus (bot04) — dance instructor ----
   {
-    id: 'p0b',
-    authorId: 'u13',
-    text: 'Style is not about the clothes you wear — it is about how you carry yourself. New lookbook dropping this week, stay tuned! Fashion is my love language and ORRA is my runway.',
-    images: ['/images/posts/aura-hq.jpg'],
-    likesCount: 18500,
-    commentsCount: 890,
-    sharesCount: 3200,
-    vibeTag: 'dramatic',
-    type: 'image',
-  },
-  {
-    id: 'p1',
-    authorId: 'u1',
-    text: 'Just finished my latest digital art piece! The neon aesthetic is everything — spent 12 hours on this one and every minute was worth it. What do you think?',
-    images: ['/images/posts/art1.jpg'],
-    likesCount: 2341,
-    commentsCount: 189,
-    sharesCount: 67,
-    vibeTag: 'dramatic',
-    type: 'image',
-  },
-  {
-    id: 'p2',
-    authorId: 'u6',
-    text: 'Breaking: AI achieves new milestone in creative generation. The future is here and it is mind-blowing. This changes everything we know about content creation and digital art.',
-    images: [],
-    likesCount: 8912,
-    commentsCount: 456,
-    sharesCount: 1234,
-    vibeTag: 'focused',
-    type: 'text',
-  },
-  {
-    id: 'p3',
-    authorId: 'u4',
-    text: 'Dance practice went hard today! New choreo dropping this weekend — you do not want to miss this one. Been working on something special for the ORRA Dance Off!',
+    id: 'p04a',
+    authorId: 'bot04',
+    text: 'Dance practice went hard today! New choreo dropping this weekend. Been working on something special for the ORRA Dance Off!',
     images: ['/images/posts/dance1.jpg', '/images/posts/dance2.jpg'],
     likesCount: 5678,
     commentsCount: 234,
@@ -311,64 +613,46 @@ const feedPosts = [
     type: 'image',
   },
   {
-    id: 'p4',
-    authorId: 'u5',
-    text: 'Sunset vibes from Barcelona! Travel changes your perspective on everything. Every corner of this city tells a story, and I am here for all of it.',
-    images: ['/images/posts/sunset1.jpg'],
-    likesCount: 3456,
-    commentsCount: 123,
-    sharesCount: 89,
-    vibeTag: 'chill',
-    type: 'image',
-  },
-  {
-    id: 'p5',
-    authorId: 'u7',
-    text: 'Morning routine tip: Start with 5 minutes of breathwork before checking your phone. Game changer for mental clarity. Your mind will thank you, trust me on this one.',
-    images: [],
-    likesCount: 1567,
-    commentsCount: 98,
-    sharesCount: 234,
+    id: 'p04b',
+    authorId: 'bot04',
+    text: 'One of my students just nailed a routine she has been struggling with for weeks. The look on her face was everything. This is why I teach.',
+    images: ['/images/posts/dance1.jpg'],
+    likesCount: 3400,
+    commentsCount: 178,
+    sharesCount: 120,
     vibeTag: 'peaceful',
-    type: 'text',
-  },
-  {
-    id: 'p6',
-    authorId: 'u9',
-    text: 'NEW TRACK ALERT! Just dropped "Neon Dreams" — this is the official track for the ORRA Dance Off 2027 challenge! Link in bio! Let us see those moves!',
-    images: ['/images/posts/album1.jpg'],
-    likesCount: 7890,
-    commentsCount: 567,
-    sharesCount: 890,
-    vibeTag: 'hyped',
     type: 'image',
   },
+
+  // ---- Raj (bot05) — software engineer, food blogger ----
   {
-    id: 'p7',
-    authorId: 'u8',
-    text: 'When your WiFi dies mid-game and you just stare at the screen like... RIP my killstreak. Anyone else been there? 😂😭',
-    images: ['/images/posts/game1.jpg', '/images/posts/game2.jpg'],
-    likesCount: 4523,
-    commentsCount: 345,
-    sharesCount: 567,
+    id: 'p05a',
+    authorId: 'bot05',
+    text: 'My code works! *changes nothing* My code does not work... Welcome to programming! Also I made butter chicken from scratch tonight so at least one thing went right today.',
+    images: ['/images/posts/food1.jpg'],
+    likesCount: 7800,
+    commentsCount: 456,
+    sharesCount: 1200,
     vibeTag: 'laughing',
     type: 'image',
   },
   {
-    id: 'p8',
-    authorId: 'u10',
-    text: 'Just hit 1 million ORRA tokens! From zero to hero in 6 months. The secret? Consistency, authentic content, and always showing up for the community. Dream big, grind harder!',
+    id: 'p05b',
+    authorId: 'bot05',
+    text: 'Deployed my first smart contract today! The decentralized web is the future and I am here for it. Web3 developers, where you at?',
     images: [],
-    likesCount: 12340,
-    commentsCount: 890,
-    sharesCount: 2100,
-    vibeTag: 'hyped',
+    likesCount: 3200,
+    commentsCount: 234,
+    sharesCount: 567,
+    vibeTag: 'focused',
     type: 'text',
   },
+
+  // ---- Tasha (bot06) — hair stylist ----
   {
-    id: 'p9',
-    authorId: 'u13',
-    text: 'Just dropped my summer lookbook and I am obsessed with every single fit! From streetwear to couture, this season is all about mixing highs and lows. Which look is your favorite?',
+    id: 'p06a',
+    authorId: 'bot06',
+    text: 'Client walked in with a Pinterest board and said "I trust you." That is the highest compliment a stylist can get. Came out looking like a whole different woman.',
     images: ['/images/posts/fashion1.jpg'],
     likesCount: 8900,
     commentsCount: 567,
@@ -377,20 +661,142 @@ const feedPosts = [
     type: 'image',
   },
   {
-    id: 'p10',
-    authorId: 'u14',
-    text: 'CLUTCH WIN! Just hit a 1v5 in ranked and my whole squad went crazy. Streaming the rest of the session live on ORRA Prism — come watch the chaos unfold!',
-    images: [],
-    likesCount: 6700,
-    commentsCount: 423,
-    sharesCount: 890,
+    id: 'p06b',
+    authorId: 'bot06',
+    text: 'Six years ago I was renting a chair in someone else shop. Today I signed the lease on my SECOND salon location. Never let anyone tell you your dream is too big.',
+    images: ['/images/posts/art1.jpg'],
+    likesCount: 24500,
+    commentsCount: 1800,
+    sharesCount: 5600,
     vibeTag: 'hyped',
-    type: 'text',
+    type: 'image',
+  },
+
+  // ---- Chris (bot07) — electrician, gamer ----
+  {
+    id: 'p07a',
+    authorId: 'bot07',
+    text: 'When your WiFi dies mid-game and you just stare at the screen like... RIP my killstreak. Anyone else been there?',
+    images: ['/images/posts/game1.jpg', '/images/posts/game2.jpg'],
+    likesCount: 6700,
+    commentsCount: 345,
+    sharesCount: 567,
+    vibeTag: 'laughing',
+    type: 'image',
   },
   {
-    id: 'p11',
-    authorId: 'u15',
-    text: 'Made authentic hand-pulled noodles from scratch today! The secret is the dough resting time — 2 hours minimum. Recipe dropping tomorrow on my page. Your taste buds will thank you!',
+    id: 'p07b',
+    authorId: 'bot07',
+    text: 'Just rewired my entire gaming setup with custom LEDs. My electricity bill is going to be a problem but my setup is going to be UNREAL.',
+    images: ['/images/posts/game2.jpg'],
+    likesCount: 2300,
+    commentsCount: 145,
+    sharesCount: 89,
+    vibeTag: 'hyped',
+    type: 'image',
+  },
+
+  // ---- Elena (bot08) — traveler ----
+  {
+    id: 'p08a',
+    authorId: 'bot08',
+    text: 'Sunset vibes from Barcelona! Travel changes your perspective on everything. Every corner of this city tells a story, and I am here for all of it.',
+    images: ['/images/posts/sunset1.jpg'],
+    likesCount: 4500,
+    commentsCount: 189,
+    sharesCount: 340,
+    vibeTag: 'chill',
+    type: 'image',
+  },
+  {
+    id: 'p08b',
+    authorId: 'bot08',
+    text: 'Got lost in the streets of Lisbon at 2 AM and found the most incredible live music in a basement bar. The best moments are never planned.',
+    images: ['/images/posts/sunset2.jpg'],
+    likesCount: 6800,
+    commentsCount: 312,
+    sharesCount: 890,
+    vibeTag: 'chill',
+    type: 'image',
+  },
+
+  // ---- Donte (bot09) — aspiring producer ----
+  {
+    id: 'p09a',
+    authorId: 'bot09',
+    text: 'NEW TRACK ALERT! Just dropped my latest beat. This one samples 4 different genres. Hip-hop meets jazz meets electronic meets soul. Preview coming tonight!',
+    images: ['/images/posts/album1.jpg'],
+    likesCount: 2300,
+    commentsCount: 167,
+    sharesCount: 234,
+    vibeTag: 'hyped',
+    type: 'image',
+  },
+  {
+    id: 'p09b',
+    authorId: 'bot09',
+    text: 'Studio session went until 4 AM. My neighbors probably hate me but this beat is going to shake the culture. Mama said my beats slap and she is never wrong.',
+    images: [],
+    likesCount: 1800,
+    commentsCount: 123,
+    sharesCount: 178,
+    vibeTag: 'focused',
+    type: 'text',
+  },
+
+  // ---- Luna (bot10) — illustrator, cats ----
+  {
+    id: 'p10a',
+    authorId: 'bot10',
+    text: 'Just finished my latest digital art piece! Spent 12 hours on this one and every minute was worth it. My cats knocked over my coffee twice but we made it through.',
+    images: ['/images/posts/art1.jpg'],
+    likesCount: 3400,
+    commentsCount: 234,
+    sharesCount: 89,
+    vibeTag: 'dramatic',
+    type: 'image',
+  },
+  {
+    id: 'p10b',
+    authorId: 'bot10',
+    text: 'Art block is REAL. Been staring at a blank canvas for 2 hours. Send help, inspiration, or snacks. Preferably all three.',
+    images: [],
+    likesCount: 5600,
+    commentsCount: 423,
+    sharesCount: 678,
+    vibeTag: 'laughing',
+    type: 'text',
+  },
+
+  // ---- Terrence (bot11) — mechanic ----
+  {
+    id: 'p11a',
+    authorId: 'bot11',
+    text: 'Finally got the truck running right after 3 weekends in the garage. There is something about fixing things with your own hands that you just cannot get anywhere else.',
+    images: ['/images/posts/sports1.jpg'],
+    likesCount: 980,
+    commentsCount: 67,
+    sharesCount: 23,
+    vibeTag: 'chill',
+    type: 'image',
+  },
+  {
+    id: 'p11b',
+    authorId: 'bot11',
+    text: 'Wife asked me to fix the dishwasher. I fixed it. Then I broke it again. Then I fixed it again. The dishwasher and I are in a complicated relationship.',
+    images: [],
+    likesCount: 8900,
+    commentsCount: 567,
+    sharesCount: 2100,
+    vibeTag: 'laughing',
+    type: 'text',
+  },
+
+  // ---- Maya (bot12) — food blogger ----
+  {
+    id: 'p12a',
+    authorId: 'bot12',
+    text: 'Made authentic hand-pulled noodles from scratch today! The secret is the dough resting time — 2 hours minimum. Your taste buds will thank you.',
     images: ['/images/posts/food1.jpg'],
     likesCount: 5400,
     commentsCount: 345,
@@ -399,9 +805,70 @@ const feedPosts = [
     type: 'image',
   },
   {
-    id: 'p12',
-    authorId: 'u16',
-    text: 'Just finished producing a beat that samples 4 different genres in one track. Hip-hop meets jazz meets electronic meets soul. This one is going to shake the culture. Preview coming tonight!',
+    id: 'p12b',
+    authorId: 'bot12',
+    text: 'Food hack: freeze your grapes. Trust me on this one — they become like little sorbet bites. Perfect summer snack. You can thank me later!',
+    images: ['/images/posts/food2.jpg'],
+    likesCount: 6200,
+    commentsCount: 456,
+    sharesCount: 1890,
+    vibeTag: 'chill',
+    type: 'image',
+  },
+
+  // ---- Zara (bot13) — fashion ----
+  {
+    id: 'p13a',
+    authorId: 'bot13',
+    text: 'Just dropped my summer lookbook and I am obsessed with every single fit! From streetwear to couture, this season is all about mixing highs and lows.',
+    images: ['/images/posts/fashion1.jpg'],
+    likesCount: 8900,
+    commentsCount: 567,
+    sharesCount: 1234,
+    vibeTag: 'dramatic',
+    type: 'image',
+  },
+  {
+    id: 'p13b',
+    authorId: 'bot13',
+    text: 'Met Gala inspired look — ORRA edition. Who says you need a red carpet to serve looks? Style is attitude, not labels.',
+    images: ['/images/posts/fashion2.jpg'],
+    likesCount: 19800,
+    commentsCount: 1340,
+    sharesCount: 4500,
+    vibeTag: 'dramatic',
+    type: 'image',
+  },
+
+  // ---- Jaylen (bot14) — gamer ----
+  {
+    id: 'p14a',
+    authorId: 'bot14',
+    text: 'CLUTCH WIN! Just hit a 1v5 in ranked and my whole squad went crazy. Streaming the rest of the session live on ORRA Prism!',
+    images: [],
+    likesCount: 6700,
+    commentsCount: 423,
+    sharesCount: 890,
+    vibeTag: 'hyped',
+    type: 'text',
+  },
+  {
+    id: 'p14b',
+    authorId: 'bot14',
+    text: 'Just hit Diamond rank in TWO games in the same week! The grind is real but the payoff is sweeter. Who else out here chasing ranks?',
+    images: ['/images/posts/game1.jpg'],
+    likesCount: 4500,
+    commentsCount: 312,
+    sharesCount: 432,
+    vibeTag: 'hyped',
+    type: 'image',
+  },
+
+  // ---- Dre (bot15) — producer/DJ ----
+  {
+    id: 'p15a',
+    authorId: 'bot15',
+    text: 'Just finished producing a beat that samples 4 different genres in one track. Hip-hop meets jazz meets electronic meets soul. Preview coming tonight!',
     images: [],
     likesCount: 9800,
     commentsCount: 678,
@@ -409,165 +876,95 @@ const feedPosts = [
     vibeTag: 'hyped',
     type: 'text',
   },
-  // New posts to make the feed look live
   {
-    id: 'p13',
-    authorId: 'u2',
-    text: 'Deployed my first smart contract today! The decentralized web is the future and I am here for it. Web3 developers, where you at? Let us build something amazing together.',
-    images: [],
-    likesCount: 3200,
-    commentsCount: 234,
-    sharesCount: 567,
-    vibeTag: 'focused',
-    type: 'text',
-  },
-  {
-    id: 'p14',
-    authorId: 'u3',
-    text: 'Golden hour at the beach is my therapy. No notifications, no deadlines, just waves and peace. Everyone needs a moment like this. Take a breath, you deserve it.',
-    images: ['/images/posts/sunset1.jpg'],
-    likesCount: 7800,
-    commentsCount: 456,
-    sharesCount: 890,
-    vibeTag: 'peaceful',
-    type: 'image',
-  },
-  {
-    id: 'p15',
-    authorId: 'u10',
-    text: 'Pop-up shop in SoHo this weekend! Exclusively on ORRA first — my new streetwear collab with Nova Blaze. Limited drops, first come first serve. Set your reminders NOW!',
-    images: ['/images/posts/fashion1.jpg'],
-    likesCount: 14200,
-    commentsCount: 980,
-    sharesCount: 3400,
-    vibeTag: 'hyped',
-    type: 'image',
-  },
-  {
-    id: 'p16',
-    authorId: 'u7',
-    text: '5 yoga poses that actually cure desk posture. I have been teaching these for 10 years and they never fail. Save this for later — your back will thank you. Full video on my page.',
-    images: [],
-    likesCount: 6100,
-    commentsCount: 389,
-    sharesCount: 1200,
-    vibeTag: 'peaceful',
-    type: 'text',
-  },
-  {
-    id: 'p17',
-    authorId: 'u14',
-    text: 'Just hit Diamond rank in TWO games in the same week! The grind is real but the payoff is sweeter. Who else out here chasing ranks? Drop your current rank below!',
-    images: ['/images/posts/game1.jpg'],
-    likesCount: 5600,
-    commentsCount: 789,
-    sharesCount: 432,
-    vibeTag: 'hyped',
-    type: 'image',
-  },
-  {
-    id: 'p18',
-    authorId: 'u15',
-    text: 'Made ramen from scratch — 48 hour broth, handmade noodles, chashu pork that melts in your mouth. This took 3 days but it was absolutely worth every single minute.',
-    images: ['/images/posts/food1.jpg'],
-    likesCount: 8900,
-    commentsCount: 567,
-    sharesCount: 1234,
-    vibeTag: 'chill',
-    type: 'image',
-  },
-  {
-    id: 'p19',
-    authorId: 'u16',
-    text: 'Studio session went CRAZY last night. 6 beats in one session, all fire. The album is coming together and I cannot wait for yall to hear this. ORRA exclusive preview dropping soon!',
-    images: [],
+    id: 'p15b',
+    authorId: 'bot15',
+    text: 'Studio session went CRAZY last night. 6 beats in one session, all fire. The album is coming together and I cannot wait for yall to hear this.',
+    images: ['/images/posts/album1.jpg'],
     likesCount: 11000,
     commentsCount: 890,
     sharesCount: 2300,
     vibeTag: 'hyped',
+    type: 'image',
+  },
+
+  // ---- Nia (bot16) — yoga ----
+  {
+    id: 'p16a',
+    authorId: 'bot16',
+    text: 'Morning routine tip: Start with 5 minutes of breathwork before checking your phone. Game changer for mental clarity. Your mind will thank you.',
+    images: [],
+    likesCount: 1567,
+    commentsCount: 98,
+    sharesCount: 234,
+    vibeTag: 'peaceful',
     type: 'text',
   },
   {
-    id: 'p20',
-    authorId: 'u1',
-    text: 'New mural finished! Took 3 weeks and 47 cans of spray paint. This is my biggest piece yet and every spray told a story. Art is how I speak when words are not enough.',
-    images: ['/images/posts/art1.jpg'],
-    likesCount: 4500,
-    commentsCount: 312,
-    sharesCount: 678,
-    vibeTag: 'dramatic',
+    id: 'p16b',
+    authorId: 'bot16',
+    text: 'Meditation challenge: 21 days, 10 minutes a day. Day 14 and I already feel like a completely different person. Better sleep, less anxiety, more clarity.',
+    images: ['/images/posts/sunset1.jpg'],
+    likesCount: 3800,
+    commentsCount: 234,
+    sharesCount: 890,
+    vibeTag: 'peaceful',
     type: 'image',
   },
+
+  // ---- Trevon (bot17) — college student ----
   {
-    id: 'p21',
-    authorId: 'u4',
-    text: 'Master class dropping next week! Learn my signature move — the Prism Glide. Breaking it down step by step so anyone can learn it. Beginners welcome, no experience needed!',
-    images: ['/images/posts/dance1.jpg'],
-    likesCount: 9300,
-    commentsCount: 678,
-    sharesCount: 1567,
-    vibeTag: 'hyped',
-    type: 'image',
+    id: 'p17a',
+    authorId: 'bot17',
+    text: 'Failed my calculus midterm. Again. But I showed up to class today and that counts for something, right? Just trying to keep going even when it feels impossible.',
+    images: [],
+    likesCount: 1200,
+    commentsCount: 145,
+    sharesCount: 56,
+    vibeTag: 'chill',
+    type: 'text',
   },
   {
-    id: 'p22',
-    authorId: 'u6',
-    text: 'This AI just generated a full album in 30 seconds and honestly some of the tracks are genuinely good. Are we watching the birth of a new genre or the death of human creativity? Discuss.',
+    id: 'p17b',
+    authorId: 'bot17',
+    text: 'My professor pulled me aside today and said she sees me trying. She told me to keep going. Sometimes one sentence from someone who believes in you changes everything.',
     images: [],
     likesCount: 15600,
-    commentsCount: 1200,
-    sharesCount: 4500,
-    vibeTag: 'focused',
+    commentsCount: 1100,
+    sharesCount: 4200,
+    vibeTag: 'peaceful',
+    type: 'text',
+  },
+
+  // ---- Isla (bot18) — poet ----
+  {
+    id: 'p18a',
+    authorId: 'bot18',
+    text: 'new poem:\n\ni keep rewriting the same letter\nin different handwriting\nhoping the words will finally\nsound like\nthe truth\n\nmaybe the ink is tired too',
+    images: [],
+    likesCount: 4100,
+    commentsCount: 267,
+    sharesCount: 890,
+    vibeTag: 'dramatic',
     type: 'text',
   },
   {
-    id: 'p23',
-    authorId: 'u5',
-    text: 'Hidden gem in Lisbon — this cafe has the best pastel de nata I have ever tasted. Travel is the only thing you buy that makes you richer. Who has been to Portugal?',
-    images: ['/images/posts/sunset1.jpg'],
-    likesCount: 4200,
-    commentsCount: 234,
-    sharesCount: 456,
-    vibeTag: 'chill',
+    id: 'p18b',
+    authorId: 'bot18',
+    text: 'Open mic night and I am third on the list. Hands shaking, voice steady. Sometimes your body knows the words before your mind does. Tonight I read the poem I have been afraid to share.',
+    images: ['/images/posts/art1.jpg'],
+    likesCount: 2800,
+    commentsCount: 198,
+    sharesCount: 340,
+    vibeTag: 'focused',
     type: 'image',
   },
+
+  // ---- Kai (bot19) — skater ----
   {
-    id: 'p24',
-    authorId: 'u8',
-    text: 'When your squad carries you to victory and you get the MVP screen with 0 kills... I will take it! Sometimes the best play is staying out of the way!',
-    images: ['/images/posts/game2.jpg'],
-    likesCount: 7800,
-    commentsCount: 567,
-    sharesCount: 1200,
-    vibeTag: 'laughing',
-    type: 'image',
-  },
-  {
-    id: 'p25',
-    authorId: 'u9',
-    text: 'Open mic night was INCREDIBLE. Shoutout to every artist who got on that stage and poured their soul out. The ORRA music community is unlike anything I have ever seen.',
-    images: ['/images/posts/album1.jpg'],
-    likesCount: 6700,
-    commentsCount: 423,
-    sharesCount: 890,
-    vibeTag: 'hyped',
-    type: 'image',
-  },
-  {
-    id: 'p26',
-    authorId: 'u13',
-    text: 'Met Gala inspired look — ORRA edition. Who says you need a red carpet to serve looks? Every sidewalk is a runway if you walk with purpose. Style is attitude, not labels.',
-    images: ['/images/posts/fashion1.jpg'],
-    likesCount: 19800,
-    commentsCount: 1340,
-    sharesCount: 4500,
-    vibeTag: 'dramatic',
-    type: 'image',
-  },
-  {
-    id: 'p27',
-    authorId: 'u11',
-    text: 'New skateboard deck design just dropped! Hand-painted cyberpunk dragon — this one took 40 hours and I am so proud of how it turned out. Limited run of 50, link in bio!',
+    id: 'p19a',
+    authorId: 'bot19',
+    text: 'New skateboard deck design just dropped! Hand-painted cyberpunk dragon — this one took 40 hours and I am so proud of how it turned out. Limited run of 50!',
     images: ['/images/posts/art1.jpg'],
     likesCount: 3400,
     commentsCount: 189,
@@ -576,8 +973,117 @@ const feedPosts = [
     type: 'image',
   },
   {
-    id: 'p28',
-    authorId: 'u3',
+    id: 'p19b',
+    authorId: 'bot19',
+    text: 'Ate pavement hard today. Road rash on my elbow, bruised ribs, and my board is cracked. But I landed the trick on the next try and that is all that matters.',
+    images: ['/images/posts/sports1.jpg'],
+    likesCount: 2100,
+    commentsCount: 134,
+    sharesCount: 89,
+    vibeTag: 'hyped',
+    type: 'image',
+  },
+
+  // ---- Brianna (bot20) — single mom ----
+  {
+    id: 'p20a',
+    authorId: 'bot20',
+    text: 'My 6 year old just told me I am the best chef in the whole wide world. I made dinosaur nuggets. The bar is low but I will take the win.',
+    images: ['/images/posts/food1.jpg'],
+    likesCount: 9200,
+    commentsCount: 567,
+    sharesCount: 2300,
+    vibeTag: 'laughing',
+    type: 'image',
+  },
+  {
+    id: 'p20b',
+    authorId: 'bot20',
+    text: 'Some days being a single mom feels like drowning and other days it feels like flying. Today was a flying day. My kids are my whole world and I would not change a thing.',
+    images: [],
+    likesCount: 14200,
+    commentsCount: 890,
+    sharesCount: 3400,
+    vibeTag: 'peaceful',
+    type: 'text',
+  },
+
+  // ---- Omar (bot21) — architecture student ----
+  {
+    id: 'p21a',
+    authorId: 'bot21',
+    text: 'Been in the studio for 14 hours straight. My model is falling apart and my professor says "add more layers." Layers of WHAT, Professor Kim? My sanity?',
+    images: ['/images/posts/art1.jpg'],
+    likesCount: 5600,
+    commentsCount: 345,
+    sharesCount: 890,
+    vibeTag: 'laughing',
+    type: 'image',
+  },
+  {
+    id: 'p21b',
+    authorId: 'bot21',
+    text: 'Just got my first internship at an architecture firm! I cried in the parking lot for ten minutes. All those sleepless nights were not for nothing.',
+    images: [],
+    likesCount: 11200,
+    commentsCount: 678,
+    sharesCount: 2100,
+    vibeTag: 'hyped',
+    type: 'text',
+  },
+
+  // ---- Rosa (bot22) — retired teacher ----
+  {
+    id: 'p22a',
+    authorId: 'bot22',
+    text: 'My grandkids taught me how to use ORRA today. I already have 3 followers and I do not know what that means but I am winning! Abuela is online!',
+    images: [],
+    likesCount: 28900,
+    commentsCount: 2100,
+    sharesCount: 8900,
+    vibeTag: 'laughing',
+    type: 'text',
+  },
+  {
+    id: 'p22b',
+    authorId: 'bot22',
+    text: 'Retired after 35 years of teaching. Today a former student emailed me to say I changed her life. I am not crying, you are crying. Actually we both are.',
+    images: ['/images/posts/sunset1.jpg'],
+    likesCount: 18700,
+    commentsCount: 1340,
+    sharesCount: 5600,
+    vibeTag: 'peaceful',
+    type: 'image',
+  },
+
+  // ---- Liam (bot23) — firefighter ----
+  {
+    id: 'p23a',
+    authorId: 'bot23',
+    text: 'Just got back from a call. Everyone is safe. That is the only thing that matters. Hug your people tight tonight, you never know.',
+    images: [],
+    likesCount: 8500,
+    commentsCount: 423,
+    sharesCount: 1200,
+    vibeTag: 'peaceful',
+    type: 'text',
+  },
+  {
+    id: 'p23b',
+    authorId: 'bot23',
+    text: 'Made risotto for the station tonight. The boys said it was the best thing I have ever cooked. I told them it was the first thing I have ever cooked properly. Honesty is the best policy.',
+    images: ['/images/posts/food1.jpg'],
+    likesCount: 4300,
+    commentsCount: 289,
+    sharesCount: 567,
+    vibeTag: 'laughing',
+    type: 'image',
+  },
+
+  // ---- Jade (bot24) — trainer ----
+  {
+    id: 'p24a',
+    authorId: 'bot24',
     text: 'Just finished a 10K run in under 45 minutes! 6 months ago I could not even run a mile without stopping. Consistency is literally the only secret. Start small, show up daily.',
     images: [],
     likesCount: 5600,
@@ -587,31 +1093,68 @@ const feedPosts = [
     type: 'text',
   },
   {
-    id: 'p29',
-    authorId: 'u12',
-    text: 'Beat making live stream TONIGHT at 9 PM EST! We are making a track from scratch using only ORRA community suggestions. Drop your genre and tempo ideas below!',
-    images: [],
-    likesCount: 4100,
-    commentsCount: 567,
-    sharesCount: 780,
-    vibeTag: 'hyped',
-    type: 'text',
-  },
-  {
-    id: 'p30',
-    authorId: 'u7',
-    text: 'Meditation challenge: 21 days, 10 minutes a day. Day 14 and I already feel like a completely different person. Better sleep, less anxiety, more clarity. Who is joining me?',
-    images: [],
-    likesCount: 3800,
-    commentsCount: 234,
-    sharesCount: 890,
+    id: 'p24b',
+    authorId: 'bot24',
+    text: '5 yoga poses that actually cure desk posture. I have been teaching these for 10 years and they never fail. Save this for later — your back will thank you.',
+    images: ['/images/posts/sports1.jpg'],
+    likesCount: 6100,
+    commentsCount: 389,
+    sharesCount: 1200,
     vibeTag: 'peaceful',
+    type: 'image',
+  },
+
+  // ---- Ethan (bot25) — teacher, memes ----
+  {
+    id: 'p25a',
+    authorId: 'bot25',
+    text: 'POV: You said "just one more episode" 4 hours ago and now it is 3 AM. Asking for a friend. The friend is me.',
+    images: ['/images/posts/comedy1.jpg'],
+    likesCount: 15600,
+    commentsCount: 1200,
+    sharesCount: 3400,
+    vibeTag: 'laughing',
+    type: 'image',
+  },
+  {
+    id: 'p25b',
+    authorId: 'bot25',
+    text: 'That moment when you wave back at someone who was not waving at you... Then pretend you were fixing your hair. I have done this four times this week.',
+    images: [],
+    likesCount: 23100,
+    commentsCount: 1800,
+    sharesCount: 5600,
+    vibeTag: 'laughing',
     type: 'text',
   },
   {
-    id: 'p31',
-    authorId: 'u2',
-    text: 'Anyone else addicted to the ORRA Dance Off? I just submitted my entry and I am literally shaking. The talent this season is absolutely insane. Good luck to everyone competing!',
+    id: 'p25c',
+    authorId: 'bot25',
+    text: 'A student just told me I am the only teacher who makes math not terrible. I will put that on my tombstone. "He made math not terrible."',
+    images: [],
+    likesCount: 19800,
+    commentsCount: 1450,
+    sharesCount: 4800,
+    vibeTag: 'laughing',
+    type: 'text',
+  },
+
+  // ---- Extra varied posts from multiple bots ----
+  {
+    id: 'pExtra1',
+    authorId: 'bot03',
+    text: 'This AI just generated a full album in 30 seconds and honestly some of the tracks are genuinely good. Are we watching the birth of a new genre or the death of human creativity? Discuss.',
+    images: [],
+    likesCount: 15600,
+    commentsCount: 1200,
+    sharesCount: 4500,
+    vibeTag: 'focused',
+    type: 'text',
+  },
+  {
+    id: 'pExtra2',
+    authorId: 'bot15',
+    text: 'Anyone else addicted to the ORRA Dance Off? The talent this season is absolutely insane. I submitted my entry and I am literally shaking.',
     images: [],
     likesCount: 2900,
     commentsCount: 178,
@@ -620,265 +1163,693 @@ const feedPosts = [
     type: 'text',
   },
   {
-    id: 'p32',
-    authorId: 'u15',
-    text: 'Food hack: freeze your grapes. Trust me on this one — they become like little sorbet bites. Perfect summer snack. You can thank me later!',
-    images: ['/images/posts/food1.jpg'],
-    likesCount: 6200,
-    commentsCount: 456,
-    sharesCount: 1890,
+    id: 'pExtra3',
+    authorId: 'bot08',
+    text: 'Hidden gem in Lisbon — this cafe has the best pastel de nata I have ever tasted. Travel is the only thing you buy that makes you richer.',
+    images: ['/images/posts/sunset2.jpg'],
+    likesCount: 4200,
+    commentsCount: 234,
+    sharesCount: 456,
     vibeTag: 'chill',
     type: 'image',
   },
-];
-
-// Comedy posts
-const comedyPosts = [
   {
-    id: 'cp1',
-    authorId: 'u8',
-    text: 'When the WiFi dies mid-game and you stare at the screen like your whole life just flashed before your eyes...',
-    images: ['/images/posts/comedy1.jpg'],
-    likesCount: 8900,
-    commentsCount: 456,
-    sharesCount: 890,
-    vibeTag: 'laughing',
+    id: 'pExtra4',
+    authorId: 'bot19',
+    text: 'Beat making live stream TONIGHT at 9 PM EST! Making a track from scratch using only ORRA community suggestions. Drop your genre ideas below!',
+    images: [],
+    likesCount: 4100,
+    commentsCount: 567,
+    sharesCount: 780,
+    vibeTag: 'hyped',
+    type: 'text',
+  },
+  {
+    id: 'pExtra5',
+    authorId: 'bot22',
+    text: 'Just planted my spring garden! Tomatoes, jalapenos, cilantro, and sunflowers. My grandkids think I am farming. Abuela says it is called surviving with flavor.',
+    images: ['/images/posts/art2.jpg'],
+    likesCount: 3400,
+    commentsCount: 189,
+    sharesCount: 234,
+    vibeTag: 'chill',
     type: 'image',
   },
   {
-    id: 'cp2',
-    authorId: 'u2',
-    text: 'My code works! *changes nothing* My code doesn\'t work... Welcome to programming!',
+    id: 'pExtra6',
+    authorId: 'bot20',
+    text: 'Tax season as an accountant AND a single mom is my personal villain origin story. If you see me crying at my desk, just slide coffee my way and walk away slowly.',
     images: [],
-    likesCount: 12400,
-    commentsCount: 890,
-    sharesCount: 2100,
+    likesCount: 7800,
+    commentsCount: 567,
+    sharesCount: 1900,
     vibeTag: 'laughing',
     type: 'text',
   },
   {
-    id: 'cp3',
-    authorId: 'u11',
-    text: 'POV: You said "just one more episode" 4 hours ago and now it\'s 3 AM',
-    images: ['/images/posts/comedy3.jpg'],
-    likesCount: 15600,
-    commentsCount: 1200,
+    id: 'pExtra7',
+    authorId: 'bot01',
+    text: 'Night shift nurses, I see you. The silence at 3 AM when all your patients are sleeping is both peaceful and terrifying. Stay strong out there.',
+    images: ['/images/posts/sunset1.jpg'],
+    likesCount: 2100,
+    commentsCount: 167,
+    sharesCount: 234,
+    vibeTag: 'peaceful',
+    type: 'image',
+  },
+  {
+    id: 'pExtra8',
+    authorId: 'bot06',
+    text: 'Pop-up shop in SoHo this weekend! My new hair care line drops exclusively on ORRA first. Limited bottles, first come first serve. Set your reminders!',
+    images: ['/images/posts/fashion1.jpg'],
+    likesCount: 14200,
+    commentsCount: 980,
     sharesCount: 3400,
-    vibeTag: 'laughing',
+    vibeTag: 'hyped',
     type: 'image',
   },
-  {
-    id: 'cp4',
-    authorId: 'u3',
-    text: 'That moment when you wave back at someone who wasn\'t waving at you... Then pretend you were fixing your hair',
-    images: [],
-    likesCount: 23100,
-    commentsCount: 1800,
-    sharesCount: 5600,
-    vibeTag: 'laughing',
-    type: 'text',
-  },
 ];
 
-// Reels data
+// ============================================================
+// COMMENTS — 80+ realistic conversation replies
+// ============================================================
+
+const commentsData = [
+  // Comments on founder welcome post
+  { id: 'c01', postId: 'p0founder', authorId: 'bot04', text: 'ORRA is about to change the game! Let us go!', parentId: null, replyToName: null },
+  { id: 'c02', postId: 'p0founder', authorId: 'bot06', text: 'Already in love with this platform. The vibes are immaculate.', parentId: null, replyToName: null },
+  { id: 'c03', postId: 'p0founder', authorId: 'bot10', text: 'The future is NOW. Proud to be here from day one!', parentId: null, replyToName: null },
+  { id: 'c04', postId: 'p0founder', authorId: 'bot22', text: 'My grandkids showed me this app and I am OBSESSED. Abuela is online!', parentId: 'c02', replyToName: 'Tasha Washington' },
+  { id: 'c05', postId: 'p0founder', authorId: 'bot13', text: 'This platform is giving everything it needs to give. Period.', parentId: null, replyToName: null },
+
+  // Comments on Sofia's first-gen grad post
+  { id: 'c06', postId: 'p03b', authorId: 'bot17', text: 'As a first-gen student still in the struggle, this gives me so much hope. Congrats Sofia!', parentId: null, replyToName: null },
+  { id: 'c07', postId: 'p03b', authorId: 'bot20', text: 'Paying off student loans is no joke. You should be SO proud of yourself!', parentId: null, replyToName: null },
+  { id: 'c08', postId: 'p03b', authorId: 'bot21', text: 'We made it! First gen grads run the world. Congrats!', parentId: 'c06', replyToName: 'Trevon Harris' },
+  { id: 'c09', postId: 'p03b', authorId: 'bot03', text: 'Thank you everyone! Could not have done it without the village. Mama sacrificed everything for this moment.', parentId: 'c07', replyToName: 'Brianna Taylor' },
+
+  // Comments on Tasha's second salon post
+  { id: 'c10', postId: 'p06b', authorId: 'bot13', text: 'QUEEN! This is what hard work looks like. So proud of you!', parentId: null, replyToName: null },
+  { id: 'c11', postId: 'p06b', authorId: 'bot01', text: 'From renting a chair to two locations! You are an inspiration Tasha!', parentId: null, replyToName: null },
+  { id: 'c12', postId: 'p06b', authorId: 'bot06', text: 'Six years of blood, sweat, and hair dye! Thank you all for believing in me!', parentId: 'c10', replyToName: 'Zara Miles' },
+  { id: 'c13', postId: 'p06b', authorId: 'bot22', text: 'This is the kind of story that makes me believe in people. Congratulations mija!', parentId: null, replyToName: null },
+
+  // Comments on Marcus's dance posts
+  { id: 'c14', postId: 'p04a', authorId: 'bot15', text: 'Those moves are CLEAN. You are going to destroy the Dance Off this year!', parentId: null, replyToName: null },
+  { id: 'c15', postId: 'p04a', authorId: 'bot10', text: 'The energy in this video is unmatched! We need a collab!', parentId: null, replyToName: null },
+  { id: 'c16', postId: 'p04b', authorId: 'bot19', text: 'Moments like that are why we do what we do. That student will remember you forever.', parentId: null, replyToName: null },
+  { id: 'c17', postId: 'p04b', authorId: 'bot16', text: 'Teaching is the most underrated superpower. Keep inspiring Marcus!', parentId: null, replyToName: null },
+
+  // Comments on Raj's coding/food post
+  { id: 'c18', postId: 'p05a', authorId: 'bot05', text: 'The butter chicken was the real MVP tonight. Code can wait, curry cannot.', parentId: null, replyToName: null },
+  { id: 'c19', postId: 'p05a', authorId: 'bot12', text: 'That butter chicken recipe when? Asking for literally everyone!', parentId: null, replyToName: null },
+  { id: 'c20', postId: 'p05a', authorId: 'bot23', text: 'As a fellow code-and-cook person, I respect this deeply. The duality of man.', parentId: null, replyToName: null },
+
+  // Comments on Devin's Madden post
+  { id: 'c21', postId: 'p02b', authorId: 'bot24', text: 'Your kid has no mercy and I respect that. Future champion in the making!', parentId: null, replyToName: null },
+  { id: 'c22', postId: 'p02b', authorId: 'bot25', text: 'My students beat me at Smash Bros all the time. The youth are terrifying.', parentId: null, replyToName: null },
+  { id: 'c23', postId: 'p02b', authorId: 'bot02', text: 'He talked trash the whole game too. Gets it from his mama honestly.', parentId: 'c21', replyToName: 'Jade Thompson' },
+
+  // Comments on Isla's poem
+  { id: 'c24', postId: 'p18a', authorId: 'bot10', text: 'This hit different. The line about tired ink? I felt that in my bones.', parentId: null, replyToName: null },
+  { id: 'c25', postId: 'p18a', authorId: 'bot17', text: 'I keep rereading this. Sometimes words find you exactly when you need them.', parentId: null, replyToName: null },
+  { id: 'c26', postId: 'p18a', authorId: 'bot22', text: 'Mija, you have a gift. Keep writing. The world needs your words.', parentId: null, replyToName: null },
+  { id: 'c27', postId: 'p18a', authorId: 'bot18', text: 'Thank you. Writing is the only way I know how to be honest.', parentId: 'c24', replyToName: 'Luna Kim' },
+
+  // Comments on Trevon's professor post
+  { id: 'c28', postId: 'p17b', authorId: 'bot20', text: 'One person believing in you can change your whole trajectory. Keep going king!', parentId: null, replyToName: null },
+  { id: 'c29', postId: 'p17b', authorId: 'bot16', text: 'This is why teachers matter. They see what we cannot see in ourselves yet.', parentId: null, replyToName: null },
+  { id: 'c30', postId: 'p17b', authorId: 'bot01', text: 'As someone who almost quit nursing school, I feel this so hard. One person changed everything for me too.', parentId: null, replyToName: null },
+  { id: 'c31', postId: 'p17b', authorId: 'bot17', text: 'I am literally crying reading these comments. Thank you all for the love. I am not giving up.', parentId: 'c28', replyToName: 'Brianna Taylor' },
+
+  // Comments on Rosa's ORRA post
+  { id: 'c32', postId: 'p22a', authorId: 'bot13', text: 'Abuela is ONLINE! I am crying this is the best thing I have seen all day!', parentId: null, replyToName: null },
+  { id: 'c33', postId: 'p22a', authorId: 'bot25', text: 'Mrs. Delgado is my favorite ORRA user and it is not even close.', parentId: null, replyToName: null },
+  { id: 'c34', postId: 'p22a', authorId: 'bot22', text: 'Thank you mijo! My grandson says I am going viral? Is that good?', parentId: 'c32', replyToName: 'Zara Miles' },
+  { id: 'c35', postId: 'p22a', authorId: 'bot06', text: 'Rosa you are the icon we did not know we needed! Keep posting!', parentId: null, replyToName: null },
+
+  // Comments on Brianna's kids post
+  { id: 'c36', postId: 'p20a', authorId: 'bot22', text: 'Dinosaur nuggets are gourmet when made with love! Keep winning mama!', parentId: null, replyToName: null },
+  { id: 'c37', postId: 'p20a', authorId: 'bot12', text: 'I am a food blogger and even I respect the dinosaur nugget. Do not let anyone take that from you.', parentId: null, replyToName: null },
+  { id: 'c38', postId: 'p20a', authorId: 'bot01', text: 'The best chef award goes to Brianna! Dino nuggets forever!', parentId: null, replyToName: null },
+
+  // Comments on Liam's firefighter post
+  { id: 'c39', postId: 'p23a', authorId: 'bot24', text: 'Thank you for what you do. Seriously. Yall are the real heroes.', parentId: null, replyToName: null },
+  { id: 'c40', postId: 'p23a', authorId: 'bot11', text: 'Glad everyone is safe. Go rest, you earned it brother.', parentId: null, replyToName: null },
+  { id: 'c41', postId: 'p23a', authorId: 'bot16', text: 'Sending you and your crew so much love tonight. Take care of yourself too.', parentId: null, replyToName: null },
+
+  // Comments on Maya's food posts
+  { id: 'c42', postId: 'p12a', authorId: 'bot05', text: 'Two hours resting time? I have been doing it wrong my whole life. Recipe PLEASE!', parentId: null, replyToName: null },
+  { id: 'c43', postId: 'p12a', authorId: 'bot23', text: 'I made this and my station crew lost their minds. Best recipe on ORRA.', parentId: null, replyToName: null },
+  { id: 'c44', postId: 'p12b', authorId: 'bot03', text: 'Freezing grapes?! My mind is blown. Trying this immediately!', parentId: null, replyToName: null },
+  { id: 'c45', postId: 'p12b', authorId: 'bot08', text: 'Learned this trick in Greece! Life changing snack for real.', parentId: null, replyToName: null },
+
+  // Comments on Zara's fashion posts
+  { id: 'c46', postId: 'p13a', authorId: 'bot06', text: 'Every single look is giving! You never miss Zara!', parentId: null, replyToName: null },
+  { id: 'c47', postId: 'p13a', authorId: 'bot03', text: 'The third look is my favorite! Where did you get that jacket?', parentId: null, replyToName: null },
+  { id: 'c48', postId: 'p13b', authorId: 'bot13', text: 'Style is an attitude and yours is unmatched. Slaying as always!', parentId: null, replyToName: null },
+  { id: 'c49', postId: 'p13b', authorId: 'bot24', text: 'Even I want that outfit and I live in gym clothes. That says something!', parentId: null, replyToName: null },
+
+  // Comments on Ethan's meme posts
+  { id: 'c50', postId: 'p25a', authorId: 'bot07', text: 'It is 3 AM and I am reading this instead of sleeping. The irony is not lost on me.', parentId: null, replyToName: null },
+  { id: 'c51', postId: 'p25a', authorId: 'bot14', text: 'This is literally me every night. I have a problem and I am not fixing it.', parentId: null, replyToName: null },
+  { id: 'c52', postId: 'p25b', authorId: 'bot18', text: 'I did this at the coffee shop today. The barista saw everything. I am never going back.', parentId: null, replyToName: null },
+  { id: 'c53', postId: 'p25b', authorId: 'bot22', text: 'Happened to me at church. I just started praising the Lord. Quick recovery!', parentId: null, replyToName: null },
+  { id: 'c54', postId: 'p25c', authorId: 'bot17', text: 'Mr. Park if you are reading this, you are the reason I did not drop out of math. For real.', parentId: null, replyToName: null },
+  { id: 'c55', postId: 'p25c', authorId: 'bot25', text: 'Making math not terrible is my entire personality at this point. I accept it.', parentId: 'c54', replyToName: 'Trevon Harris' },
+
+  // Comments on Chris's gaming posts
+  { id: 'c56', postId: 'p07a', authorId: 'bot14', text: 'This is the most relatable post on ORRA. WiFi dying mid-game is a crime against humanity.', parentId: null, replyToName: null },
+  { id: 'c57', postId: 'p07a', authorId: 'bot09', text: 'I made a beat about this exact feeling. It is called "Disconnected" lol', parentId: null, replyToName: null },
+  { id: 'c58', postId: 'p07b', authorId: 'bot07', text: 'The custom LEDs are going to be insane. Post a video when it is done!', parentId: null, replyToName: null },
+
+  // Comments on Omar's internship post
+  { id: 'c59', postId: 'p21b', authorId: 'bot21', text: 'Still processing. Cried happy tears for the first time in my life. All those all-nighters were worth it.', parentId: null, replyToName: null },
+  { id: 'c60', postId: 'p21b', authorId: 'bot05', text: 'From one sleep-deprived student to another, this is the dream. Congrats Omar!', parentId: null, replyToName: null },
+  { id: 'c61', postId: 'p21b', authorId: 'bot10', text: 'You are going to design buildings that change skylines. I can feel it!', parentId: null, replyToName: null },
+  { id: 'c62', postId: 'p21b', authorId: 'bot17', text: 'This gives me hope that my grind will pay off too. Thank you for sharing this.', parentId: null, replyToName: null },
+
+  // Comments on Donte's beat post
+  { id: 'c63', postId: 'p09a', authorId: 'bot15', text: 'This kid has serious talent. The multi-genre sampling is next level.', parentId: null, replyToName: null },
+  { id: 'c64', postId: 'p09a', authorId: 'bot04', text: 'We need to dance to this! The beat is infectious!', parentId: null, replyToName: null },
+  { id: 'c65', postId: 'p09b', authorId: 'bot09', text: '4 AM is when the magic happens. Or the madness. Same thing really.', parentId: null, replyToName: null },
+
+  // Comments on Elena's travel posts
+  { id: 'c66', postId: 'p08a', authorId: 'bot08', text: 'Barcelona has my heart. The architecture alone is worth the trip!', parentId: null, replyToName: null },
+  { id: 'c67', postId: 'p08a', authorId: 'bot03', text: 'Adding Barcelona to my bucket list right now. This is stunning!', parentId: null, replyToName: null },
+  { id: 'c68', postId: 'p08b', authorId: 'bot12', text: '2 AM basement jazz in Lisbon? That sounds like a movie scene. Incredible!', parentId: null, replyToName: null },
+
+  // Comments on Jade's fitness posts
+  { id: 'c69', postId: 'p24a', authorId: 'bot19', text: '45 minute 10K is no joke! You are an absolute machine.', parentId: null, replyToName: null },
+  { id: 'c70', postId: 'p24a', authorId: 'bot02', text: 'Consistency over intensity. Could not agree more. Keep pushing!', parentId: null, replyToName: null },
+  { id: 'c71', postId: 'p24b', authorId: 'bot16', text: 'These poses saved my back after years of teaching yoga! Everyone save this post!', parentId: null, replyToName: null },
+  { id: 'c72', postId: 'p24b', authorId: 'bot20', text: 'My desk posture is terrible. Trying these tonight, thank you Jade!', parentId: null, replyToName: null },
+
+  // Comments on Kai's skating posts
+  { id: 'c73', postId: 'p19a', authorId: 'bot10', text: 'That dragon deck is FIRE. The detail is insane. You painted this by hand?!', parentId: null, replyToName: null },
+  { id: 'c74', postId: 'p19b', authorId: 'bot24', text: 'Eat pavement, get back up, land the trick. That is the skater way. Respect!', parentId: null, replyToName: null },
+
+  // Comments on Nia's wellness posts
+  { id: 'c75', postId: 'p16a', authorId: 'bot24', text: '5 minutes does not sound like much but it genuinely changes your whole morning. Try it people!', parentId: null, replyToName: null },
+  { id: 'c76', postId: 'p16b', authorId: 'bot01', text: 'Day 8 of the meditation challenge here. Already sleeping so much better. Nia is onto something!', parentId: null, replyToName: null },
+  { id: 'c77', postId: 'p16b', authorId: 'bot18', text: 'Meditation and poetry go hand in hand. The clarity is real.', parentId: null, replyToName: null },
+
+  // Comments on Brianna's single mom post
+  { id: 'c78', postId: 'p20b', authorId: 'bot22', text: 'Mija, you are raising the future. Every day you show up is a flying day. I am so proud of you.', parentId: null, replyToName: null },
+  { id: 'c79', postId: 'p20b', authorId: 'bot11', text: 'My wife is a single mom from before we met. I see how hard you all work. Salute.', parentId: null, replyToName: null },
+  { id: 'c80', postId: 'p20b', authorId: 'bot06', text: 'Single moms are the strongest people on earth. No debate.', parentId: null, replyToName: null },
+
+  // Comments on founder's second post
+  { id: 'c81', postId: 'p0founder2', authorId: 'bot04', text: 'Whatever is coming, we are ready! ORRA keeps getting better!', parentId: null, replyToName: null },
+  { id: 'c82', postId: 'p0founder2', authorId: 'bot15', text: 'Late nights building something great — that is the energy! We got you Nick!', parentId: null, replyToName: null },
+  { id: 'c83', postId: 'p0founder2', authorId: 'bot03', text: 'The community sees the work. Thank you for building something that feels different.', parentId: null, replyToName: null },
+
+  // Comments on Luna's art posts
+  { id: 'c84', postId: 'p10a', authorId: 'bot19', text: '12 hours well spent. This is incredible Luna! Your cats are chaotic but your art is flawless.', parentId: null, replyToName: null },
+  { id: 'c85', postId: 'p10b', authorId: 'bot21', text: 'Architecture student checking in — I feel this in my soul. The blank page is the enemy.', parentId: null, replyToName: null },
+  { id: 'c86', postId: 'p10b', authorId: 'bot05', text: 'Snacks incoming! Also, sometimes the best art comes from the block. Give it time.', parentId: null, replyToName: null },
+
+  // Comments on extra posts
+  { id: 'c87', postId: 'pExtra6', authorId: 'bot20', text: 'Coffee has been slid. Virtual hug from one tired professional to another!', parentId: null, replyToName: null },
+  { id: 'c88', postId: 'pExtra7', authorId: 'bot01', text: 'The 3 AM quiet is a whole mood. Hang in there fellow night shift warriors.', parentId: null, replyToName: null },
+  { id: 'c89', postId: 'pExtra5', authorId: 'bot22', text: 'Abuela knows best! That garden is going to be beautiful. Jalapenos are essential.', parentId: null, replyToName: null },
+  { id: 'c90', postId: 'pExtra1', authorId: 'bot09', text: 'As a producer this terrifies and excites me. AI cannot replace soul though. At least I hope not.', parentId: null, replyToName: null },
+];
+
+// ============================================================
+// LIKES — 100+ from various bots on various posts
+// ============================================================
+
+const likesData = [
+  // Founder's posts
+  { id: 'l01', userId: 'bot04', targetId: 'p0founder', targetType: 'post', reactionType: 'like' },
+  { id: 'l02', userId: 'bot06', targetId: 'p0founder', targetType: 'post', reactionType: 'wow' },
+  { id: 'l03', userId: 'bot10', targetId: 'p0founder', targetType: 'post', reactionType: 'like' },
+  { id: 'l04', userId: 'bot13', targetId: 'p0founder', targetType: 'post', reactionType: 'like' },
+  { id: 'l05', userId: 'bot03', targetId: 'p0founder', targetType: 'post', reactionType: 'like' },
+  { id: 'l06', userId: 'bot22', targetId: 'p0founder', targetType: 'post', reactionType: 'care' },
+  { id: 'l07', userId: 'bot15', targetId: 'p0founder2', targetType: 'post', reactionType: 'like' },
+  { id: 'l08', userId: 'bot01', targetId: 'p0founder2', targetType: 'post', reactionType: 'like' },
+  { id: 'l09', userId: 'bot24', targetId: 'p0founder2', targetType: 'post', reactionType: 'like' },
+
+  // Amira's posts
+  { id: 'l10', userId: 'bot16', targetId: 'p01a', targetType: 'post', reactionType: 'care' },
+  { id: 'l11', userId: 'bot20', targetId: 'p01a', targetType: 'post', reactionType: 'like' },
+  { id: 'l12', userId: 'bot01', targetId: 'p01b', targetType: 'post', reactionType: 'like' },
+  { id: 'l13', userId: 'bot22', targetId: 'p01b', targetType: 'post', reactionType: 'care' },
+
+  // Sofia's posts
+  { id: 'l14', userId: 'bot17', targetId: 'p03b', targetType: 'post', reactionType: 'like' },
+  { id: 'l15', userId: 'bot20', targetId: 'p03b', targetType: 'post', reactionType: 'like' },
+  { id: 'l16', userId: 'bot21', targetId: 'p03b', targetType: 'post', reactionType: 'like' },
+  { id: 'l17', userId: 'bot05', targetId: 'p03b', targetType: 'post', reactionType: 'wow' },
+  { id: 'l18', userId: 'bot08', targetId: 'p03a', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l19', userId: 'bot12', targetId: 'p03a', targetType: 'post', reactionType: 'like' },
+
+  // Marcus's dance posts
+  { id: 'l20', userId: 'bot15', targetId: 'p04a', targetType: 'post', reactionType: 'like' },
+  { id: 'l21', userId: 'bot04', targetId: 'p04a', targetType: 'post', reactionType: 'wow' },
+  { id: 'l22', userId: 'bot10', targetId: 'p04a', targetType: 'post', reactionType: 'like' },
+  { id: 'l23', userId: 'bot19', targetId: 'p04b', targetType: 'post', reactionType: 'care' },
+  { id: 'l24', userId: 'bot16', targetId: 'p04b', targetType: 'post', reactionType: 'like' },
+
+  // Tasha's posts
+  { id: 'l25', userId: 'bot13', targetId: 'p06a', targetType: 'post', reactionType: 'wow' },
+  { id: 'l26', userId: 'bot01', targetId: 'p06b', targetType: 'post', reactionType: 'like' },
+  { id: 'l27', userId: 'bot22', targetId: 'p06b', targetType: 'post', reactionType: 'care' },
+  { id: 'l28', userId: 'bot03', targetId: 'p06b', targetType: 'post', reactionType: 'like' },
+
+  // Devin's posts
+  { id: 'l29', userId: 'bot24', targetId: 'p02b', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l30', userId: 'bot25', targetId: 'p02b', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l31', userId: 'bot02', targetId: 'p02a', targetType: 'post', reactionType: 'like' },
+
+  // Raj's posts
+  { id: 'l32', userId: 'bot12', targetId: 'p05a', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l33', userId: 'bot23', targetId: 'p05a', targetType: 'post', reactionType: 'like' },
+  { id: 'l34', userId: 'bot05', targetId: 'p05b', targetType: 'post', reactionType: 'like' },
+
+  // Isla's poetry
+  { id: 'l35', userId: 'bot10', targetId: 'p18a', targetType: 'post', reactionType: 'care' },
+  { id: 'l36', userId: 'bot17', targetId: 'p18a', targetType: 'post', reactionType: 'like' },
+  { id: 'l37', userId: 'bot22', targetId: 'p18a', targetType: 'post', reactionType: 'like' },
+  { id: 'l38', userId: 'bot18', targetId: 'p18b', targetType: 'post', reactionType: 'like' },
+
+  // Trevon's posts
+  { id: 'l39', userId: 'bot20', targetId: 'p17b', targetType: 'post', reactionType: 'care' },
+  { id: 'l40', userId: 'bot16', targetId: 'p17b', targetType: 'post', reactionType: 'like' },
+  { id: 'l41', userId: 'bot01', targetId: 'p17b', targetType: 'post', reactionType: 'like' },
+  { id: 'l42', userId: 'bot17', targetId: 'p17a', targetType: 'post', reactionType: 'like' },
+
+  // Rosa's posts
+  { id: 'l43', userId: 'bot13', targetId: 'p22a', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l44', userId: 'bot25', targetId: 'p22a', targetType: 'post', reactionType: 'like' },
+  { id: 'l45', userId: 'bot06', targetId: 'p22a', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l46', userId: 'bot22', targetId: 'p22b', targetType: 'post', reactionType: 'care' },
+
+  // Brianna's posts
+  { id: 'l47', userId: 'bot22', targetId: 'p20a', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l48', userId: 'bot12', targetId: 'p20a', targetType: 'post', reactionType: 'like' },
+  { id: 'l49', userId: 'bot01', targetId: 'p20a', targetType: 'post', reactionType: 'like' },
+  { id: 'l50', userId: 'bot06', targetId: 'p20b', targetType: 'post', reactionType: 'care' },
+
+  // Liam's posts
+  { id: 'l51', userId: 'bot24', targetId: 'p23a', targetType: 'post', reactionType: 'care' },
+  { id: 'l52', userId: 'bot11', targetId: 'p23a', targetType: 'post', reactionType: 'like' },
+  { id: 'l53', userId: 'bot16', targetId: 'p23a', targetType: 'post', reactionType: 'like' },
+  { id: 'l54', userId: 'bot05', targetId: 'p23b', targetType: 'post', reactionType: 'laughing' },
+
+  // Ethan's meme posts
+  { id: 'l55', userId: 'bot07', targetId: 'p25a', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l56', userId: 'bot14', targetId: 'p25a', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l57', userId: 'bot18', targetId: 'p25b', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l58', userId: 'bot22', targetId: 'p25b', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l59', userId: 'bot17', targetId: 'p25c', targetType: 'post', reactionType: 'like' },
+
+  // Jade's fitness posts
+  { id: 'l60', userId: 'bot19', targetId: 'p24a', targetType: 'post', reactionType: 'wow' },
+  { id: 'l61', userId: 'bot02', targetId: 'p24a', targetType: 'post', reactionType: 'like' },
+  { id: 'l62', userId: 'bot16', targetId: 'p24b', targetType: 'post', reactionType: 'like' },
+  { id: 'l63', userId: 'bot20', targetId: 'p24b', targetType: 'post', reactionType: 'like' },
+
+  // Maya's food posts
+  { id: 'l64', userId: 'bot05', targetId: 'p12a', targetType: 'post', reactionType: 'like' },
+  { id: 'l65', userId: 'bot23', targetId: 'p12a', targetType: 'post', reactionType: 'like' },
+  { id: 'l66', userId: 'bot03', targetId: 'p12b', targetType: 'post', reactionType: 'wow' },
+  { id: 'l67', userId: 'bot08', targetId: 'p12b', targetType: 'post', reactionType: 'like' },
+
+  // Zara's fashion posts
+  { id: 'l68', userId: 'bot06', targetId: 'p13a', targetType: 'post', reactionType: 'wow' },
+  { id: 'l69', userId: 'bot03', targetId: 'p13a', targetType: 'post', reactionType: 'like' },
+  { id: 'l70', userId: 'bot24', targetId: 'p13b', targetType: 'post', reactionType: 'like' },
+
+  // Jaylen's gaming posts
+  { id: 'l71', userId: 'bot07', targetId: 'p14a', targetType: 'post', reactionType: 'wow' },
+  { id: 'l72', userId: 'bot14', targetId: 'p14b', targetType: 'post', reactionType: 'like' },
+
+  // Dre's music posts
+  { id: 'l73', userId: 'bot04', targetId: 'p15a', targetType: 'post', reactionType: 'like' },
+  { id: 'l74', userId: 'bot09', targetId: 'p15a', targetType: 'post', reactionType: 'wow' },
+  { id: 'l75', userId: 'bot15', targetId: 'p15b', targetType: 'post', reactionType: 'like' },
+
+  // Nia's wellness posts
+  { id: 'l76', userId: 'bot24', targetId: 'p16a', targetType: 'post', reactionType: 'like' },
+  { id: 'l77', userId: 'bot01', targetId: 'p16b', targetType: 'post', reactionType: 'like' },
+  { id: 'l78', userId: 'bot18', targetId: 'p16b', targetType: 'post', reactionType: 'like' },
+
+  // Chris's gaming posts
+  { id: 'l79', userId: 'bot14', targetId: 'p07a', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l80', userId: 'bot09', targetId: 'p07a', targetType: 'post', reactionType: 'like' },
+  { id: 'l81', userId: 'bot07', targetId: 'p07b', targetType: 'post', reactionType: 'like' },
+
+  // Elena's travel posts
+  { id: 'l82', userId: 'bot08', targetId: 'p08a', targetType: 'post', reactionType: 'like' },
+  { id: 'l83', userId: 'bot03', targetId: 'p08a', targetType: 'post', reactionType: 'like' },
+  { id: 'l84', userId: 'bot12', targetId: 'p08b', targetType: 'post', reactionType: 'wow' },
+
+  // Omar's posts
+  { id: 'l85', userId: 'bot05', targetId: 'p21b', targetType: 'post', reactionType: 'like' },
+  { id: 'l86', userId: 'bot10', targetId: 'p21b', targetType: 'post', reactionType: 'like' },
+  { id: 'l87', userId: 'bot17', targetId: 'p21b', targetType: 'post', reactionType: 'like' },
+
+  // Kai's skate posts
+  { id: 'l88', userId: 'bot10', targetId: 'p19a', targetType: 'post', reactionType: 'wow' },
+  { id: 'l89', userId: 'bot24', targetId: 'p19b', targetType: 'post', reactionType: 'like' },
+
+  // Donte's beats
+  { id: 'l90', userId: 'bot15', targetId: 'p09a', targetType: 'post', reactionType: 'like' },
+  { id: 'l91', userId: 'bot04', targetId: 'p09a', targetType: 'post', reactionType: 'like' },
+
+  // Luna's art
+  { id: 'l92', userId: 'bot19', targetId: 'p10a', targetType: 'post', reactionType: 'wow' },
+  { id: 'l93', userId: 'bot21', targetId: 'p10b', targetType: 'post', reactionType: 'like' },
+  { id: 'l94', userId: 'bot05', targetId: 'p10b', targetType: 'post', reactionType: 'care' },
+
+  // Terrence's posts
+  { id: 'l95', userId: 'bot11', targetId: 'p11a', targetType: 'post', reactionType: 'like' },
+  { id: 'l96', userId: 'bot23', targetId: 'p11b', targetType: 'post', reactionType: 'laughing' },
+
+  // Extra posts
+  { id: 'l97', userId: 'bot09', targetId: 'pExtra1', targetType: 'post', reactionType: 'like' },
+  { id: 'l98', userId: 'bot15', targetId: 'pExtra2', targetType: 'post', reactionType: 'like' },
+  { id: 'l99', userId: 'bot12', targetId: 'pExtra3', targetType: 'post', reactionType: 'like' },
+  { id: 'l100', userId: 'bot19', targetId: 'pExtra4', targetType: 'post', reactionType: 'like' },
+  { id: 'l101', userId: 'bot22', targetId: 'pExtra5', targetType: 'post', reactionType: 'like' },
+  { id: 'l102', userId: 'bot20', targetId: 'pExtra6', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l103', userId: 'bot01', targetId: 'pExtra7', targetType: 'post', reactionType: 'care' },
+  { id: 'l104', userId: 'bot03', targetId: 'pExtra8', targetType: 'post', reactionType: 'like' },
+  { id: 'l105', userId: 'bot13', targetId: 'pExtra8', targetType: 'post', reactionType: 'wow' },
+
+  // Founder likes on community posts
+  { id: 'l106', userId: 'founder', targetId: 'p03b', targetType: 'post', reactionType: 'like' },
+  { id: 'l107', userId: 'founder', targetId: 'p06b', targetType: 'post', reactionType: 'wow' },
+  { id: 'l108', userId: 'founder', targetId: 'p17b', targetType: 'post', reactionType: 'care' },
+  { id: 'l109', userId: 'founder', targetId: 'p22a', targetType: 'post', reactionType: 'laughing' },
+  { id: 'l110', userId: 'founder', targetId: 'p21b', targetType: 'post', reactionType: 'like' },
+];
+
+// ============================================================
+// FOLLOW RELATIONSHIPS
+// ============================================================
+
+// All bots follow the founder, plus cross-follows for community feel
+const followsData: Array<{ followerId: string; followingId: string }> = [];
+
+// All bots follow the founder
+for (let i = 1; i <= 25; i++) {
+  const botId = `bot${String(i).padStart(2, '0')}`;
+  followsData.push({ followerId: botId, followingId: 'founder' });
+}
+
+// Founder follows all bots back
+for (let i = 1; i <= 25; i++) {
+  const botId = `bot${String(i).padStart(2, '0')}`;
+  followsData.push({ followerId: 'founder', followingId: botId });
+}
+
+// Cross-follows between bots for community feel
+const crossFollows = [
+  ['bot04', 'bot15'], ['bot15', 'bot04'], // Marcus & Dre - dance/music collab
+  ['bot03', 'bot13'], ['bot13', 'bot03'], // Sofia & Zara - marketing/fashion
+  ['bot06', 'bot13'], ['bot13', 'bot06'], // Tasha & Zara - style icons
+  ['bot01', 'bot16'], ['bot16', 'bot01'], // Amira & Nia - wellness/healthcare
+  ['bot05', 'bot12'], ['bot12', 'bot05'], // Raj & Maya - foodies
+  ['bot07', 'bot14'], ['bot14', 'bot07'], // Chris & Jaylen - gamers
+  ['bot10', 'bot19'], ['bot19', 'bot10'], // Luna & Kai - artists
+  ['bot17', 'bot21'], ['bot21', 'bot17'], // Trevon & Omar - students
+  ['bot18', 'bot25'], ['bot25', 'bot18'], // Isla & Ethan - word lovers
+  ['bot20', 'bot22'], ['bot22', 'bot20'], // Brianna & Rosa - maternal figures
+  ['bot02', 'bot24'], ['bot24', 'bot02'], // Devin & Jade - fitness
+  ['bot23', 'bot11'], ['bot11', 'bot23'], // Liam & Terrence - blue collar
+  ['bot08', 'bot09'], ['bot09', 'bot08'], // Elena & Donte - creative
+  ['bot03', 'bot06'], ['bot06', 'bot03'], // Sofia & Tasha - besties
+  ['bot04', 'bot10'], ['bot10', 'bot04'], // Marcus & Luna - art+dance
+  ['bot12', 'bot23'], ['bot23', 'bot12'], // Maya & Liam - food lovers
+  ['bot01', 'bot20'], ['bot20', 'bot01'], // Amira & Brianna - working moms
+  ['bot16', 'bot24'], ['bot24', 'bot16'], // Nia & Jade - wellness/fitness
+  ['bot05', 'bot21'], ['bot21', 'bot05'], // Raj & Omar - tech
+];
+
+for (const [a, b] of crossFollows) {
+  followsData.push({ followerId: a, followingId: b });
+}
+
+// ============================================================
+// REELS DATA — 12 reels
+// ============================================================
+
 const reelsData = [
-  { id: 'r1', title: 'Neon Dance Routine', creatorId: 'u4', views: 2400000, likesCount: 189000, commentsCount: 12400, category: 'Dance', song: 'Neon Dreams - DJ Prism ft. Luna', isRemix: true, thumbnail: '/images/reels/reel1.jpg' },
-  { id: 'r2', title: 'Cooking Hacks: 5min Meals', creatorId: 'u5', views: 890000, likesCount: 67000, commentsCount: 5600, category: 'Food', song: 'Lo-Fi Kitchen Beats', thumbnail: '/images/reels/reel2.jpg' },
-  { id: 'r3', title: 'Epic Guitar Solo', creatorId: 'u9', views: 1200000, likesCount: 145000, commentsCount: 8900, category: 'Music', song: 'Shredding Neon - Music Central', thumbnail: '/images/reels/reel3.jpg' },
-  { id: 'r4', title: 'Morning Yoga Flow', creatorId: 'u7', views: 567000, likesCount: 34000, commentsCount: 2300, category: 'Sports', song: 'Zen Flow - Wellness Sounds', isLive: true, thumbnail: '/images/reels/reel4.jpg' },
-  { id: 'r5', title: 'Street Art Process', creatorId: 'u1', views: 1800000, likesCount: 210000, commentsCount: 15600, category: 'Art', song: 'Canvas Dreams - Art Beats', isRemix: true, thumbnail: '/images/reels/reel5.jpg' },
-  { id: 'r6', title: 'Comedy: When WiFi Dies', creatorId: 'u8', views: 3100000, likesCount: 445000, commentsCount: 34200, category: 'Comedy', song: 'Fail Sound Effect', thumbnail: '/images/reels/reel6.jpg' },
-  { id: 'r7', title: 'Skateboard Tricks', creatorId: 'u11', views: 920000, likesCount: 78000, commentsCount: 4500, category: 'Sports', song: 'Skate Punk Anthems', thumbnail: '/images/reels/reel7.jpg' },
-  { id: 'r8', title: 'Beat Making Tutorial', creatorId: 'u12', views: 1500000, likesCount: 167000, commentsCount: 11200, category: 'Music', song: 'Beat Lab - Nova Blaze', isRemix: true, thumbnail: '/images/reels/reel8.jpg' },
-  { id: 'r9', title: 'Fashion Haul: Summer', creatorId: 'u10', views: 670000, likesCount: 45000, commentsCount: 3200, category: 'Trending', song: 'Runway Vibes - Luna Sky', isLive: true, thumbnail: '/images/reels/reel9.jpg' },
-  { id: 'r10', title: 'Dance Battle Finals', creatorId: 'u4', views: 4200000, likesCount: 567000, commentsCount: 45600, category: 'Dance', song: 'Battle Cry - DJ Prism', isRemix: true, thumbnail: '/images/reels/reel10.jpg' },
-  { id: 'r11', title: 'Sunset Timelapse', creatorId: 'u5', views: 1100000, likesCount: 98000, commentsCount: 6700, category: 'Trending', song: 'Golden Hour - Ambient Mix', thumbnail: '/images/reels/reel11.jpg' },
-  { id: 'r12', title: 'Piano Cover: Neon Dreams', creatorId: 'u9', views: 780000, likesCount: 56000, commentsCount: 4100, category: 'Music', song: 'Neon Dreams (Piano Version)', thumbnail: '/images/reels/reel12.jpg' },
+  { id: 'r1', title: 'Neon Dance Routine', creatorId: 'bot04', views: 2400000, likesCount: 189000, commentsCount: 12400, category: 'Dance', song: 'ORRA Gives Me Everything - ORRA', isRemix: true, thumbnail: '/images/reels/reel1.jpg' },
+  { id: 'r2', title: 'Cooking Hacks: 5min Meals', creatorId: 'bot12', views: 890000, likesCount: 67000, commentsCount: 5600, category: 'Food', song: 'Welcome to My Page - ORRA', thumbnail: '/images/reels/reel2.jpg' },
+  { id: 'r3', title: 'Beat Making From Scratch', creatorId: 'bot09', views: 1200000, likesCount: 145000, commentsCount: 8900, category: 'Music', song: 'Back of the Tracks - ORRA', thumbnail: '/images/reels/reel3.jpg' },
+  { id: 'r4', title: 'Morning Yoga Flow', creatorId: 'bot16', views: 567000, likesCount: 34000, commentsCount: 2300, category: 'Sports', song: 'ORRA - ORRA', isLive: true, thumbnail: '/images/reels/reel4.jpg' },
+  { id: 'r5', title: 'Street Art Process', creatorId: 'bot10', views: 1800000, likesCount: 210000, commentsCount: 15600, category: 'Art', song: 'Like and Follow - ORRA', isRemix: true, thumbnail: '/images/reels/reel5.jpg' },
+  { id: 'r6', title: 'Comedy: When WiFi Dies', creatorId: 'bot07', views: 3100000, likesCount: 445000, commentsCount: 34200, category: 'Comedy', song: 'Back of the Tracks - ORRA', thumbnail: '/images/reels/reel6.jpg' },
+  { id: 'r7', title: 'Skateboard Tricks', creatorId: 'bot19', views: 920000, likesCount: 78000, commentsCount: 4500, category: 'Sports', song: 'ORRA Gives Me Everything - ORRA', thumbnail: '/images/reels/reel7.jpg' },
+  { id: 'r8', title: 'Beat Making Tutorial', creatorId: 'bot15', views: 1500000, likesCount: 167000, commentsCount: 11200, category: 'Music', song: 'Like and Follow - ORRA', isRemix: true, thumbnail: '/images/reels/reel8.jpg' },
+  { id: 'r9', title: 'Fashion Haul: Summer', creatorId: 'bot13', views: 670000, likesCount: 45000, commentsCount: 3200, category: 'Trending', song: 'Welcome to My Page - ORRA', isLive: true, thumbnail: '/images/reels/reel9.jpg' },
+  { id: 'r10', title: 'Dance Battle Finals', creatorId: 'bot04', views: 4200000, likesCount: 567000, commentsCount: 45600, category: 'Dance', song: 'ORRA Gives Me Everything - ORRA', isRemix: true, thumbnail: '/images/reels/reel10.jpg' },
+  { id: 'r11', title: 'Sunset Timelapse', creatorId: 'bot08', views: 1100000, likesCount: 98000, commentsCount: 6700, category: 'Trending', song: 'ORRA - ORRA', thumbnail: '/images/reels/reel11.jpg' },
+  { id: 'r12', title: 'Classroom Comedy', creatorId: 'bot25', views: 780000, likesCount: 56000, commentsCount: 4100, category: 'Comedy', song: 'Back of the Tracks - ORRA', thumbnail: '/images/reels/reel12.jpg' },
 ];
 
-// Dance entries data
+// ============================================================
+// DANCE CHALLENGE + ENTRIES
+// ============================================================
+
 const danceEntriesData = [
-  { id: 'de1', authorId: 'u4', description: 'Electric slide meets hip-hop!', thumbnail: '/images/dance/entry0.jpg', likesCount: 98420 },
-  { id: 'de2', authorId: 'u10', description: 'Contemporary fusion piece', thumbnail: '/images/dance/entry1.jpg', likesCount: 87650 },
-  { id: 'de3', authorId: 'u1', description: 'Voguing with a twist', thumbnail: '/images/dance/entry2.jpg', likesCount: 76340 },
-  { id: 'de4', authorId: 'u12', description: 'Breakdance meets ballet', thumbnail: '/images/dance/entry3.jpg', likesCount: 65230 },
-  { id: 'de5', authorId: 'u5', description: 'Latin dance fusion', thumbnail: '/images/dance/entry4.jpg', likesCount: 54120 },
-  { id: 'de6', authorId: 'u11', description: 'Krump energy!', thumbnail: '/images/dance/entry5.jpg', likesCount: 43010 },
-  { id: 'de7', authorId: 'u2', description: 'Robot dance challenge', thumbnail: '/images/dance/entry6.jpg', likesCount: 38900 },
-  { id: 'de8', authorId: 'u8', description: 'Cyberpunk choreography', thumbnail: '/images/dance/entry7.jpg', likesCount: 32780 },
+  { id: 'de1', authorId: 'bot04', description: 'Electric slide meets hip-hop — bringing that Miami flavor!', thumbnail: '/images/dance/entry0.jpg', likesCount: 98420 },
+  { id: 'de2', authorId: 'bot13', description: 'Contemporary fusion with a fashion twist', thumbnail: '/images/dance/entry1.jpg', likesCount: 87650 },
+  { id: 'de3', authorId: 'bot10', description: 'Voguing with a digital art twist', thumbnail: '/images/dance/entry2.jpg', likesCount: 76340 },
+  { id: 'de4', authorId: 'bot15', description: 'Breakdance meets ballet — the duality', thumbnail: '/images/dance/entry3.jpg', likesCount: 65230 },
+  { id: 'de5', authorId: 'bot08', description: 'Latin dance fusion from around the world', thumbnail: '/images/dance/entry4.jpg', likesCount: 54120 },
+  { id: 'de6', authorId: 'bot19', description: 'Krump energy with skate style!', thumbnail: '/images/dance/entry5.jpg', likesCount: 43010 },
+  { id: 'de7', authorId: 'bot05', description: 'Robot dance challenge — engineer style', thumbnail: '/images/dance/entry6.jpg', likesCount: 38900 },
+  { id: 'de8', authorId: 'bot07', description: 'Cyberpunk choreography — gaming meets dance', thumbnail: '/images/dance/entry7.jpg', likesCount: 32780 },
+  { id: 'de9', authorId: 'bot24', description: 'Athletic flow — fitness meets rhythm', thumbnail: '/images/dance/entry8.jpg', likesCount: 28450 },
+  { id: 'de10', authorId: 'bot09', description: 'Chicago house meets hip-hop — born on the South Side', thumbnail: '/images/dance/entry9.jpg', likesCount: 24120 },
 ];
 
-// Hubs data
+// ============================================================
+// HUBS DATA
+// ============================================================
+
 const hubsData = [
-  { id: 'h1', name: 'Digital Artists', membersCount: 12400, onlineCount: 342, icon: '🎨', cover: '/images/hub1.jpg', description: 'Share your digital creations' },
-  { id: 'h2', name: 'Dance Crew', membersCount: 8900, onlineCount: 567, icon: '💃', cover: '/images/hub2.jpg', description: 'All dance styles welcome' },
-  { id: 'h3', name: 'Tech Innovators', membersCount: 15600, onlineCount: 890, icon: '🚀', cover: '/images/hub3.jpg', description: 'The future starts here' },
-  { id: 'h4', name: 'Music Makers', membersCount: 9200, onlineCount: 234, icon: '🎵', cover: '/images/hub4.jpg', description: 'Create and collaborate' },
-  { id: 'h5', name: 'Fitness First', membersCount: 11000, onlineCount: 456, icon: '💪', cover: '/images/hub5.jpg', description: 'Level up your fitness' },
-  { id: 'h6', name: 'Foodies Unite', membersCount: 7800, onlineCount: 123, icon: '🍜', cover: '/images/hub6.jpg', description: 'Food from around the world' },
+  { id: 'h1', name: 'Digital Artists', membersCount: 12400, onlineCount: 342, icon: '🎨', cover: '/images/hub1.jpg', description: 'Share your digital creations and get feedback from fellow artists' },
+  { id: 'h2', name: 'Dance Crew', membersCount: 8900, onlineCount: 567, icon: '💃', cover: '/images/hub2.jpg', description: 'All dance styles welcome — learn, share, and compete' },
+  { id: 'h3', name: 'Tech Innovators', membersCount: 15600, onlineCount: 890, icon: '🚀', cover: '/images/hub3.jpg', description: 'The future starts here — tech talk, dev tips, and AI debates' },
+  { id: 'h4', name: 'Music Makers', membersCount: 9200, onlineCount: 234, icon: '🎵', cover: '/images/hub4.jpg', description: 'Create and collaborate — producers, DJs, and musicians unite' },
+  { id: 'h5', name: 'Fitness First', membersCount: 11000, onlineCount: 456, icon: '💪', cover: '/images/hub5.jpg', description: 'Level up your fitness — tips, motivation, and accountability' },
+  { id: 'h6', name: 'Foodies Unite', membersCount: 7800, onlineCount: 123, icon: '🍜', cover: '/images/hub6.jpg', description: 'Food from around the world — recipes, reviews, and restaurant recs' },
 ];
 
-// Hub posts data
 const hubPostsData: Record<string, Array<{ id: string; authorId: string; text: string; likesCount: number; commentsCount: number }>> = {
   h1: [
-    { id: 'hp1-1', authorId: 'u1', text: 'Just finished this cyberpunk cityscape! What do you all think? Feedback welcome!', likesCount: 234, commentsCount: 45 },
-    { id: 'hp1-2', authorId: 'u12', text: 'Anyone else using Procreate for digital art? Looking for brush recommendations!', likesCount: 89, commentsCount: 23 },
-    { id: 'hp1-3', authorId: 'u4', text: 'Art block is REAL. Been staring at a blank canvas for 2 hours. Send help and inspiration!', likesCount: 567, commentsCount: 78 },
+    { id: 'hp1-1', authorId: 'bot10', text: 'Just finished this cyberpunk cityscape! What do you all think? Feedback welcome!', likesCount: 234, commentsCount: 45 },
+    { id: 'hp1-2', authorId: 'bot19', text: 'Anyone else using Procreate for digital art? Looking for brush recommendations!', likesCount: 89, commentsCount: 23 },
+    { id: 'hp1-3', authorId: 'bot21', text: 'Art block is REAL. Been staring at a blank canvas for 2 hours. Send help and inspiration!', likesCount: 567, commentsCount: 78 },
   ],
   h2: [
-    { id: 'hp2-1', authorId: 'u4', text: 'New choreo dropping this weekend! Been working on something special for the ORRA Dance Off!', likesCount: 456, commentsCount: 89 },
-    { id: 'hp2-2', authorId: 'u10', text: 'Anyone want to collab on a duet dance? Looking for a partner for the challenge!', likesCount: 234, commentsCount: 56 },
+    { id: 'hp2-1', authorId: 'bot04', text: 'New choreo dropping this weekend! Been working on something special for the ORRA Dance Off!', likesCount: 456, commentsCount: 89 },
+    { id: 'hp2-2', authorId: 'bot13', text: 'Anyone want to collab on a duet dance? Looking for a partner for the challenge!', likesCount: 234, commentsCount: 56 },
+    { id: 'hp2-3', authorId: 'bot24', text: 'Stretching routine for dancers! Do not skip your warmup, your body will thank you after practice.', likesCount: 312, commentsCount: 45 },
   ],
   h3: [
-    { id: 'hp3-1', authorId: 'u6', text: 'New AI model just dropped and it is INSANE. The creative applications are endless!', likesCount: 890, commentsCount: 123 },
-    { id: 'hp3-2', authorId: 'u2', text: 'Just built my first app with the new SDK. Documentation could use some work but the possibilities are amazing!', likesCount: 345, commentsCount: 67 },
+    { id: 'hp3-1', authorId: 'bot05', text: 'New AI model just dropped and it is INSANE. The creative applications are endless!', likesCount: 890, commentsCount: 123 },
+    { id: 'hp3-2', authorId: 'bot21', text: 'Just built my first app with the new SDK. Documentation could use some work but the possibilities are amazing!', likesCount: 345, commentsCount: 67 },
+    { id: 'hp3-3', authorId: 'bot07', text: 'Custom RGB setup is done. My electricity bill is going to be a problem but my setup is UNREAL.', likesCount: 234, commentsCount: 56 },
   ],
   h4: [
-    { id: 'hp4-1', authorId: 'u9', text: 'Studio session went crazy last night! New track coming this Friday!', likesCount: 678, commentsCount: 90 },
-    { id: 'hp4-2', authorId: 'u12', text: 'Beat making tutorial dropping tomorrow! Going to show you my whole workflow', likesCount: 445, commentsCount: 56 },
+    { id: 'hp4-1', authorId: 'bot15', text: 'Studio session went crazy last night! New track coming this Friday!', likesCount: 678, commentsCount: 90 },
+    { id: 'hp4-2', authorId: 'bot09', text: 'Beat making tutorial dropping tomorrow! Going to show you my whole workflow from bedroom to banger.', likesCount: 445, commentsCount: 56 },
+    { id: 'hp4-3', authorId: 'bot18', text: 'Does anyone else write lyrics first and then build the beat around them? Looking for collaborators!', likesCount: 189, commentsCount: 34 },
   ],
   h5: [
-    { id: 'hp5-1', authorId: 'u7', text: 'Morning routine tip: 5 minutes of breathwork before checking your phone. Game changer!', likesCount: 567, commentsCount: 78 },
-    { id: 'hp5-2', authorId: 'u11', text: 'Just hit a new PR on deadlifts! Consistency is key. Keep pushing!', likesCount: 345, commentsCount: 45 },
+    { id: 'hp5-1', authorId: 'bot16', text: 'Morning routine tip: 5 minutes of breathwork before checking your phone. Game changer!', likesCount: 567, commentsCount: 78 },
+    { id: 'hp5-2', authorId: 'bot24', text: 'Just hit a new PR on deadlifts! Consistency is key. Keep pushing!', likesCount: 345, commentsCount: 45 },
+    { id: 'hp5-3', authorId: 'bot02', text: 'Coach tip: hydration is not optional. If you are not drinking water, you are not training right.', likesCount: 234, commentsCount: 34 },
   ],
   h6: [
-    { id: 'hp6-1', authorId: 'u5', text: 'Made authentic paella from my abuela\'s recipe! The secret is the saffron!', likesCount: 789, commentsCount: 134 },
-    { id: 'hp6-2', authorId: 'u3', text: 'Best ramen spot in the city? Need recommendations for this weekend!', likesCount: 234, commentsCount: 89 },
+    { id: 'hp6-1', authorId: 'bot12', text: 'Made authentic paella from scratch! The secret is the saffron!', likesCount: 789, commentsCount: 134 },
+    { id: 'hp6-2', authorId: 'bot05', text: 'Best ramen spot in the city? Need recommendations for this weekend!', likesCount: 234, commentsCount: 89 },
+    { id: 'hp6-3', authorId: 'bot22', text: 'My garden jalapenos are finally ready! Salsa recipe coming this weekend. Abuela approved.', likesCount: 156, commentsCount: 23 },
   ],
 };
 
-// Initial chat history
-const chatHistoryData: Record<string, { otherUserId: string; unreadCount: number; messages: { senderId: string; text: string }[] }> = {
-  // Founder chats
-  mf1: {
-    otherUserId: 'u1',
-    unreadCount: 1,
-    messages: [
-      { senderId: 'u1', text: 'Hey Nick! Love what you built with ORRA!' },
-      { senderId: 'founder', text: 'Thanks! We are just getting started' },
-      { senderId: 'u1', text: 'The art community is thriving here!' },
-    ],
-  },
-  mf2: {
-    otherUserId: 'u4',
-    unreadCount: 2,
-    messages: [
-      { senderId: 'u4', text: 'The Dance Off is going crazy this year!' },
-      { senderId: 'founder', text: 'I know! The talent is insane' },
-      { senderId: 'u4', text: 'Can we collab on the next challenge?' },
-    ],
-  },
-  mf3: {
-    otherUserId: 'u16',
-    unreadCount: 0,
-    messages: [
-      { senderId: 'u16', text: 'Just dropped a new beat for ORRA!' },
-      { senderId: 'founder', text: 'Let me hear it!' },
-      { senderId: 'u16', text: 'The studio session was legendary' },
-    ],
-  },
-  m1: {
-    otherUserId: 'u1',
-    unreadCount: 2,
-    messages: [
-      { senderId: 'u1', text: 'Hey! Did you see the new dance challenge?' },
-      { senderId: 'u13', text: 'Yes!! The moves are incredible this year' },
-      { senderId: 'u1', text: 'OMG that dance was insane! We need to collab!' },
-    ],
-  },
-  m2: {
-    otherUserId: 'u2',
-    unreadCount: 0,
-    messages: [
-      { senderId: 'u2', text: 'Working on something cool in the studio' },
-      { senderId: 'u13', text: 'Can not wait to hear it!' },
-      { senderId: 'u2', text: 'Check out this new track I made' },
-    ],
-  },
-  m3: {
-    otherUserId: 'u4',
-    unreadCount: 1,
-    messages: [
-      { senderId: 'u4', text: 'The dance off is about to start!' },
-      { senderId: 'u13', text: 'I am so ready for this' },
-      { senderId: 'u4', text: 'You ready for the challenge? Let us go!' },
-    ],
-  },
-  m4: {
-    otherUserId: 'u5',
-    unreadCount: 0,
-    messages: [
-      { senderId: 'u5', text: 'Barcelona is absolutely stunning' },
-      { senderId: 'u13', text: 'Show me the photos!' },
-      { senderId: 'u5', text: 'Barcelona photos are up! Check them' },
-    ],
-  },
-  m5: {
-    otherUserId: 'u7',
-    unreadCount: 0,
-    messages: [
-      { senderId: 'u7', text: 'Morning meditation was amazing today' },
-      { senderId: 'u13', text: 'I need to get back into that routine' },
-      { senderId: 'u7', text: 'Namaste! Morning session tomorrow?' },
-    ],
-  },
-  m6: {
-    otherUserId: 'u9',
-    unreadCount: 3,
-    messages: [
-      { senderId: 'u9', text: 'Studio session went crazy last night' },
-      { senderId: 'u13', text: 'When is it dropping?' },
-      { senderId: 'u9', text: 'Listen to the new single! Just dropped!' },
-    ],
-  },
-  m7: {
-    otherUserId: 'u10',
-    unreadCount: 0,
-    messages: [
-      { senderId: 'u10', text: 'That reel we talked about?' },
-      { senderId: 'u13', text: 'Still editing, almost done!' },
-      { senderId: 'u10', text: 'Let us collab on the next reel' },
-    ],
-  },
-  m8: {
-    otherUserId: 'u11',
-    unreadCount: 0,
-    messages: [
-      { senderId: 'u11', text: 'The weather is perfect for skating' },
-      { senderId: 'u13', text: 'Let me grab my board!' },
-      { senderId: 'u11', text: 'Skate session tomorrow at the park?' },
-    ],
-  },
-  m9: {
-    otherUserId: 'u12',
-    unreadCount: 0,
-    messages: [
-      { senderId: 'u12', text: 'Just finished a new beat' },
-      { senderId: 'u13', text: 'Send it over!' },
-      { senderId: 'u12', text: 'New beat just dropped, need your feedback' },
-    ],
-  },
+// Hub member assignments
+const hubMembersData: Record<string, string[]> = {
+  h1: ['bot10', 'bot19', 'bot21', 'bot13', 'bot18'],
+  h2: ['bot04', 'bot13', 'bot15', 'bot24', 'bot08'],
+  h3: ['bot05', 'bot07', 'bot21', 'bot09'],
+  h4: ['bot15', 'bot09', 'bot18', 'bot19'],
+  h5: ['bot16', 'bot24', 'bot02', 'bot19', 'bot01'],
+  h6: ['bot12', 'bot05', 'bot22', 'bot23', 'bot08'],
 };
 
-// Notifications data
+// ============================================================
+// CHAT CONVERSATIONS
+// ============================================================
+
+const chatHistoryData: Array<{ chatKey: string; participants: string[]; unreadCounts: Record<string, number>; messages: Array<{ senderId: string; text: string }> }> = [
+  // Founder chats
+  {
+    chatKey: 'mf1',
+    participants: ['founder', 'bot04'],
+    unreadCounts: { founder: 1, bot04: 0 },
+    messages: [
+      { senderId: 'bot04', text: 'Hey Nick! The Dance Off is going crazy this year!' },
+      { senderId: 'founder', text: 'I know! The talent is insane' },
+      { senderId: 'bot04', text: 'Can we collab on the next challenge? I have some wild ideas!' },
+    ],
+  },
+  {
+    chatKey: 'mf2',
+    participants: ['founder', 'bot15'],
+    unreadCounts: { founder: 2, bot15: 0 },
+    messages: [
+      { senderId: 'bot15', text: 'Just dropped a new beat for ORRA!' },
+      { senderId: 'founder', text: 'Let me hear it!' },
+      { senderId: 'bot15', text: 'The studio session was legendary. This one is different.' },
+    ],
+  },
+  {
+    chatKey: 'mf3',
+    participants: ['founder', 'bot06'],
+    unreadCounts: { founder: 0, bot06: 1 },
+    messages: [
+      { senderId: 'bot06', text: 'Nick! The hair care line is ready for the ORRA drop!' },
+      { senderId: 'founder', text: 'Amazing! Let us make it an exclusive launch!' },
+      { senderId: 'bot06', text: 'Yes! I will send over the product shots tonight' },
+    ],
+  },
+  {
+    chatKey: 'mf4',
+    participants: ['founder', 'bot10'],
+    unreadCounts: { founder: 0, bot10: 0 },
+    messages: [
+      { senderId: 'bot10', text: 'Love what you built with ORRA! The art community is thriving!' },
+      { senderId: 'founder', text: 'Thanks Luna! We are just getting started' },
+      { senderId: 'bot10', text: 'The art tools are incredible. My illustrations have never looked better!' },
+    ],
+  },
+  // Bot-to-bot chats
+  {
+    chatKey: 'mb1',
+    participants: ['bot03', 'bot13'],
+    unreadCounts: { bot03: 2, bot13: 0 },
+    messages: [
+      { senderId: 'bot13', text: 'Hey! Did you see the new dance challenge?' },
+      { senderId: 'bot03', text: 'Yes!! The moves are incredible this year' },
+      { senderId: 'bot13', text: 'We need to collab on a reel! Fashion meets dance!' },
+    ],
+  },
+  {
+    chatKey: 'mb2',
+    participants: ['bot05', 'bot12'],
+    unreadCounts: { bot05: 0, bot12: 0 },
+    messages: [
+      { senderId: 'bot12', text: 'Working on a new recipe that blends Indian and Chinese flavors' },
+      { senderId: 'bot05', text: 'That sounds incredible! Butter chicken egg rolls?' },
+      { senderId: 'bot12', text: 'You read my mind! Testing it tonight' },
+    ],
+  },
+  {
+    chatKey: 'mb3',
+    participants: ['bot04', 'bot15'],
+    unreadCounts: { bot04: 1, bot15: 0 },
+    messages: [
+      { senderId: 'bot15', text: 'The dance off track is going to be FIRE' },
+      { senderId: 'bot04', text: 'I am so ready for this! Been practicing all week' },
+      { senderId: 'bot15', text: 'Let us make this the biggest challenge yet!' },
+    ],
+  },
+  {
+    chatKey: 'mb4',
+    participants: ['bot07', 'bot14'],
+    unreadCounts: { bot07: 3, bot14: 0 },
+    messages: [
+      { senderId: 'bot14', text: 'Ranked session tonight? I am on a winning streak!' },
+      { senderId: 'bot07', text: 'Let us go! Just finished my LED setup, streaming from the cave tonight' },
+      { senderId: 'bot14', text: 'Perfect! I will bring the snacks, you bring the skills' },
+    ],
+  },
+  {
+    chatKey: 'mb5',
+    participants: ['bot01', 'bot20'],
+    unreadCounts: { bot01: 0, bot20: 0 },
+    messages: [
+      { senderId: 'bot20', text: 'Long day at work. Kids were wild today!' },
+      { senderId: 'bot01', text: 'Same! 12 hour shift. But we made it through!' },
+      { senderId: 'bot20', text: 'Working moms unite! We are basically superheroes' },
+    ],
+  },
+  {
+    chatKey: 'mb6',
+    participants: ['bot17', 'bot21'],
+    unreadCounts: { bot17: 0, bot21: 2 },
+    messages: [
+      { senderId: 'bot21', text: 'Just got the internship!' },
+      { senderId: 'bot17', text: 'BRO THAT IS AMAZING!! So happy for you!' },
+      { senderId: 'bot21', text: 'Thanks! Your turn is coming, I can feel it. Keep going.' },
+    ],
+  },
+  {
+    chatKey: 'mb7',
+    participants: ['bot18', 'bot25'],
+    unreadCounts: { bot18: 0, bot25: 1 },
+    messages: [
+      { senderId: 'bot25', text: 'Your poem today was beautiful Isla' },
+      { senderId: 'bot18', text: 'Thank you Ethan. That means a lot coming from you' },
+      { senderId: 'bot25', text: 'Want to collab? I do wordplay comedy, you do poetry. Could be magic.' },
+    ],
+  },
+  {
+    chatKey: 'mb8',
+    participants: ['bot16', 'bot24'],
+    unreadCounts: { bot16: 0, bot24: 0 },
+    messages: [
+      { senderId: 'bot24', text: 'Morning session was incredible today!' },
+      { senderId: 'bot16', text: 'I need to get back into that routine' },
+      { senderId: 'bot24', text: 'Tomorrow morning? 6 AM? Let us hold each other accountable!' },
+    ],
+  },
+];
+
+// ============================================================
+// NOTIFICATIONS DATA
+// ============================================================
+
 const notificationsData = [
   // Founder notifications
-  { id: 'nf1', userId: 'founder', triggeredByUserId: 'u1', action: 'liked your post', type: 'like', thumbnail: '/images/posts/art1.jpg' },
-  { id: 'nf2', userId: 'founder', triggeredByUserId: 'u4', action: 'started following you', type: 'follow', thumbnail: '' },
-  { id: 'nf3', userId: 'founder', triggeredByUserId: 'u13', action: 'commented: "ORRA is the future!"', type: 'comment', thumbnail: '/images/posts/dance1.jpg' },
-  { id: 'nf4', userId: 'founder', triggeredByUserId: 'u16', action: 'shared your post', type: 'share', thumbnail: '/images/posts/album1.jpg' },
-  // Other user notifications
-  { id: 'n1', userId: 'u13', triggeredByUserId: 'u1', action: 'liked your dance video', type: 'like', thumbnail: '/images/posts/dance1.jpg' },
-  { id: 'n2', userId: 'u13', triggeredByUserId: 'u2', action: 'started following you', type: 'follow', thumbnail: '' },
-  { id: 'n3', userId: 'u13', triggeredByUserId: 'u4', action: 'commented: "Insane moves!"', type: 'comment', thumbnail: '/images/posts/dance2.jpg' },
-  { id: 'n4', userId: 'u13', triggeredByUserId: 'u5', action: 'shared your post to their ORRA', type: 'share', thumbnail: '/images/posts/sunset1.jpg' },
-  { id: 'n5', userId: 'u13', triggeredByUserId: 'u7', action: 'mentioned you in a comment', type: 'mention', thumbnail: '' },
-  { id: 'n6', userId: 'u13', triggeredByUserId: 'u9', action: 'started following you', type: 'follow', thumbnail: '' },
-  { id: 'n7', userId: 'u13', triggeredByUserId: 'u8', action: 'liked your dance challenge entry', type: 'like', thumbnail: '/images/posts/game1.jpg' },
-  { id: 'n8', userId: 'u13', triggeredByUserId: 'u10', action: 'remixed your reel', type: 'remix', thumbnail: '/images/posts/album1.jpg' },
-  { id: 'n9', userId: 'u13', triggeredByUserId: 'u11', action: 'started following you', type: 'follow', thumbnail: '' },
-  { id: 'n10', userId: 'u13', triggeredByUserId: 'u12', action: 'liked your comment', type: 'like', thumbnail: '' },
-  { id: 'n11', userId: 'u13', triggeredByUserId: 'u6', action: 'featured your post in Tech Daily', type: 'feature', thumbnail: '/images/posts/art1.jpg' },
+  { id: 'nf1', userId: 'founder', triggeredByUserId: 'bot04', action: 'liked your post', type: 'like', thumbnail: '/images/posts/dance1.jpg', postId: 'p0founder' },
+  { id: 'nf2', userId: 'founder', triggeredByUserId: 'bot06', action: 'started following you', type: 'follow', thumbnail: '', postId: null },
+  { id: 'nf3', userId: 'founder', triggeredByUserId: 'bot13', action: 'commented: "ORRA is the future!"', type: 'comment', thumbnail: '/images/posts/fashion1.jpg', postId: 'p0founder' },
+  { id: 'nf4', userId: 'founder', triggeredByUserId: 'bot15', action: 'shared your post', type: 'share', thumbnail: '/images/posts/album1.jpg', postId: 'p0founder2' },
+  { id: 'nf5', userId: 'founder', triggeredByUserId: 'bot10', action: 'started following you', type: 'follow', thumbnail: '', postId: null },
+  { id: 'nf6', userId: 'founder', triggeredByUserId: 'bot22', action: 'commented: "Abuela loves ORRA!"', type: 'comment', thumbnail: '', postId: 'p0founder' },
+  { id: 'nf7', userId: 'founder', triggeredByUserId: 'bot03', action: 'shared your post to their ORRA', type: 'share', thumbnail: '/images/posts/sunset1.jpg', postId: 'p0founder2' },
+
+  // Bot notifications
+  { id: 'n1', userId: 'bot13', triggeredByUserId: 'bot04', action: 'liked your dance video', type: 'like', thumbnail: '/images/posts/dance1.jpg', postId: 'p04a' },
+  { id: 'n2', userId: 'bot13', triggeredByUserId: 'bot06', action: 'started following you', type: 'follow', thumbnail: '', postId: null },
+  { id: 'n3', userId: 'bot13', triggeredByUserId: 'bot04', action: 'commented: "Insane moves!"', type: 'comment', thumbnail: '/images/posts/dance2.jpg', postId: 'p04a' },
+  { id: 'n4', userId: 'bot06', triggeredByUserId: 'bot13', action: 'started following you', type: 'follow', thumbnail: '', postId: null },
+  { id: 'n5', userId: 'bot06', triggeredByUserId: 'bot01', action: 'liked your salon post', type: 'like', thumbnail: '/images/posts/fashion1.jpg', postId: 'p06a' },
+  { id: 'n6', userId: 'bot03', triggeredByUserId: 'bot17', action: 'commented: "This gives me hope!"', type: 'comment', thumbnail: '', postId: 'p03b' },
+  { id: 'n7', userId: 'bot17', triggeredByUserId: 'bot20', action: 'liked your post', type: 'like', thumbnail: '', postId: 'p17b' },
+  { id: 'n8', userId: 'bot21', triggeredByUserId: 'bot10', action: 'started following you', type: 'follow', thumbnail: '', postId: null },
+  { id: 'n9', userId: 'bot22', triggeredByUserId: 'bot13', action: 'liked your post', type: 'like', thumbnail: '', postId: 'p22a' },
+  { id: 'n10', userId: 'bot12', triggeredByUserId: 'bot05', action: 'commented: "Recipe when?!"', type: 'comment', thumbnail: '/images/posts/food1.jpg', postId: 'p12a' },
+  { id: 'n11', userId: 'bot20', triggeredByUserId: 'bot22', action: 'commented: "Keep winning mama!"', type: 'comment', thumbnail: '', postId: 'p20a' },
+  { id: 'n12', userId: 'bot24', triggeredByUserId: 'bot19', action: 'liked your fitness post', type: 'like', thumbnail: '', postId: 'p24a' },
+  { id: 'n13', userId: 'bot25', triggeredByUserId: 'bot07', action: 'liked your meme', type: 'like', thumbnail: '', postId: 'p25a' },
+  { id: 'n14', userId: 'bot18', triggeredByUserId: 'bot10', action: 'liked your poem', type: 'like', thumbnail: '', postId: 'p18a' },
+  { id: 'n15', userId: 'bot08', triggeredByUserId: 'bot12', action: 'started following you', type: 'follow', thumbnail: '', postId: null },
+  { id: 'n16', userId: 'bot04', triggeredByUserId: 'founder', action: 'liked your dance post', type: 'like', thumbnail: '/images/posts/dance1.jpg', postId: 'p04a' },
+  { id: 'n17', userId: 'bot09', triggeredByUserId: 'bot15', action: 'started following you', type: 'follow', thumbnail: '', postId: null },
+  { id: 'n18', userId: 'bot23', triggeredByUserId: 'bot24', action: 'liked your post', type: 'like', thumbnail: '', postId: 'p23a' },
+  { id: 'n19', userId: 'bot01', triggeredByUserId: 'bot16', action: 'started following you', type: 'follow', thumbnail: '', postId: null },
+  { id: 'n20', userId: 'bot02', triggeredByUserId: 'bot24', action: 'liked your coaching post', type: 'like', thumbnail: '', postId: 'p02a' },
 ];
 
 
@@ -928,6 +1899,7 @@ async function main() {
   const founderPassword = await bcrypt.hash('Weareone504', SALT_ROUNDS);
 
   for (const u of mockUsers) {
+    const song = u.profileSong ?? ORRA_SONGS[0];
     await prisma.user.create({
       data: {
         id: u.id,
@@ -936,7 +1908,7 @@ async function main() {
         handle: u.handle,
         password: u.id === 'founder' ? founderPassword : hashedPassword,
         avatar: u.avatar,
-        coverImage: u.coverImage ?? '/images/profile-cover.png',
+        coverImage: u.coverImage ?? '/images/profile-cover.jpg',
         bio: u.bio ?? '',
         location: u.location ?? '',
         website: u.website ?? '',
@@ -944,20 +1916,22 @@ async function main() {
         online: u.online ?? false,
         auraTokens: u.auraTokens,
         auraLevel: u.auraLevel,
-        auraXP: (u as any).auraXP ?? 50,
+        auraXP: u.auraXP ?? 50,
         badges: JSON.stringify(u.badges ?? []),
-        profileSetupComplete: true, // Demo users have their profiles set up
+        profileSetupComplete: true,
+        profileSongUrl: song.url,
+        profileSongTitle: song.title,
+        profileSongArtist: song.artist,
       },
     });
   }
   console.log(`✅ Created ${mockUsers.length} users\n`);
 
   // ========================================
-  // 2. Create Posts (Feed + Comedy)
+  // 2. Create Posts
   // ========================================
   console.log('📝 Creating posts...');
-  const allPosts = [...feedPosts, ...comedyPosts];
-  for (const p of allPosts) {
+  for (const p of feedPosts) {
     await prisma.post.create({
       data: {
         id: p.id,
@@ -973,49 +1947,90 @@ async function main() {
       },
     });
   }
-  console.log(`✅ Created ${allPosts.length} posts (${feedPosts.length} feed + ${comedyPosts.length} comedy)\n`);
+  console.log(`✅ Created ${feedPosts.length} posts\n`);
 
   // ========================================
-  // 3. Create Stories
+  // 3. Create Comments
   // ========================================
-  console.log('📸 Creating stories...');
-  const storyUsers = [
-    // Founder story — always first
-    { userId: 'founder', image: '/images/dance-party.png' },
-    { userId: 'u13', image: '/images/dance-party.png' },
-    { userId: 'u1', image: '/images/stories/story1.jpg' },
-    { userId: 'u2', image: '/images/stories/story2.jpg' },
-    { userId: 'u4', image: '/images/stories/story3.jpg' },
-    { userId: 'u5', image: '/images/stories/story4.jpg' },
-    { userId: 'u7', image: '/images/stories/story5.jpg' },
-    { userId: 'u9', image: '/images/stories/story6.jpg' },
-    { userId: 'u10', image: '/images/stories/story7.jpg' },
-    { userId: 'u12', image: '/images/stories/story8.jpg' },
-    // 8 new stories
-    { userId: 'u14', image: '/images/stories/story9.jpg' },
-    { userId: 'u15', image: '/images/stories/story10.jpg' },
-    { userId: 'u16', image: '/images/stories/story11.jpg' },
-    { userId: 'u3', image: '/images/stories/story12.jpg' },
-    { userId: 'u6', image: '/images/stories/story13.jpg' },
-    { userId: 'u8', image: '/images/stories/story14.jpg' },
-    { userId: 'u11', image: '/images/stories/story15.jpg' },
-    { userId: 'u13', image: '/images/stories/story16.jpg' },
-  ];
-
-  for (const s of storyUsers) {
-    await prisma.story.create({
+  console.log('💬 Creating comments...');
+  for (const c of commentsData) {
+    await prisma.comment.create({
       data: {
-        image: s.image,
-        viewed: false,
-        authorId: s.userId,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h from now
+        id: c.id,
+        text: c.text,
+        postId: c.postId,
+        authorId: c.authorId,
+        parentId: c.parentId,
+        replyToName: c.replyToName,
+        createdAt: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000),
       },
     });
   }
-  console.log(`✅ Created ${storyUsers.length} stories\n`);
+  console.log(`✅ Created ${commentsData.length} comments\n`);
 
   // ========================================
-  // 4. Create Reels
+  // 4. Create Likes
+  // ========================================
+  console.log('❤️  Creating likes...');
+  for (const l of likesData) {
+    await prisma.like.create({
+      data: {
+        id: l.id,
+        userId: l.userId,
+        targetId: l.targetId,
+        targetType: l.targetType,
+        reactionType: l.reactionType,
+      },
+    });
+  }
+  console.log(`✅ Created ${likesData.length} likes\n`);
+
+  // ========================================
+  // 5. Create Follow Relationships
+  // ========================================
+  console.log('🔗 Creating follow relationships...');
+  for (const f of followsData) {
+    await prisma.follow.create({
+      data: {
+        followerId: f.followerId,
+        followingId: f.followingId,
+      },
+    });
+  }
+  console.log(`✅ Created ${followsData.length} follow relationships\n`);
+
+  // ========================================
+  // 6. Create Stories
+  // ========================================
+  console.log('📸 Creating stories...');
+  // One story per user, 24h expiry
+  const allUserIds = mockUsers.map(u => u.id);
+  const storyImages = [
+    '/images/stories/story1.jpg', '/images/stories/story2.jpg', '/images/stories/story3.jpg',
+    '/images/stories/story4.jpg', '/images/stories/story5.jpg', '/images/stories/story6.jpg',
+    '/images/stories/story7.jpg', '/images/stories/story8.jpg', '/images/stories/story9.jpg',
+    '/images/stories/story10.jpg', '/images/stories/story11.jpg', '/images/stories/story12.jpg',
+    '/images/stories/story13.jpg', '/images/stories/story14.jpg', '/images/stories/story15.jpg',
+    '/images/stories/story16.jpg', '/images/dance-party.png', '/images/stories/story1.jpg',
+    '/images/stories/story2.jpg', '/images/stories/story3.jpg', '/images/stories/story4.jpg',
+    '/images/stories/story5.jpg', '/images/stories/story6.jpg', '/images/stories/story7.jpg',
+    '/images/stories/story8.jpg', '/images/stories/story9.jpg',
+  ];
+
+  for (let i = 0; i < allUserIds.length; i++) {
+    await prisma.story.create({
+      data: {
+        image: storyImages[i % storyImages.length],
+        viewed: false,
+        authorId: allUserIds[i],
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+  console.log(`✅ Created ${allUserIds.length} stories\n`);
+
+  // ========================================
+  // 7. Create Reels
   // ========================================
   console.log('🎬 Creating reels...');
   for (const r of reelsData) {
@@ -1038,7 +2053,7 @@ async function main() {
   console.log(`✅ Created ${reelsData.length} reels\n`);
 
   // ========================================
-  // 5. Create Dance Challenge + Entries
+  // 8. Create Dance Challenge + Entries
   // ========================================
   console.log('💃 Creating dance challenge...');
   const challenge = await prisma.danceChallenge.create({
@@ -1046,8 +2061,8 @@ async function main() {
       id: 'dc1',
       name: 'ORRA DANCE OFF 2027',
       hashtag: '#OrraDanceOff2027',
-      song: 'Neon Dreams - DJ Prism ft. Luna',
-      description: 'Show us your best moves! Create a dance video using the official track and tag #OrraDanceOff2027. The top 3 entries with the most likes win exclusive ORRA plaques and tokens!',
+      song: 'ORRA Gives Me Everything - ORRA',
+      description: 'Show us your best moves! Create a dance video using the official ORRA track and tag #OrraDanceOff2027. The top 3 entries with the most likes win exclusive ORRA plaques and tokens!',
       prize: '100,000 ORRA + Champion Plaque',
       secondPrize: '50,000 ORRA + Runner-Up Plaque',
       thirdPrize: '25,000 ORRA + 3rd Place Plaque',
@@ -1072,7 +2087,7 @@ async function main() {
   console.log(`✅ Created dance challenge with ${danceEntriesData.length} entries\n`);
 
   // ========================================
-  // 6. Create Hubs + Members + Posts
+  // 9. Create Hubs + Members + Posts
   // ========================================
   console.log('🏠 Creating hubs...');
   for (const h of hubsData) {
@@ -1088,26 +2103,18 @@ async function main() {
       },
     });
 
-    // Add members to each hub (current user + relevant users)
-    const hubMemberIds: string[] = [];
-    // Add specific users based on hub
-    if (h.id === 'h1') hubMemberIds.push('u1', 'u12', 'u4', 'u8', 'u13'); // Digital Artists
-    if (h.id === 'h2') hubMemberIds.push('u4', 'u10', 'u1', 'u16'); // Dance Crew
-    if (h.id === 'h3') hubMemberIds.push('u6', 'u2', 'u14'); // Tech Innovators
-    if (h.id === 'h4') hubMemberIds.push('u9', 'u12', 'u10', 'u16'); // Music Makers
-    if (h.id === 'h5') hubMemberIds.push('u7', 'u11', 'u15'); // Fitness First
-    if (h.id === 'h6') hubMemberIds.push('u5', 'u3', 'u15'); // Foodies Unite
-
-    for (const memberId of hubMemberIds) {
+    // Add members
+    const members = hubMembersData[h.id] ?? [];
+    for (const userId of members) {
       await prisma.hubMember.create({
         data: {
-          userId: memberId,
+          userId,
           hubId: h.id,
         },
       });
     }
 
-    // Create hub posts
+    // Add posts
     const posts = hubPostsData[h.id] ?? [];
     for (const hp of posts) {
       await prisma.hubPost.create({
@@ -1118,7 +2125,6 @@ async function main() {
           commentsCount: hp.commentsCount,
           authorId: hp.authorId,
           hubId: h.id,
-          createdAt: new Date(Date.now() - Math.random() * 3 * 60 * 60 * 1000),
         },
       });
     }
@@ -1126,125 +2132,26 @@ async function main() {
   console.log(`✅ Created ${hubsData.length} hubs with members and posts\n`);
 
   // ========================================
-  // 7. Create Follow Relationships
-  // ========================================
-  console.log('🔗 Creating follow relationships...');
-  // Cross-follows between users (no main account)
-  const followPairs: Array<{ followerId: string; followingId: string }> = [];
-
-  const crossFollows = [
-    // Everyone follows the founder
-    { followerId: 'u1', followingId: 'founder' },
-    { followerId: 'u2', followingId: 'founder' },
-    { followerId: 'u3', followingId: 'founder' },
-    { followerId: 'u4', followingId: 'founder' },
-    { followerId: 'u5', followingId: 'founder' },
-    { followerId: 'u6', followingId: 'founder' },
-    { followerId: 'u7', followingId: 'founder' },
-    { followerId: 'u8', followingId: 'founder' },
-    { followerId: 'u9', followingId: 'founder' },
-    { followerId: 'u10', followingId: 'founder' },
-    { followerId: 'u11', followingId: 'founder' },
-    { followerId: 'u12', followingId: 'founder' },
-    { followerId: 'u13', followingId: 'founder' },
-    { followerId: 'u14', followingId: 'founder' },
-    { followerId: 'u15', followingId: 'founder' },
-    { followerId: 'u16', followingId: 'founder' },
-    // Founder follows everyone back
-    { followerId: 'founder', followingId: 'u1' },
-    { followerId: 'founder', followingId: 'u2' },
-    { followerId: 'founder', followingId: 'u3' },
-    { followerId: 'founder', followingId: 'u4' },
-    { followerId: 'founder', followingId: 'u5' },
-    { followerId: 'founder', followingId: 'u6' },
-    { followerId: 'founder', followingId: 'u7' },
-    { followerId: 'founder', followingId: 'u8' },
-    { followerId: 'founder', followingId: 'u9' },
-    { followerId: 'founder', followingId: 'u10' },
-    { followerId: 'founder', followingId: 'u11' },
-    { followerId: 'founder', followingId: 'u12' },
-    { followerId: 'founder', followingId: 'u13' },
-    { followerId: 'founder', followingId: 'u14' },
-    { followerId: 'founder', followingId: 'u15' },
-    { followerId: 'founder', followingId: 'u16' },
-    // Cross follows between users
-    { followerId: 'u1', followingId: 'u4' },
-    { followerId: 'u4', followingId: 'u1' },
-    { followerId: 'u1', followingId: 'u12' },
-    { followerId: 'u10', followingId: 'u4' },
-    { followerId: 'u4', followingId: 'u10' },
-    { followerId: 'u9', followingId: 'u12' },
-    { followerId: 'u12', followingId: 'u9' },
-    { followerId: 'u7', followingId: 'u11' },
-    { followerId: 'u5', followingId: 'u3' },
-    { followerId: 'u6', followingId: 'u2' },
-    { followerId: 'u2', followingId: 'u6' },
-    // New demo users follows
-    { followerId: 'u13', followingId: 'u1' },
-    { followerId: 'u13', followingId: 'u4' },
-    { followerId: 'u13', followingId: 'u10' },
-    { followerId: 'u1', followingId: 'u13' },
-    { followerId: 'u14', followingId: 'u8' },
-    { followerId: 'u14', followingId: 'u6' },
-    { followerId: 'u8', followingId: 'u14' },
-    { followerId: 'u15', followingId: 'u5' },
-    { followerId: 'u15', followingId: 'u3' },
-    { followerId: 'u5', followingId: 'u15' },
-    { followerId: 'u16', followingId: 'u4' },
-    { followerId: 'u16', followingId: 'u9' },
-    { followerId: 'u16', followingId: 'u12' },
-    { followerId: 'u4', followingId: 'u16' },
-    { followerId: 'u9', followingId: 'u16' },
-  ];
-  followPairs.push(...crossFollows);
-
-  for (const f of followPairs) {
-    try {
-      await prisma.follow.create({
-        data: {
-          followerId: f.followerId,
-          followingId: f.followingId,
-        },
-      });
-    } catch {
-      // Skip duplicates (unique constraint)
-    }
-  }
-  console.log(`✅ Created ${followPairs.length} follow relationships\n`);
-
-  // ========================================
-  // 8. Create Chat Conversations + Messages
+  // 10. Create Chat Conversations
   // ========================================
   console.log('💬 Creating chat conversations...');
-  for (const [chatId, chatData] of Object.entries(chatHistoryData)) {
-    // Create chat
+  for (const chatData of chatHistoryData) {
     const chat = await prisma.chat.create({
       data: {
-        id: chatId,
+        id: chatData.chatKey,
       },
     });
 
-    // Determine the "owner" of this chat - founder chats use 'founder', others use 'u13'
-    const isFounderChat = chatId.startsWith('mf');
-    const chatOwner = isFounderChat ? 'founder' : 'u13';
-
-    // Add chat owner member
-    await prisma.chatMember.create({
-      data: {
-        chatId: chat.id,
-        userId: chatOwner,
-        unreadCount: 0,
-      },
-    });
-
-    // Other user
-    await prisma.chatMember.create({
-      data: {
-        chatId: chat.id,
-        userId: chatData.otherUserId,
-        unreadCount: chatData.unreadCount,
-      },
-    });
+    // Add members
+    for (const userId of chatData.participants) {
+      await prisma.chatMember.create({
+        data: {
+          chatId: chat.id,
+          userId,
+          unreadCount: chatData.unreadCounts[userId] ?? 0,
+        },
+      });
+    }
 
     // Add messages
     for (const msg of chatData.messages) {
@@ -1258,22 +2165,24 @@ async function main() {
       });
     }
   }
-  console.log(`✅ Created ${Object.keys(chatHistoryData).length} chat conversations with messages\n`);
+  console.log(`✅ Created ${chatHistoryData.length} chat conversations\n`);
 
   // ========================================
-  // 9. Create Notifications
+  // 11. Create Notifications
   // ========================================
   console.log('🔔 Creating notifications...');
   for (const n of notificationsData) {
     await prisma.notification.create({
       data: {
         id: n.id,
+        userId: n.userId,
+        triggeredByUserId: n.triggeredByUserId,
         action: n.action,
         type: n.type,
         thumbnail: n.thumbnail,
-        userId: n.userId,
-        triggeredByUserId: n.triggeredByUserId,
-        createdAt: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000),
+        postId: n.postId,
+        read: false,
+        createdAt: new Date(Date.now() - Math.random() * 3 * 24 * 60 * 60 * 1000),
       },
     });
   }
@@ -1282,31 +2191,27 @@ async function main() {
   // ========================================
   // Summary
   // ========================================
-  console.log('='.repeat(50));
-  console.log('🎉 ORRA Database Seeded Successfully!');
-  console.log('='.repeat(50));
-  console.log(`👤 Users: ${mockUsers.length}`);
-  console.log(`📝 Posts: ${allPosts.length}`);
-  console.log(`📸 Stories: ${storyUsers.length}`);
-  console.log(`🎬 Reels: ${reelsData.length}`);
-  console.log(`💃 Dance Entries: ${danceEntriesData.length}`);
-  console.log(`🏠 Hubs: ${hubsData.length}`);
-  console.log(`💬 Chats: ${Object.keys(chatHistoryData).length}`);
+  console.log('🎉 ORRA database seeded successfully!\n');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`👤 Users:         ${mockUsers.length}`);
+  console.log(`📝 Posts:         ${feedPosts.length}`);
+  console.log(`💬 Comments:      ${commentsData.length}`);
+  console.log(`❤️  Likes:         ${likesData.length}`);
+  console.log(`🔗 Follows:       ${followsData.length}`);
+  console.log(`📸 Stories:       ${allUserIds.length}`);
+  console.log(`🎬 Reels:         ${reelsData.length}`);
+  console.log(`💃 Dance Entries:  ${danceEntriesData.length}`);
+  console.log(`🏠 Hubs:          ${hubsData.length}`);
+  console.log(`💬 Chats:         ${chatHistoryData.length}`);
   console.log(`🔔 Notifications: ${notificationsData.length}`);
-  console.log(`🔗 Follows: ${followPairs.length}`);
-  console.log('');
-  console.log('🔑 All users login with password: password123');
-  console.log('📧 Nick Joseph (CEO): nick@orra.app');
-  console.log('📧 Jessica Art: jessica@orra.app');
-  console.log('='.repeat(50));
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
+  .catch((e) => {
     console.error('❌ Seed failed:', e);
-    await prisma.$disconnect();
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });
