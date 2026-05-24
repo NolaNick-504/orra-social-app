@@ -25,8 +25,18 @@ import { AppWrapper } from '@/components/aura/app-wrapper';
 // screen when the proxy times out and the user navigates to a new section.
 import dynamic from 'next/dynamic';
 
-// Simple loading screen component used by dynamic imports
+// Auto-reloading loading screen for dynamic imports
+// If a component takes more than 8 seconds to load (stale chunks, server down),
+// force a full page reload to get fresh HTML with correct chunk references.
 function LoadingScreen() {
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      console.warn('ORRA: Component still loading after 8s — forcing page reload');
+      window.location.replace('/?_cb=' + Date.now());
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#050505] flex items-center justify-center">
       <div className="text-center">
@@ -42,8 +52,9 @@ function LoadingScreen() {
 
 // Retry wrapper for dynamic imports — retries up to 3 times with increasing delay
 // when the import fails (network timeout, proxy drop, chunk load error, etc.)
+// If all retries fail, forces a full page reload to get fresh HTML+chunks.
 function retryImport(importFn: () => Promise<any>, retries: number = 3, delayMs: number = 2000): () => Promise<any> {
-  return () => new Promise((resolve, reject) => {
+  return () => new Promise((resolve, _reject) => {
     let attempt = 0;
     function tryImport() {
       attempt++;
@@ -63,7 +74,9 @@ function retryImport(importFn: () => Promise<any>, retries: number = 3, delayMs:
             console.warn(`ORRA: Import failed (attempt ${attempt}/${retries}), retrying...`, err?.message);
             setTimeout(tryImport, delayMs * attempt);
           } else {
-            reject(err);
+            // All retries exhausted — force a full page reload to get fresh HTML+chunks
+            console.error('ORRA: All import retries failed, forcing page reload');
+            window.location.replace('/?_cb=' + Date.now());
           }
         });
     }
@@ -87,7 +100,7 @@ const SettingsPage = dynamic(retryImport(() => import('@/components/aura/setting
 const PrismCompanion = dynamic(retryImport(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanion }))), { ssr: false });
 const PrismCompanionButton = dynamic(retryImport(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanionButton }))), { ssr: false });
 import { Toaster } from 'sonner';
-import { useEffect, useState, Component, useRef } from 'react';
+import React, { useEffect, useState, Component, useRef } from 'react';
 import { Sparkles, RefreshCw } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -453,7 +466,8 @@ export default function Home() {
   }, [status, sessionTimedOut]);
 
   // If the initial session check hasn't completed yet, show the ORRA logo
-  // spinner — but ONLY for a maximum of 800ms. After that, we proceed.
+  // spinner — but ONLY for a maximum of 2 seconds. After that, we proceed.
+  // Safety: if stuck for 8 seconds, force a full page reload.
   if (!initialCheckDone) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
