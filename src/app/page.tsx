@@ -20,22 +20,72 @@ import { DailyDigest, useDailyDigest } from '@/components/aura/daily-digest';
 import { AppWrapper } from '@/components/aura/app-wrapper';
 
 // Lazy-loaded route components — only loaded when user navigates to them
+// Uses retryDynamicImport which automatically retries failed imports (e.g., when
+// the network connection drops after idle time). This prevents the "Something went wrong"
+// screen when the proxy times out and the user navigates to a new section.
 import dynamic from 'next/dynamic';
-const PrismReels = dynamic(() => import('@/components/aura/prism-reels').then(m => ({ default: m.PrismReels })), { loading: () => <LoadingScreen /> });
-const LiveFeed = dynamic(() => import('@/components/aura/live-feed').then(m => ({ default: m.LiveFeed })), { loading: () => <LoadingScreen /> });
-const GameArena = dynamic(() => import('@/components/aura/game-arena').then(m => ({ default: m.GameArena })), { loading: () => <LoadingScreen /> });
-const DanceChallenge = dynamic(() => import('@/components/aura/dance-challenge').then(m => ({ default: m.DanceChallenge })), { loading: () => <LoadingScreen /> });
-const Explore = dynamic(() => import('@/components/aura/explore').then(m => ({ default: m.Explore })), { loading: () => <LoadingScreen /> });
-const Hub = dynamic(() => import('@/components/aura/hub').then(m => ({ default: m.Hub })), { loading: () => <LoadingScreen /> });
-const Messages = dynamic(() => import('@/components/aura/messages').then(m => ({ default: m.Messages })), { loading: () => <LoadingScreen /> });
-const Activity = dynamic(() => import('@/components/aura/activity').then(m => ({ default: m.Activity })), { loading: () => <LoadingScreen /> });
-const PostDetail = dynamic(() => import('@/components/aura/post-detail').then(m => ({ default: m.PostDetail })), { loading: () => <LoadingScreen /> });
-const Profile = dynamic(() => import('@/components/aura/profile').then(m => ({ default: m.Profile })), { loading: () => <LoadingScreen /> });
-const WellnessDashboard = dynamic(() => import('@/components/aura/wellness-dashboard').then(m => ({ default: m.WellnessDashboard })), { loading: () => <LoadingScreen /> });
-const TokenMarketplace = dynamic(() => import('@/components/aura/token-marketplace').then(m => ({ default: m.TokenMarketplace })), { loading: () => <LoadingScreen /> });
-const SettingsPage = dynamic(() => import('@/components/aura/settings-page').then(m => ({ default: m.SettingsPage })), { loading: () => <LoadingScreen /> });
-const PrismCompanion = dynamic(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanion })), { ssr: false });
-const PrismCompanionButton = dynamic(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanionButton })), { ssr: false });
+
+// Simple loading screen component used by dynamic imports
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+      <div className="text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-4 animate-pulse">
+          <Sparkles className="w-8 h-8 text-white" />
+        </div>
+        <p className="text-slate-400 text-sm">Loading ORRA...</p>
+        <p className="text-slate-600 text-xs mt-1">Echo • Pulse • Vibe</p>
+      </div>
+    </div>
+  );
+}
+
+// Retry wrapper for dynamic imports — retries up to 3 times with increasing delay
+// when the import fails (network timeout, proxy drop, chunk load error, etc.)
+function retryImport(importFn: () => Promise<any>, retries: number = 3, delayMs: number = 2000): () => Promise<any> {
+  return () => new Promise((resolve, reject) => {
+    let attempt = 0;
+    function tryImport() {
+      attempt++;
+      importFn()
+        .then(resolve)
+        .catch((err: any) => {
+          const msg = (err?.message || '').toLowerCase();
+          const isRetryable = (
+            msg.includes('failed to fetch') ||
+            msg.includes('loading chunk') ||
+            msg.includes('chunk load') ||
+            msg.includes('dynamically imported module') ||
+            msg.includes('network') ||
+            msg.includes('timeout')
+          );
+          if (isRetryable && attempt < retries) {
+            console.warn(`ORRA: Import failed (attempt ${attempt}/${retries}), retrying...`, err?.message);
+            setTimeout(tryImport, delayMs * attempt);
+          } else {
+            reject(err);
+          }
+        });
+    }
+    tryImport();
+  });
+}
+
+const PrismReels = dynamic(retryImport(() => import('@/components/aura/prism-reels').then(m => ({ default: m.PrismReels }))), { loading: () => <LoadingScreen /> });
+const LiveFeed = dynamic(retryImport(() => import('@/components/aura/live-feed').then(m => ({ default: m.LiveFeed }))), { loading: () => <LoadingScreen /> });
+const GameArena = dynamic(retryImport(() => import('@/components/aura/game-arena').then(m => ({ default: m.GameArena }))), { loading: () => <LoadingScreen /> });
+const DanceChallenge = dynamic(retryImport(() => import('@/components/aura/dance-challenge').then(m => ({ default: m.DanceChallenge }))), { loading: () => <LoadingScreen /> });
+const Explore = dynamic(retryImport(() => import('@/components/aura/explore').then(m => ({ default: m.Explore }))), { loading: () => <LoadingScreen /> });
+const Hub = dynamic(retryImport(() => import('@/components/aura/hub').then(m => ({ default: m.Hub }))), { loading: () => <LoadingScreen /> });
+const Messages = dynamic(retryImport(() => import('@/components/aura/messages').then(m => ({ default: m.Messages }))), { loading: () => <LoadingScreen /> });
+const Activity = dynamic(retryImport(() => import('@/components/aura/activity').then(m => ({ default: m.Activity }))), { loading: () => <LoadingScreen /> });
+const PostDetail = dynamic(retryImport(() => import('@/components/aura/post-detail').then(m => ({ default: m.PostDetail }))), { loading: () => <LoadingScreen /> });
+const Profile = dynamic(retryImport(() => import('@/components/aura/profile').then(m => ({ default: m.Profile }))), { loading: () => <LoadingScreen /> });
+const WellnessDashboard = dynamic(retryImport(() => import('@/components/aura/wellness-dashboard').then(m => ({ default: m.WellnessDashboard }))), { loading: () => <LoadingScreen /> });
+const TokenMarketplace = dynamic(retryImport(() => import('@/components/aura/token-marketplace').then(m => ({ default: m.TokenMarketplace }))), { loading: () => <LoadingScreen /> });
+const SettingsPage = dynamic(retryImport(() => import('@/components/aura/settings-page').then(m => ({ default: m.SettingsPage }))), { loading: () => <LoadingScreen /> });
+const PrismCompanion = dynamic(retryImport(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanion }))), { ssr: false });
+const PrismCompanionButton = dynamic(retryImport(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanionButton }))), { ssr: false });
 import { Toaster } from 'sonner';
 import { useEffect, useState, Component, useRef } from 'react';
 import { Sparkles, RefreshCw } from 'lucide-react';
@@ -221,25 +271,6 @@ function MainContent() {
     default:
       return <PulseFeed />;
   }
-}
-
-function LoadingScreen() {
-  // NOTE: Removed auto-reload on loading screen timeout.
-  // The previous 8-second force-reload caused infinite reload loops
-  // when combined with the ErrorBoundary and build ID checks.
-  // If the app is truly stuck loading, the user can manually refresh.
-
-  return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-4 animate-pulse">
-          <Sparkles className="w-8 h-8 text-white" />
-        </div>
-        <p className="text-slate-400 text-sm">Loading ORRA...</p>
-        <p className="text-slate-600 text-xs mt-1">Echo • Pulse • Vibe</p>
-      </div>
-    </div>
-  );
 }
 
 function SkeletonContent() {

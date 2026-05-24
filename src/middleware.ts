@@ -33,14 +33,23 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // 4. Next.js static chunks — CACHE FOREVER (content-hashed filenames)
-  //    These files have content hashes in their names (e.g. webpack-abc123.js).
-  //    When content changes, the filename changes, so caching is ALWAYS safe.
-  //    Caching these is CRITICAL for performance — without it, browsers re-download
-  //    ALL JavaScript on every page load, causing 5+ second white screens.
+  // 4. Next.js static chunks — CACHE FOREVER but ONLY if they're real static files
+  //    CRITICAL: Non-existent chunk paths fall through to the catch-all route
+  //    which returns HTML with Content-Type: text/html. If we cache this as
+  //    immutable, the browser caches HTML as JS, causing parse errors.
+  //    Fix: Only set immutable cache for paths that match the chunk hash pattern.
   if (pathname.startsWith('/_next/static/')) {
     const response = NextResponse.next();
-    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    // Real chunk files have content hashes: webpack-abc123.js, 4bd1b696-bf5e0dbacfa5baef.js
+    // Non-existent chunks won't match this pattern and shouldn't be cached forever
+    const isRealChunk = pathname.match(/\/_next\/static\/(chunks|css|media)\/[a-z0-9-]+\.[a-z0-9-]+\.(js|css|woff2?|ttf|otf|eot|png|jpg|svg|webp|ico|json|wasm)$/i);
+    if (isRealChunk) {
+      response.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      // Could be a non-existent path that falls through to catch-all
+      // Don't cache it as immutable — let the browser revalidate
+      response.headers.set('Cache-Control', 'no-cache, must-revalidate');
+    }
     return response;
   }
 
