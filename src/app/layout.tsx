@@ -52,28 +52,35 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         {/* Bootstrap script — runs BEFORE React hydrates.
-            1. Kills old service workers
-            2. Clears all Cache Storage
+            1. Registers cold-start service worker (handles "sandbox is inactive")
+            2. Clears stale Cache Storage from old SW versions
             3. Starts keep-alive pings to prevent proxy timeouts
-            4. Adds global fetch error recovery
+            4. Adds global fetch error recovery with sandbox detection
             5. Catches chunk load errors
-            10. Watchdog: if app is stuck on loading for 10s, force reload via clear-cache */}
+            6. Watchdog: if app is stuck on loading for 15s, force reload via clear-cache */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-            // 1. KILL OLD SERVICE WORKERS
+            // 1. REGISTER SERVICE WORKER for cold-start resilience
+            //    This SW detects "sandbox is inactive" errors and shows a
+            //    "Waking up..." page with auto-retry instead of raw JSON.
             if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.getRegistrations().then(function(regs) {
-                for (var i = 0; i < regs.length; i++) {
-                  regs[i].unregister();
-                }
-              }).catch(function() {});
+              navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(reg) {
+                console.log('ORRA: Service Worker v7 registered for cold-start protection');
+                // Force update check
+                reg.update();
+              }).catch(function(err) {
+                console.warn('ORRA: SW registration failed (non-critical):', err.message);
+              });
             }
 
-            // 2. Clear ALL Cache Storage
+            // 2. Clear OLD Cache Storage (from previous SW versions)
             if ('caches' in window) {
               caches.keys().then(function(names) {
                 for (var i = 0; i < names.length; i++) {
-                  caches.delete(names[i]);
+                  // Only keep our current caches (orra-static-v7, orra-images-v7)
+                  if (!names[i].includes('v7')) {
+                    caches.delete(names[i]);
+                  }
                 }
               }).catch(function() {});
             }
@@ -106,21 +113,30 @@ export default function RootLayout({
                 headers: { 'X-Keep-Alive': '1' }
               }).then(function(res) {
                 if (res.ok) {
+                  // Check for "sandbox is inactive" even in 200 responses
+                  var ct = (res.headers.get('content-type') || '').toLowerCase();
+                  if (!ct.includes('application/json')) {
+                    // Got HTML or something instead of JSON — platform proxy error
+                    containerWasFrozen = true;
+                    return;
+                  }
                   lastKeepAliveOk = Date.now();
                   if (containerWasFrozen) {
                     containerWasFrozen = false;
                     console.log('ORRA: Container is back online');
+                    hideSandboxOverlay();
                   }
                 } else if (res.status === 403 || res.status === 502 || res.status === 503) {
                   // FC proxy returns 403 (FCCommonError) when container is frozen
-                  // or 502 when the server is down. Don't treat as fatal — just
-                  // note that the container is likely cold-starting.
+                  // or 502 when the server is down.
                   containerWasFrozen = true;
+                  showSandboxOverlay();
                 }
               }).catch(function() {
                 // Network error — container might be frozen
                 if (Date.now() - lastKeepAliveOk > 30000) {
                   containerWasFrozen = true;
+                  showSandboxOverlay();
                 }
               });
             }
@@ -169,18 +185,58 @@ export default function RootLayout({
               doKeepAlive();
             });
 
-            // 7. GLOBAL FETCH ERROR RECOVERY with proper error propagation
-            //    Fixes bug: the old 3rd retry called originalFetch without .catch(),
-            //    creating an unhandled promise rejection that could crash the app.
+            // 7. GLOBAL FETCH ERROR RECOVERY with sandbox detection
+            //    - Retries API and chunk requests on failure
+            //    - Detects "sandbox is inactive" responses from the platform proxy
+            //    - Shows a "Waking up..." overlay when sandbox is cold
             var originalFetch = window.fetch;
+            var sandboxInactiveOverlay = null;
+
+            function showSandboxOverlay() {
+              if (sandboxInactiveOverlay) return; // Already showing
+              sandboxInactiveOverlay = document.createElement('div');
+              sandboxInactiveOverlay.id = 'orra-sandbox-overlay';
+              sandboxInactiveOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#050505;display:flex;align-items:center;justify-content:center;z-index:99999;';
+              sandboxInactiveOverlay.innerHTML = '<div style="text-align:center;padding:20px;max-width:400px;">' +
+                '<div style="width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,#7c3aed,#d946ef);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;font-weight:bold;color:white;animation:logoPulse 2s ease-in-out infinite;box-shadow:0 0 40px rgba(124,58,237,0.3);">O</div>' +
+                '<h2 style="color:white;font-size:22px;margin:0 0 8px;font-weight:700;">Waking Up ORRA</h2>' +
+                '<p style="color:#94a3b8;font-size:14px;">Server is starting up. This takes a few seconds...</p>' +
+                '<div style="width:200px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;margin:20px auto 0;overflow:hidden;"><div id="orra-wake-progress" style="height:100%;background:linear-gradient(90deg,#7c3aed,#d946ef);border-radius:2px;transition:width 0.5s;width:0%;"></div></div>' +
+                '</div>';
+              var style = document.createElement('style');
+              style.textContent = '@keyframes logoPulse{0%,100%{transform:scale(1);box-shadow:0 0 40px rgba(124,58,237,0.3)}50%{transform:scale(1.05);box-shadow:0 0 60px rgba(124,58,237,0.5)}}';
+              document.head.appendChild(style);
+              document.body.appendChild(sandboxInactiveOverlay);
+            }
+
+            function hideSandboxOverlay() {
+              if (sandboxInactiveOverlay) {
+                sandboxInactiveOverlay.remove();
+                sandboxInactiveOverlay = null;
+              }
+            }
+
+            function checkForSandboxError(response) {
+              // Check if the response is a platform error like "sandbox is inactive"
+              var contentType = (response.headers.get('content-type') || '').toLowerCase();
+              var sandboxHeader = response.headers.get('X-ORRA-Sandbox') || '';
+              if (sandboxHeader === 'inactive') return true;
+              // Also detect by status code for proxy errors
+              if (response.status === 403) {
+                var fcError = response.headers.get('X-Fc-Error-Type') || '';
+                if (fcError.includes('FCCommonError')) return true;
+              }
+              return false;
+            }
 
             window.fetch = function(input, init) {
               var url = typeof input === 'string' ? input : (input instanceof Request ? input.url : String(input));
 
-              // Keep-alive pings should not be retried (they have their own error handling)
+              // Keep-alive and wake-up pings should not be retried
               if (init && init.headers && typeof init.headers === 'object') {
                 try {
-                  if (init.headers['X-Keep-Alive'] || init.headers['x-keep-alive']) {
+                  if (init.headers['X-Keep-Alive'] || init.headers['x-keep-alive'] ||
+                      init.headers['X-Wake-Up'] || init.headers['x-wake-up']) {
                     return originalFetch.apply(this, arguments);
                   }
                 } catch(e) {}
@@ -190,21 +246,43 @@ export default function RootLayout({
               var isChunk = url.includes('/_next/static/') || url.includes('chunk');
 
               if (!isApi && !isChunk) {
-                // Not an API or chunk request — don't retry
                 return originalFetch.apply(this, arguments);
               }
 
-              // For API and chunk requests, retry on failure (up to 3 times)
               var self = this;
               var args = arguments;
 
               function attemptFetch(retriesLeft) {
-                return originalFetch.apply(self, args).catch(function(err) {
+                return originalFetch.apply(self, args).then(function(response) {
+                  // Check for platform/sandbox errors in the response
+                  if (checkForSandboxError(response)) {
+                    if (retriesLeft > 0) {
+                      showSandboxOverlay();
+                      var delay = (4 - retriesLeft) * 3000; // 3s, 6s, 9s
+                      console.warn('ORRA: Sandbox inactive, retrying in ' + delay + 'ms (' + retriesLeft + ' left)');
+                      return new Promise(function(resolve, reject) {
+                        setTimeout(function() {
+                          attemptFetch(retriesLeft - 1).then(resolve).catch(reject);
+                        }, delay);
+                      });
+                    }
+                    // All retries exhausted — the sandbox overlay is showing
+                    // Auto-reload the whole page after a delay
+                    setTimeout(function() {
+                      window.location.replace('/?_cb=' + Date.now());
+                    }, 5000);
+                    return response;
+                  }
+                  // Success — hide sandbox overlay if showing
+                  hideSandboxOverlay();
+                  return response;
+                }).catch(function(err) {
                   if (retriesLeft <= 0) {
-                    // All retries exhausted — throw the original error
                     throw err;
                   }
-                  var delay = (4 - retriesLeft) * 2000; // 2s, 4s, 6s
+                  // Network error might mean sandbox is cold
+                  showSandboxOverlay();
+                  var delay = (4 - retriesLeft) * 2000;
                   console.warn('ORRA: Fetch failed, retrying in ' + delay + 'ms (' + retriesLeft + ' left):', url);
                   return new Promise(function(resolve, reject) {
                     setTimeout(function() {

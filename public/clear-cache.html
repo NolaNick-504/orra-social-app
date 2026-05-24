@@ -26,7 +26,7 @@
       var status = document.getElementById('status');
       var manualBtn = document.getElementById('manualBtn');
       var steps = 0;
-      var total = 6;
+      var total = 5;
 
       function updateStatus(msg) {
         steps++;
@@ -34,18 +34,7 @@
       }
 
       try {
-        // 1. Register the self-destructing SW FIRST — this replaces any old SW
-        if ('serviceWorker' in navigator) {
-          try {
-            await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-            updateStatus('New service worker installed (self-destructing)');
-          } catch(e) {
-            // SW registration may fail, that's OK
-            updateStatus('Service worker update attempted');
-          }
-        }
-
-        // 2. Unregister ALL service workers
+        // 1. Unregister ALL old service workers first
         if ('serviceWorker' in navigator) {
           try {
             var regs = await navigator.serviceWorker.getRegistrations();
@@ -56,7 +45,7 @@
         }
         updateStatus('Old service workers removed');
 
-        // 3. Clear ALL Cache Storage
+        // 2. Clear ALL Cache Storage
         if ('caches' in window) {
           try {
             var names = await caches.keys();
@@ -67,15 +56,15 @@
         }
         updateStatus('Cache storage cleared');
 
-        // 4. Clear localStorage completely
+        // 3. Clear localStorage completely
         try { localStorage.clear(); } catch(e) {}
         updateStatus('Local storage cleared');
 
-        // 5. Clear sessionStorage completely
+        // 4. Clear sessionStorage completely
         try { sessionStorage.clear(); } catch(e) {}
         updateStatus('Session storage cleared');
 
-        // 6. Delete cookies for this origin
+        // 5. Delete cookies for this origin
         try {
           var cookies = document.cookie.split(';');
           for (var i = 0; i < cookies.length; i++) {
