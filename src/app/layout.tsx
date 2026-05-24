@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Dancing_Script, Great_Vibes } from "next/font/google";
 import { AuthProvider } from "@/components/providers/session-provider";
+import { KeepAliveProvider } from "@/components/providers/keep-alive-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -226,7 +227,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${dancingScript.variable} ${greatVibes.variable} antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <KeepAliveProvider>{children}</KeepAliveProvider>
+        </AuthProvider>
       </body>
     </html>
   );

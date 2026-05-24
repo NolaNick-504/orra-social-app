@@ -45,30 +45,32 @@ function StoreHydrator({ children }: { children: React.ReactNode }) {
 
         if (!res.ok) {
           console.warn('/api/me returned status:', res.status);
-          // If user not found (DB was reset), force sign out so user can re-login
-          // BUT: only do this for genuine 404s, not network/proxy timeouts
-          // that return non-200 status codes temporarily.
+
+          // IMPORTANT: Only sign out for a REAL 404 from our server.
+          // When the platform proxy returns 404 (container frozen), the response
+          // will NOT have JSON body with { success: false, error: 'User not found' }.
+          // We check the response body to distinguish the two cases.
           if (res.status === 404) {
-            // Check if this is a real 404 from our API (has JSON body with error)
-            // vs a proxy/gateway 404 (has HTML body)
             try {
-              const cloned = res.clone();
-              const body = await cloned.text();
-              if (body.includes('"success"') || body.includes('"error"')) {
-                // This is our API returning a proper JSON 404 — user genuinely doesn't exist
+              const body = await res.json();
+              if (body.error === 'User not found') {
+                // Real 404 — user was deleted from DB, force re-login
                 console.warn('ORRA: User not found in DB — forcing sign out for re-login');
                 try { await signOut({ redirect: false }); } catch {}
                 useAuraStore.setState({ isHydrated: false, profileSetupComplete: false });
                 localStorage.removeItem('aura-storage');
                 return;
               }
-            } catch {}
-            // Not our API 404 — probably a proxy timeout. Use fallback instead.
-            console.warn('ORRA: 404 from proxy/gateway, using fallback hydration');
-            hydrateFromFallback();
-            return;
+            } catch {
+              // Can't parse JSON — this is a platform proxy 404, NOT our server
+              // Don't sign the user out — just use fallback data
+              console.warn('ORRA: 404 without JSON body — likely platform proxy issue, using fallback');
+              hydrateFromFallback();
+              return;
+            }
           }
-          // 5xx, timeout, etc. — use fallback, don't sign out
+
+          // For other errors (500, 502, etc.) — don't sign out, use fallback
           hydrateFromFallback();
           return;
         }

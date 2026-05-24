@@ -1,111 +1,78 @@
 #!/bin/bash
-set -euo pipefail
+# ORRA Custom Startup Script
+# This runs automatically when the container starts (called by /start.sh)
+# It builds and starts Next.js in production mode with auto-restart.
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+set -e
 
-log_step() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+PROJECT_DIR=/home/z/my-project
+LOG_FILE=$PROJECT_DIR/next-supervisor.log
+
+log() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ORRA-Startup] $1" | tee -a "$LOG_FILE"
 }
 
+log "ORRA custom startup script running..."
+
+# Step 1: Install dependencies if needed
+if [ ! -d "$PROJECT_DIR/node_modules" ]; then
+  log "Installing dependencies..."
+  cd "$PROJECT_DIR"
+  npm install 2>&1 | tee -a "$LOG_FILE"
+fi
+
+# Step 2: Generate Prisma client
 cd "$PROJECT_DIR"
+log "Generating Prisma client..."
+npx prisma generate 2>&1 | tee -a "$LOG_FILE"
 
-# ========================================
-# STEP 1: Try to restore build from cache
-# This is the KEY fix - if .next/ was wiped by container restart,
-# we restore from /tmp/ cache instead of rebuilding from scratch (5 min vs 10 sec)
-# ========================================
-PRESERVER="$SCRIPT_DIR/build-preserver.py"
+# Step 3: Push database schema
+log "Pushing database schema..."
+npx prisma db push 2>&1 | tee -a "$LOG_FILE"
 
-if [ ! -f ".next/standalone/server.js" ]; then
-    log_step "Build not found! Checking cache..."
-    if python3 "$PRESERVER" --restore; then
-        log_step "Build restored from cache - skipping rebuild!"
-    else
-        log_step "No cached build found, will need to rebuild..."
-    fi
+# Step 4: Build if .next doesn't exist
+if [ ! -d "$PROJECT_DIR/.next" ]; then
+  log "Building Next.js (first time)..."
+  npx next build --webpack 2>&1 | tee -a "$LOG_FILE"
 fi
 
-# ========================================
-# STEP 2: Install dependencies if needed
-# ========================================
-if [ ! -d "node_modules" ]; then
-    log_step "Installing dependencies..."
-    npm install 2>/dev/null || bun install
-fi
+# Step 5: Start Next.js with auto-restart
+log "Starting Next.js in production mode with supervisor..."
 
-# ========================================
-# STEP 3: Push database schema
-# ========================================
-log_step "Setting up database..."
-npx prisma db push 2>/dev/null || bun run db:push 2>/dev/null || true
+MAX_RESTARTS=10
+RESTART_COUNT=0
+LAST_START=0
+RESTART_WINDOW=300  # Reset counter after 5 minutes of uptime
 
-# ========================================
-# STEP 4: Build if standalone doesn't exist
-# ========================================
-if [ ! -f ".next/standalone/server.js" ]; then
-    log_step "Building Next.js production bundle (this takes 2-5 min)..."
-    rm -rf .next
-    npm run build
-    log_step "Build complete!"
-else
-    log_step "Build exists, skipping rebuild"
-fi
+while [ $RESTART_COUNT -lt $MAX_RESTARTS ]; do
+  NOW=$(date +%s)
 
-# ========================================
-# STEP 5: Ensure static files and .env are in place
-# ========================================
-mkdir -p .next/standalone/.next/static
-cp -rf .next/static/* .next/standalone/.next/static/
-cp -rf public .next/standalone/public 2>/dev/null || true
+  # Reset restart counter if running for more than 5 minutes
+  if [ $((NOW - LAST_START)) -gt $RESTART_WINDOW ] && [ $RESTART_COUNT -gt 0 ]; then
+    log "Process ran for $RESTART_WINDOW+ seconds, resetting restart counter"
+    RESTART_COUNT=0
+  fi
 
-# Ensure .env in standalone
-if [ ! -f ".next/standalone/.env" ] || ! grep -q "NEXTAUTH_SECRET" .next/standalone/.env 2>/dev/null; then
-    cat > .next/standalone/.env << 'ENVEOF'
-DATABASE_URL=file:/home/z/my-project/db/custom.db
-NEXTAUTH_SECRET=orra-super-secret-key-2025-production
-ENVEOF
-    log_step "Created .env in standalone directory"
-fi
+  LAST_START=$NOW
+  RESTART_COUNT=$((RESTART_COUNT + 1))
 
-# ========================================
-# STEP 6: Verify build integrity
-# ========================================
-CHUNK_COUNT=$(ls .next/standalone/.next/static/chunks/*.js 2>/dev/null | wc -l)
-log_step "Build verification: $CHUNK_COUNT chunk files found"
-if [ "$CHUNK_COUNT" -eq 0 ]; then
-    log_step "ERROR: No chunk files! Build may be corrupted. Rebuilding..."
-    rm -rf .next
-    npm run build
-    mkdir -p .next/standalone/.next/static
-    cp -rf .next/static/* .next/standalone/.next/static/
-    cp -rf public .next/standalone/public 2>/dev/null || true
-fi
+  log "Starting Next.js (attempt $RESTART_COUNT/$MAX_RESTARTS)..."
 
-# ========================================
-# STEP 7: Cache the build for next restart
-# ========================================
-python3 "$PRESERVER" --sync 2>/dev/null || true
+  cd "$PROJECT_DIR"
+  npx next start -p 3000 2>&1 | tee -a "$LOG_FILE"
 
-# ========================================
-# STEP 8: Start the build preserver daemon
-# ========================================
-python3 "$PRESERVER" 2>/dev/null || true
+  EXIT_CODE=${PIPESTATUS[0]}
+  log "Next.js exited with code $EXIT_CODE"
 
-# ========================================
-# STEP 9: Start the server daemon
-# ========================================
-export PORT=3000
-export DATABASE_URL="file:/home/z/my-project/db/custom.db"
-export NEXTAUTH_SECRET="orra-super-secret-key-2025-production"
-export NEXTAUTH_URL="http://localhost:3000"
-export AUTH_TRUST_HOST=true
-export NODE_ENV=production
+  # Clean shutdown
+  if [ $EXIT_CODE -eq 0 ]; then
+    log "Clean shutdown, not restarting"
+    break
+  fi
 
-log_step "Starting AURA daemon (self-healing server) on port 3000..."
-python3 "$SCRIPT_DIR/aura-daemon.py"
-
-# Keep alive
-while true; do
-    sleep 60
+  # Wait before restarting
+  log "Waiting 3 seconds before restart..."
+  sleep 3
 done
+
+log "Supervisor exiting (max restarts reached or clean shutdown)"
