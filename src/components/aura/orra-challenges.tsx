@@ -16,17 +16,49 @@ import {
   Search, Bot, Share2
 } from 'lucide-react';
 
-// Lazy-load individual game components for code splitting
-const RoastBattleGame = dynamic(() => import('@/components/aura/games/roast-battle-game'), { ssr: false });
-const HotTakeGame = dynamic(() => import('@/components/aura/games/hot-take-game'), { ssr: false });
-const FirstImpressionGame = dynamic(() => import('@/components/aura/games/first-impression-game'), { ssr: false });
-const RateMyFitGame = dynamic(() => import('@/components/aura/games/rate-my-fit-game'), { ssr: false });
-const StoryChallengeGame = dynamic(() => import('@/components/aura/games/story-challenge-game'), { ssr: false });
-const WhoSaidItGame = dynamic(() => import('@/components/aura/games/who-said-it-game'), { ssr: false });
-const VibeCheckGame = dynamic(() => import('@/components/aura/games/vibe-check-game'), { ssr: false });
-const ClapbackGame = dynamic(() => import('@/components/aura/games/clapback-game'), { ssr: false });
-const AuraDropGame = dynamic(() => import('@/components/aura/games/aura-drop-game'), { ssr: false });
-const TruthOrDareGame = dynamic(() => import('@/components/aura/games/truth-or-dare-game'), { ssr: false });
+// Retry wrapper for dynamic imports — retries up to 3 times with increasing delay
+// when the import fails (network timeout, proxy drop, chunk load error, etc.)
+// This prevents the Games section from crashing when the FC proxy drops connections.
+function retryImport(importFn: () => Promise<any>, retries: number = 3, delayMs: number = 2000): () => Promise<any> {
+  return () => new Promise((resolve, reject) => {
+    let attempt = 0;
+    function tryImport() {
+      attempt++;
+      importFn()
+        .then(resolve)
+        .catch((err: any) => {
+          const msg = (err?.message || '').toLowerCase();
+          const isRetryable = (
+            msg.includes('failed to fetch') ||
+            msg.includes('loading chunk') ||
+            msg.includes('chunk load') ||
+            msg.includes('dynamically imported module') ||
+            msg.includes('network') ||
+            msg.includes('timeout')
+          );
+          if (isRetryable && attempt < retries) {
+            console.warn(`ORRA Games: Import failed (attempt ${attempt}/${retries}), retrying...`);
+            setTimeout(tryImport, delayMs * attempt);
+          } else {
+            reject(err);
+          }
+        });
+    }
+    tryImport();
+  });
+}
+
+// Lazy-load individual game components for code splitting with retry
+const RoastBattleGame = dynamic(retryImport(() => import('@/components/aura/games/roast-battle-game')), { ssr: false });
+const HotTakeGame = dynamic(retryImport(() => import('@/components/aura/games/hot-take-game')), { ssr: false });
+const FirstImpressionGame = dynamic(retryImport(() => import('@/components/aura/games/first-impression-game')), { ssr: false });
+const RateMyFitGame = dynamic(retryImport(() => import('@/components/aura/games/rate-my-fit-game')), { ssr: false });
+const StoryChallengeGame = dynamic(retryImport(() => import('@/components/aura/games/story-challenge-game')), { ssr: false });
+const WhoSaidItGame = dynamic(retryImport(() => import('@/components/aura/games/who-said-it-game')), { ssr: false });
+const VibeCheckGame = dynamic(retryImport(() => import('@/components/aura/games/vibe-check-game')), { ssr: false });
+const ClapbackGame = dynamic(retryImport(() => import('@/components/aura/games/clapback-game')), { ssr: false });
+const AuraDropGame = dynamic(retryImport(() => import('@/components/aura/games/aura-drop-game')), { ssr: false });
+const TruthOrDareGame = dynamic(retryImport(() => import('@/components/aura/games/truth-or-dare-game')), { ssr: false });
 
 // ============================================
 // GAME DATA - Best of the best for each mode

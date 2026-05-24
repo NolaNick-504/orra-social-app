@@ -50,3 +50,30 @@ Stage Summary:
 - Startup script checks for existing data before seeding
 - Founder password is always ensured on startup
 - App is running and verified: login works, API endpoints respond
+
+---
+Task ID: timeout-404-fix-v3
+Agent: Main Agent
+Task: Fix ORRA app going to 404/crash after a few minutes of idle time
+
+Work Log:
+- Investigated the full app architecture: layout.tsx, middleware.ts, page.tsx, KeepAliveProvider, ErrorBoundary, catch-all route, server.js
+- Discovered CRITICAL BUG: non-existent JS/CSS chunk requests (/_next/static/chunks/fake.js) were returning 200 with Content-Type: text/html instead of 404, because the catch-all route [..slug] was matching them and returning the app HTML
+- This caused browser JS parse errors when stale chunks were requested after idle timeout
+- Found that Next.js middleware is NOT invoked for /_next/static/ paths (built-in behavior)
+- Solution: Modified server.js to intercept /_next/static/chunks/*.js and /_next/static/css/*.css requests BEFORE passing to Next.js — checks if file exists, returns 404 if not, serves directly if yes
+- Added server-side keep-alive daemon (.zscripts/keep-alive.py) that pings localhost:3000/api/health every 10 seconds to prevent FC proxy from freezing container
+- Fixed orra-challenges.tsx: added retryImport wrapper for all 10 game dynamic imports
+- Fixed global fetch monkey-patch bug in layout.tsx: 3rd retry was creating unhandled promise rejection
+- Improved cold start detection: keep-alive now detects FC proxy 403/502 and marks container as frozen
+- Updated visibility recovery: doesn't immediately reload on tab focus if server is just cold-starting
+- Updated aura-daemon to use `node server.js` instead of `next start`
+- Updated package.json start script to use `node server.js`
+- Rebuilt and verified: non-existent chunks now return 404, real chunks still serve correctly
+
+Stage Summary:
+- Root cause #1: Non-existent chunks returned HTML (200) instead of 404 → JS parse errors → crash cascade
+- Root cause #2: No server-side keep-alive → container freezes after idle → FC proxy returns 403/502
+- Root cause #3: Game components had no retry on dynamic imports → crashed on network failure
+- Fix: Custom server.js intercepts chunk requests, keep-alive daemon, retryImport for all dynamic imports
+- All changes committed to project files (not yet pushed to git)

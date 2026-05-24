@@ -91,10 +91,13 @@ export default function RootLayout({
               try { localStorage.removeItem('aura-storage'); } catch(x) {}
             }
 
-            // 4. KEEP-ALIVE: Ping the server every 15 seconds to prevent
+            // 4. KEEP-ALIVE: Ping the server every 10 seconds to prevent
             //    proxy/platform idle connection timeouts.
+            //    The server-side keep-alive daemon also pings localhost every 10s.
+            //    Together, these keep the FC proxy from freezing the container.
             var keepAliveUrl = '/api/build-id';
             var lastKeepAliveOk = Date.now();
+            var containerWasFrozen = false;
 
             function doKeepAlive() {
               fetch(keepAliveUrl, {
@@ -104,31 +107,59 @@ export default function RootLayout({
               }).then(function(res) {
                 if (res.ok) {
                   lastKeepAliveOk = Date.now();
+                  if (containerWasFrozen) {
+                    containerWasFrozen = false;
+                    console.log('ORRA: Container is back online');
+                  }
+                } else if (res.status === 403 || res.status === 502 || res.status === 503) {
+                  // FC proxy returns 403 (FCCommonError) when container is frozen
+                  // or 502 when the server is down. Don't treat as fatal — just
+                  // note that the container is likely cold-starting.
+                  containerWasFrozen = true;
                 }
               }).catch(function() {
-                if (Date.now() - lastKeepAliveOk > 60000) {
-                  console.warn('ORRA: No successful keep-alive in 60s — connection likely dead');
+                // Network error — container might be frozen
+                if (Date.now() - lastKeepAliveOk > 30000) {
+                  containerWasFrozen = true;
                 }
               });
             }
 
             doKeepAlive();
-            setInterval(doKeepAlive, 15000);
+            setInterval(doKeepAlive, 10000);
 
-            // 5. VISIBILITY RECOVERY
+            // 5. VISIBILITY RECOVERY — when tab regains focus
             document.addEventListener('visibilitychange', function() {
               if (!document.hidden) {
                 doKeepAlive();
+                // Wait 2s then check if server is alive
                 setTimeout(function() {
-                  fetch('/api/build-id', { cache: 'no-store' })
+                  fetch('/api/health', { cache: 'no-store' })
                     .then(function(res) {
-                      if (!res.ok) throw new Error('bad status');
+                      if (res.ok) {
+                        // Server is alive — if we were frozen, reload to get fresh state
+                        if (containerWasFrozen) {
+                          console.log('ORRA: Server is back after freeze — reloading');
+                          window.location.replace('/?_cb=' + Date.now());
+                        }
+                      } else {
+                        throw new Error('bad status');
+                      }
                     })
                     .catch(function() {
-                      console.warn('ORRA: Health check failed on tab focus — reloading');
-                      window.location.replace('/?_cb=' + Date.now());
+                      // Server unreachable — give it more time, don't reload yet
+                      console.warn('ORRA: Health check failed on tab focus — server may be waking up');
+                      // Try again in 5 seconds
+                      setTimeout(function() {
+                        fetch('/api/health', { cache: 'no-store' })
+                          .then(function(res) {
+                            if (res.ok) {
+                              window.location.replace('/?_cb=' + Date.now());
+                            }
+                          }).catch(function() {});
+                      }, 5000);
                     });
-                }, 1000);
+                }, 2000);
               }
             });
 
@@ -138,12 +169,15 @@ export default function RootLayout({
               doKeepAlive();
             });
 
-            // 7. GLOBAL FETCH ERROR RECOVERY
+            // 7. GLOBAL FETCH ERROR RECOVERY with proper error propagation
+            //    Fixes bug: the old 3rd retry called originalFetch without .catch(),
+            //    creating an unhandled promise rejection that could crash the app.
             var originalFetch = window.fetch;
 
             window.fetch = function(input, init) {
               var url = typeof input === 'string' ? input : (input instanceof Request ? input.url : String(input));
 
+              // Keep-alive pings should not be retried (they have their own error handling)
               if (init && init.headers && typeof init.headers === 'object') {
                 try {
                   if (init.headers['X-Keep-Alive'] || init.headers['x-keep-alive']) {
@@ -152,26 +186,35 @@ export default function RootLayout({
                 } catch(e) {}
               }
 
-              return originalFetch.apply(this, arguments).catch(function(err) {
-                var isApi = url.startsWith('/api/') || url.startsWith(window.location.origin + '/api/');
-                var isChunk = url.includes('/_next/static/') || url.includes('chunk');
+              var isApi = url.startsWith('/api/') || url.startsWith(window.location.origin + '/api/');
+              var isChunk = url.includes('/_next/static/') || url.includes('chunk');
 
-                if (isApi || isChunk) {
-                  console.warn('ORRA: Fetch failed, retrying in 2s:', url, err.message || err);
-                  return new Promise(function(resolve) {
+              if (!isApi && !isChunk) {
+                // Not an API or chunk request — don't retry
+                return originalFetch.apply(this, arguments);
+              }
+
+              // For API and chunk requests, retry on failure (up to 3 times)
+              var self = this;
+              var args = arguments;
+
+              function attemptFetch(retriesLeft) {
+                return originalFetch.apply(self, args).catch(function(err) {
+                  if (retriesLeft <= 0) {
+                    // All retries exhausted — throw the original error
+                    throw err;
+                  }
+                  var delay = (4 - retriesLeft) * 2000; // 2s, 4s, 6s
+                  console.warn('ORRA: Fetch failed, retrying in ' + delay + 'ms (' + retriesLeft + ' left):', url);
+                  return new Promise(function(resolve, reject) {
                     setTimeout(function() {
-                      originalFetch.apply(window, [input, init]).then(resolve).catch(function() {
-                        setTimeout(function() {
-                          originalFetch.apply(window, [input, init]).then(resolve).catch(function(finalErr) {
-                            resolve(originalFetch.apply(window, [input, init]));
-                          });
-                        }, 3000);
-                      });
-                    }, 2000);
+                      attemptFetch(retriesLeft - 1).then(resolve).catch(reject);
+                    }, delay);
                   });
-                }
-                throw err;
-              });
+                });
+              }
+
+              return attemptFetch(3);
             };
 
             // 8. Prevent chunk load errors from crashing the app
@@ -206,21 +249,19 @@ export default function RootLayout({
             });
 
             // 10. LOADING SCREEN WATCHDOG
-            //     If the app is still showing "Loading ORRA..." after 10 seconds,
+            //     If the app is still showing "Loading ORRA..." after 15 seconds,
             //     something is fundamentally broken (stale JS, blocked network, etc.)
             //     Redirect to clear-cache.html which will nuke everything and retry.
             setTimeout(function() {
-              // Check if the React root has any real content (not just the loading spinner)
               var root = document.getElementById('__next');
               if (root) {
                 var text = root.innerText || root.textContent || '';
-                // If we're still showing the loading message after 10s, bail out
                 if (text.includes('Loading ORRA') && !text.includes('Sign In') && !text.includes('Home')) {
-                  console.warn('ORRA: App stuck on loading screen for 10s — redirecting to clear cache');
+                  console.warn('ORRA: App stuck on loading screen for 15s — redirecting to clear cache');
                   window.location.replace('/clear-cache.html');
                 }
               }
-            }, 10000);
+            }, 15000);
           })();
         `}} />
       </head>

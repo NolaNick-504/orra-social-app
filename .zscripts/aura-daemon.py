@@ -205,9 +205,9 @@ def is_daemon_running():
 
 def start_server_process():
     """Start the Next.js production server and return the process"""
-    log('Starting production server (next start -p 3000)...')
+    log('Starting production server (node server.js -p 3000)...')
     proc = subprocess.Popen(
-        ['npx', 'next', 'start', '-p', '3000'],
+        ['node', 'server.js'],
         cwd=PROJECT_DIR,
         env=ENV,
         stdout=open(LOGFILE.replace('.log', '-server.log'), 'a'),

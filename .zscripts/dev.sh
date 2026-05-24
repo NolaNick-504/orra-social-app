@@ -213,6 +213,15 @@ log "Starting auto-backup daemon..."
 ) &
 log "Auto-backup daemon started (PID: $!)"
 
+# Step 9b: Start the keep-alive daemon (pings Next.js every 10s to prevent
+# the Alibaba Cloud FC proxy from freezing the container)
+KEEPALIVE_DAEMON=$PROJECT_DIR/.zscripts/keep-alive.py
+log "Starting keep-alive daemon..."
+python3 "$KEEPALIVE_DAEMON" --stop 2>/dev/null || true
+sleep 1
+python3 "$KEEPALIVE_DAEMON" 2>&1 | tee -a "$LOG_FILE" &
+log "Keep-alive daemon started"
+
 # Step 10: Start the AURA daemon as the SOLE supervisor
 # aura-daemon.py handles:
 #   - Health checking every 10 seconds

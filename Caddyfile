@@ -29,6 +29,25 @@
                 }
         }
 
+        # CRITICAL FIX: Next.js static chunk requests that return HTML instead of 404
+        # When a non-existent JS/CSS chunk is requested (e.g., from a stale browser cache),
+        # Next.js falls through to the catch-all route and returns HTML with status 200.
+        # The browser tries to parse HTML as JavaScript → crash cascade.
+        # Fix: Route /_next/static/chunks/*.js and /_next/static/css/*.css through the
+        # serve-chunk API, which returns proper 404 for non-existent files.
+        @static_chunks {
+                path_regexp chunk_path ^/_next/static/(chunks|css)/(.+\.(js|css|map))$
+        }
+        handle @static_chunks {
+                uri replace /_next/static/{re.chunk_path.1}/{re.chunk_path.2} /api/serve-chunk?file={re.chunk_path.2}
+                reverse_proxy localhost:3000 {
+                        header_up Host {host}
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto {scheme}
+                        header_up X-Real-IP {remote_host}
+                }
+        }
+
         # Cache-bust for ALL HTML pages — ensures browsers always get fresh HTML after deploys
         # This covers / and all SPA routes (/explore, /profile, etc.) so the browser
         # never serves a stale 404 page from cache
