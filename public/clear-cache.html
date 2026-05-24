@@ -11,6 +11,7 @@
     p { font-size: 14px; margin: 8px 0; }
     .small { font-size: 11px; color: #94a3b8; }
     .btn { display: inline-block; margin-top: 16px; padding: 10px 24px; background: linear-gradient(to right, #7c3aed, #d946ef); color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .status { margin-top: 12px; font-size: 11px; color: #64748b; }
   </style>
 </head>
 <body>
@@ -18,50 +19,62 @@
     <div class="spinner"></div>
     <p>Clearing ORRA cache...</p>
     <p class="small">This will only take a moment</p>
+    <div id="status" class="status"></div>
     <a href="/" class="btn" id="reloadBtn" style="display:none">Open ORRA</a>
   </div>
   <script>
     (async function() {
-      var cleared = false;
-      
+      var statusEl = document.getElementById('status');
+      var log = function(msg) { statusEl.textContent = msg; console.log(msg); };
+
       try {
-        // 1. Unregister ALL service workers
+        log('Step 1: Unregistering service workers...');
         if ('serviceWorker' in navigator) {
           var regs = await navigator.serviceWorker.getRegistrations();
           for (var i = 0; i < regs.length; i++) {
             await regs[i].unregister();
-            console.log('Unregistered SW:', regs[i].scope);
+            log('Unregistered SW: ' + regs[i].scope);
           }
         }
       } catch(e) { console.warn('SW cleanup error:', e); }
 
       try {
-        // 2. Clear ALL Cache API storage
+        log('Step 2: Clearing cache storage...');
         if ('caches' in window) {
           var names = await caches.keys();
           for (var i = 0; i < names.length; i++) {
             await caches.delete(names[i]);
-            console.log('Deleted cache:', names[i]);
+            log('Deleted cache: ' + names[i]);
           }
         }
       } catch(e) { console.warn('Cache cleanup error:', e); }
 
       try {
-        // 3. Clear relevant localStorage
+        log('Step 3: Clearing localStorage...');
         localStorage.removeItem('aura-storage');
       } catch(e) {}
 
       try {
-        // 4. Clear sessionStorage
+        log('Step 4: Clearing sessionStorage...');
         sessionStorage.clear();
       } catch(e) {}
 
-      cleared = true;
-      console.log('Cache cleared successfully!');
+      // Nuclear option: clear ALL localStorage (only aura-related keys)
+      try {
+        var keysToRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (key && (key.includes('orra') || key.includes('aura') || key.includes('next'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+      } catch(e) {}
 
-      // 5. Auto-redirect after a short delay
+      log('Cache cleared! Redirecting...');
+
+      // Auto-redirect after a short delay
       setTimeout(function() {
-        // Use replace so the user can't accidentally come back to this page
         window.location.replace('/?_fresh=' + Date.now());
       }, 800);
     })();

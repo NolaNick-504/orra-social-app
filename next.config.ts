@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   // Use a stable build ID so browsers don't force-reload on every deploy
   // Next.js chunk filenames already include content hashes, so caching is safe
   generateBuildId: async () => {
-    return 'orra-stable-v1';
+    return 'orra-v2-' + Date.now().toString(36);
   },
   experimental: {
     serverActions: {
