@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """AURA Server Daemon - Bulletproof Next.js production server watchdog.
 
-Keeps the ORRA app running 24/7. If the server crashes, it auto-restarts.
-If the build is missing, it auto-rebuilds. If port is stuck, it kills the old process.
+THE SOLE supervisor for ORRA's Next.js server. No other script should
+start or manage Next.js — this daemon handles everything:
+
+- Health checking every 10 seconds
+- Auto-restarting Next.js if it crashes
+- Auto-rebuilding if the build is missing
+- DB integrity check + WAL checkpoint on restart
+- Killing stale processes on port 3000
 
 Usage:
   python3 aura-daemon.py         # Start the daemon
@@ -20,6 +26,8 @@ PROJECT_DIR = '/home/z/my-project'
 PIDFILE = '/tmp/aura-daemon.pid'
 LOGFILE = '/tmp/aura-daemon.log'
 SERVER_PIDFILE = '/tmp/orra-next-server.pid'
+DB_FILE = os.path.join(PROJECT_DIR, 'db/custom.db')
+PERSISTENT_BACKUP = '/home/sync/orra-db-backup/latest.db'
 
 ENV = {
     **os.environ,
@@ -71,7 +79,6 @@ def kill_port_3000():
 
 def kill_old_server():
     """Kill server tracked by PID file and anything on port 3000"""
-    # Kill tracked server
     try:
         with open(SERVER_PIDFILE) as f:
             pid = int(f.read().strip())
@@ -79,8 +86,79 @@ def kill_old_server():
         log(f'Killed tracked server PID {pid}')
     except:
         pass
-    # Kill anything on port 3000
     kill_port_3000()
+
+def check_and_repair_db():
+    """Check SQLite integrity and repair if needed. Also checkpoint WAL."""
+    log('Checking database integrity and checkpointing WAL...')
+    try:
+        result = subprocess.run(
+            ['node', '-e', f'''
+const Database = require('better-sqlite3');
+const fs = require('fs');
+const DB_PATH = '{DB_FILE}';
+const BACKUP_PATH = '{PERSISTENT_BACKUP}';
+
+try {{
+  const db = new Database(DB_PATH);
+  db.pragma('journal_mode = WAL');
+  
+  // Force WAL checkpoint
+  try {{
+    db.pragma('wal_checkpoint(TRUNCATE)');
+    console.log('WAL checkpoint done');
+  }} catch(e) {{
+    console.warn('WAL checkpoint warning:', e.message);
+  }}
+  
+  // Check integrity
+  const integrity = db.pragma('integrity_check');
+  const status = integrity[0]?.integrity_check;
+  
+  if (status === 'ok') {{
+    console.log('DB_INTEGRITY_OK');
+  }} else {{
+    console.error('DB_CORRUPTED');
+    db.close();
+    
+    if (fs.existsSync(BACKUP_PATH)) {{
+      console.log('RESTORING_FROM_BACKUP');
+      fs.copyFileSync(BACKUP_PATH, DB_PATH);
+    }} else {{
+      console.log('NO_BACKUP_REMOVING_CORRUPT');
+      fs.unlinkSync(DB_PATH);
+    }}
+  }}
+  
+  try {{ db.close(); }} catch(e) {{}}
+}} catch(e) {{
+  console.error('DB_OPEN_ERROR:', e.message);
+  const fs = require('fs');
+  if (fs.existsSync(BACKUP_PATH)) {{
+    console.log('RESTORING_FROM_BACKUP');
+    fs.copyFileSync(BACKUP_PATH, DB_PATH);
+  }} else if (fs.existsSync(DB_PATH)) {{
+    fs.unlinkSync(DB_PATH);
+  }}
+}}
+'''],
+            capture_output=True, text=True, timeout=15,
+            cwd=PROJECT_DIR
+        )
+        output = result.stdout + result.stderr
+        log(f'DB check output: {output.strip()}')
+        
+        if 'DB_CORRUPTED' in output or 'RESTORING_FROM_BACKUP' in output:
+            log('Database was corrupted, restored from backup')
+            # Re-push schema after restore
+            subprocess.run(['npx', 'prisma', 'db', 'push'], 
+                         cwd=PROJECT_DIR, capture_output=True, timeout=30)
+        elif 'DB_INTEGRITY_OK' in output:
+            log('Database integrity OK')
+        return True
+    except Exception as e:
+        log(f'DB check error: {e}')
+        return False
 
 def build_if_needed():
     """Build the production bundle if BUILD_ID doesn't exist"""
@@ -89,7 +167,7 @@ def build_if_needed():
         log('No production build found. Building...')
         try:
             result = subprocess.run(
-                ['npx', 'next', 'build'],
+                ['npx', 'next', 'build', '--webpack'],
                 cwd=PROJECT_DIR,
                 capture_output=True, text=True, timeout=300
             )
@@ -120,7 +198,7 @@ def is_daemon_running():
     if pid is None:
         return False
     try:
-        os.kill(pid, 0)  # Signal 0 = check if process exists
+        os.kill(pid, 0)
         return True
     except:
         return False
@@ -135,11 +213,29 @@ def start_server_process():
         stdout=open(LOGFILE.replace('.log', '-server.log'), 'a'),
         stderr=subprocess.STDOUT,
     )
-    # Write server PID
     with open(SERVER_PIDFILE, 'w') as f:
         f.write(str(proc.pid))
     log(f'Server process started (PID: {proc.pid})')
     return proc
+
+def backup_db():
+    """Quick backup of the database to persistent storage"""
+    try:
+        subprocess.run([
+            'node', '-e', f'''
+const Database = require('better-sqlite3');
+const fs = require('fs');
+try {{
+  const db = new Database('{DB_FILE}');
+  db.pragma('wal_checkpoint(TRUNCATE)');
+  db.close();
+}} catch(e) {{}}
+fs.copyFileSync('{DB_FILE}', '{PERSISTENT_BACKUP}');
+console.log('DB backed up');
+'''
+        ], cwd=PROJECT_DIR, capture_output=True, timeout=10)
+    except:
+        pass
 
 def run_daemon():
     """Main daemon loop - keeps the server alive forever"""
@@ -150,19 +246,33 @@ def run_daemon():
     kill_old_server()
     time.sleep(2)
     
+    # Check and repair database
+    check_and_repair_db()
+    
     # Make sure we have a build
     if not build_if_needed():
         log('FATAL: Build failed. Will retry in 60 seconds...')
         time.sleep(60)
         if not build_if_needed():
-            log('FATAL: Build failed twice. Giving up for now, will retry every 60s.')
+            log('FATAL: Build failed twice. Will retry every 60s in main loop.')
     
     server_proc = None
     crash_count = 0
     last_start_time = 0
+    health_check_interval = 10  # seconds
+    last_backup_time = 0
+    backup_interval = 300  # 5 minutes
     
     while True:
         try:
+            now = time.time()
+            
+            # Periodic DB backup
+            if now - last_backup_time > backup_interval:
+                if os.path.exists(DB_FILE):
+                    backup_db()
+                    last_backup_time = now
+            
             # Check if server is responding
             if not is_port_active():
                 log('Server is not responding!')
@@ -170,6 +280,9 @@ def run_daemon():
                 # Kill any stuck processes
                 kill_port_3000()
                 time.sleep(2)
+                
+                # Check DB integrity before restarting
+                check_and_repair_db()
                 
                 # Ensure build exists
                 if not build_if_needed():
@@ -196,8 +309,7 @@ def run_daemon():
                 if not ready:
                     log('Server failed to start within 30s')
                     crash_count += 1
-                    # Check if process is even alive
-                    if server_proc.poll() is not None:
+                    if server_proc and server_proc.poll() is not None:
                         log(f'Server process exited with code: {server_proc.returncode}')
                 
                 # Back off if crashing repeatedly
@@ -205,23 +317,24 @@ def run_daemon():
                     wait = min(crash_count * 30, 300)
                     log(f'Too many crashes, waiting {wait}s before next attempt...')
                     time.sleep(wait)
-                    crash_count = max(0, crash_count - 1)  # Slowly decay
+                    crash_count = max(0, crash_count - 1)
             
             else:
-                # Server is healthy - check if process is still alive
+                # Server is healthy — check if tracked process is still alive
                 if server_proc and server_proc.poll() is not None:
                     exit_code = server_proc.returncode
                     log(f'Server process exited with code {exit_code}')
                     crash_count += 1
                     server_proc = None
-                    # Will be caught on next iteration when is_port_active() returns False
+                    # Backup DB before potential restart
+                    backup_db()
                 elif server_proc is None:
-                    # Port is active but we don't have a tracked process
-                    # This means something else started the server - that's fine
+                    # Port is active but we don't track the process — that's fine
+                    # Maybe started by a previous daemon instance
                     pass
             
             # Health check interval
-            time.sleep(10)
+            time.sleep(health_check_interval)
             
         except KeyboardInterrupt:
             log('Daemon stopped by user')
@@ -235,16 +348,13 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         cmd = sys.argv[1]
         if cmd == '--stop':
-            # Stop the daemon
             pid = read_daemon_pid()
             if pid and is_daemon_running():
                 os.kill(pid, signal.SIGTERM)
                 log(f'Daemon stopped (PID {pid})')
-                # Also kill the server
                 kill_old_server()
             else:
                 print('No running daemon found')
-                # Kill any server on port 3000 as cleanup
                 kill_port_3000()
             sys.exit(0)
         
@@ -259,7 +369,6 @@ if __name__ == '__main__':
             sys.exit(0)
         
         elif cmd == '--restart':
-            # Stop and start
             pid = read_daemon_pid()
             if pid and is_daemon_running():
                 os.kill(pid, signal.SIGTERM)
@@ -267,14 +376,11 @@ if __name__ == '__main__':
             kill_old_server()
             time.sleep(2)
             print('Restarting daemon...')
-            # Continue to start below
-        
         else:
             print(f'Unknown command: {cmd}')
             print('Usage: aura-daemon.py [--stop|--status|--restart]')
             sys.exit(1)
     else:
-        # Check if daemon is already running
         if is_daemon_running():
             print('Daemon is already running! Use --stop to stop it first.')
             sys.exit(1)
@@ -282,10 +388,8 @@ if __name__ == '__main__':
     # Start the daemon in background
     log('Starting AURA daemon in background...')
     
-    # Simple background approach - redirect output and fork
     pid = os.fork()
     if pid > 0:
-        # Parent process - wait briefly then exit
         time.sleep(2)
         if is_daemon_running():
             print(f'Daemon started successfully (PID: {pid})')
@@ -295,12 +399,9 @@ if __name__ == '__main__':
     
     # Child process - become daemon
     os.setsid()
-    
-    # Close standard file descriptors
     sys.stdout.flush()
     sys.stderr.flush()
     devnull = open(os.devnull, 'r')
     os.dup2(devnull.fileno(), sys.stdin.fileno())
     
-    # Run the daemon loop
     run_daemon()
