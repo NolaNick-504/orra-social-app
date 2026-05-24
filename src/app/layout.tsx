@@ -61,9 +61,22 @@ export default function RootLayout({
             and the browser naturally loads them on the next navigation. */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-            // Register service worker for smart caching
+            // TEMPORARILY DISABLED: Service worker registration
+            // The old SW (v100) was caching stale chunks causing "Loading ORRA..." to hang.
+            // sw.js v103 is a self-destructing SW that will clean up old caches.
+            // Once users have cleared their old SW, we can re-enable registration.
             if ('serviceWorker' in navigator) {
+              // Register the self-destructing SW to clean up old caches
               navigator.serviceWorker.register('/sw.js').catch(function() {});
+              // Also immediately try to unregister any existing SWs
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                regs.forEach(function(reg) {
+                  // Only unregister old versions, let v103 self-destruct naturally
+                  if (reg.active && reg.active.scriptURL.indexOf('sw.js') !== -1) {
+                    // The new sw.js v103 will self-destruct on activate
+                  }
+                });
+              }).catch(function() {});
             }
           })();
         `}} />

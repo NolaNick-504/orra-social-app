@@ -1,8 +1,6 @@
-// ORRA Service Worker v102 - Network-first for chunks
-// v102: Network-first for /_next/static/ chunks to prevent stale cache after rebuilds.
-// v101: Force-clears all previous caches to ensure fresh JS chunks after rebuilds.
-const STATIC_CACHE = 'orra-static-v102';
-const IMAGE_CACHE = 'orra-images-v102';
+// ORRA Service Worker v103 - Self-Destruct
+// v103: Unregisters itself immediately to clear all cached data from previous SW versions.
+// This fixes the "stuck on Loading ORRA" issue caused by old SW caching stale chunks.
 
 self.addEventListener('install', (event) => {
   // Skip waiting to activate immediately
@@ -10,135 +8,25 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  // Claim all clients immediately so the new SW takes control
-  // Then DELETE ALL OLD CACHES from previous SW versions
+  // Delete ALL caches and unregister this service worker
   event.waitUntil(
-    clients.claim().then(() => {
-      return caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames
-            .filter((name) => name !== STATIC_CACHE && name !== IMAGE_CACHE)
-            .map((cacheName) => {
-              console.log('[SW v101] Deleting stale cache:', cacheName);
-              return caches.delete(cacheName);
-            })
-        );
-      });
+    caches.keys().then((cacheNames) => {
+      // Delete every single cache
+      return Promise.all(cacheNames.map(name => caches.delete(name)));
+    }).then(() => {
+      // Claim all clients so they get the clean state
+      return clients.claim();
+    }).then(() => {
+      // Unregister THIS service worker so the browser has NO SW at all
+      // The next page load will register sw-stable.js (if it exists)
+      // or just work without a service worker
+      return self.registration.unregister();
     })
   );
 });
 
+// Pass-through: don't intercept any requests
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-
-  // NEVER intercept the clear-cache.html page — it needs to work
-  // even when the SW is in a bad state
-  if (url.pathname === '/clear-cache.html') {
-    return;
-  }
-
-  // For navigation requests (HTML pages), always fetch fresh from network.
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          return response;
-        })
-        .catch(() => {
-          return Response.redirect(url.origin + '/?_cb=' + Date.now(), 302);
-        })
-    );
-    return;
-  }
-
-  // For API calls - network first, never cache
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          return response;
-        })
-        .catch(() => {
-          return new Response(JSON.stringify({ error: 'Network error' }), {
-            status: 503,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        })
-    );
-    return;
-  }
-
-  // For /_next/static/ chunks - NETWORK FIRST strategy
-  // This ensures fresh chunks after rebuilds instead of serving stale cached ones
-  if (url.pathname.startsWith('/_next/static/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(STATIC_CACHE).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          // Network failed — try cache as fallback
-          return caches.match(event.request).then((cachedResponse) => {
-            return cachedResponse || new Response('/* chunk not found */', {
-              status: 404,
-              headers: { 'Content-Type': 'application/javascript' }
-            });
-          });
-        })
-    );
-    return;
-  }
-
-  // For images - cache first, with network fallback
-  if (url.pathname.match(/\.(png|jpg|jpeg|webp|gif|svg|ico)$/i)) {
-    event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(event.request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseToCache = networkResponse.clone();
-            caches.open(IMAGE_CACHE).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return networkResponse;
-        }).catch(() => {
-          return new Response(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
-            { status: 200, headers: { 'Content-Type': 'image/svg+xml' } }
-          );
-        });
-      })
-    );
-    return;
-  }
-
-  // For CSS/JS not in /_next/static/ - network first
-  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          return response;
-        })
-        .catch(() => {
-          return caches.match(event.request);
-        })
-    );
-    return;
-  }
-
-  // For everything else - network first
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-  );
+  // Do nothing - let the browser handle all requests normally
+  // This is just a self-destructing SW
 });
