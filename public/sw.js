@@ -1,8 +1,7 @@
-// ORRA Service Worker v100 - Robust Navigation Handling
-// v100: Fixed 404 issue where navigation fallback to empty cache left users stranded.
-// Now: navigation fetch failures redirect to home instead of showing a blank 404.
-const STATIC_CACHE = 'orra-static-v100';
-const IMAGE_CACHE = 'orra-images-v100';
+// ORRA Service Worker v101 - Force Cache Clear
+// v101: Force-clears all previous caches to ensure fresh JS chunks after rebuilds.
+const STATIC_CACHE = 'orra-static-v101';
+const IMAGE_CACHE = 'orra-images-v101';
 
 self.addEventListener('install', (event) => {
   // Skip waiting to activate immediately
@@ -19,7 +18,7 @@ self.addEventListener('activate', (event) => {
           cacheNames
             .filter((name) => name !== STATIC_CACHE && name !== IMAGE_CACHE)
             .map((cacheName) => {
-              console.log('[SW v100] Deleting stale cache:', cacheName);
+              console.log('[SW v101] Deleting stale cache:', cacheName);
               return caches.delete(cacheName);
             })
         );
@@ -32,18 +31,13 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   // For navigation requests (HTML pages), always fetch fresh from network.
-  // If network fails, redirect to home page instead of showing a blank 404.
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // If server returns a valid response (even 404), pass it through.
-          // The not-found.tsx will handle 404s by redirecting to /.
           return response;
         })
         .catch(() => {
-          // Network completely failed — redirect to home with cache-bust
-          // instead of showing a blank error page
           return Response.redirect(url.origin + '/?_cb=' + Date.now(), 302);
         })
     );
@@ -67,15 +61,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For /_next/static/ chunks - CACHE FIRST strategy
-  // These files have content-hash filenames, so cached versions are always valid.
+  // For /_next/static/ chunks - NETWORK FIRST strategy
+  // This ensures fresh chunks after rebuilds instead of serving stale cached ones
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(event.request).then((networkResponse) => {
+      fetch(event.request)
+        .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             const responseToCache = networkResponse.clone();
             caches.open(STATIC_CACHE).then((cache) => {
@@ -83,13 +74,16 @@ self.addEventListener('fetch', (event) => {
             });
           }
           return networkResponse;
-        }).catch(() => {
-          return new Response('/* chunk not found */', {
-            status: 404,
-            headers: { 'Content-Type': 'application/javascript' }
+        })
+        .catch(() => {
+          // Network failed — try cache as fallback
+          return caches.match(event.request).then((cachedResponse) => {
+            return cachedResponse || new Response('/* chunk not found */', {
+              status: 404,
+              headers: { 'Content-Type': 'application/javascript' }
+            });
           });
-        });
-      })
+        })
     );
     return;
   }
@@ -110,7 +104,6 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         }).catch(() => {
-          // Return a 1x1 transparent pixel instead of a broken image
           return new Response(
             '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
             { status: 200, headers: { 'Content-Type': 'image/svg+xml' } }
