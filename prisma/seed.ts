@@ -2083,7 +2083,7 @@ async function main() {
     });
     counts.usersCreated++;
   }
-  console.log('✅ Users: ${counts.usersCreated} created, ${counts.usersSkipped} skipped\n');
+  console.log(`✅ Users: ${counts.usersCreated} created, ${counts.usersSkipped} skipped\n`);
 
   // ========================================
   // 2. Create Posts (skip if already exists)
@@ -2111,7 +2111,7 @@ async function main() {
     });
     counts.postsCreated++;
   }
-  console.log('✅ Posts: ${counts.postsCreated} created, ${counts.postsSkipped} skipped\n');
+  console.log(`✅ Posts: ${counts.postsCreated} created, ${counts.postsSkipped} skipped\n`);
 
   // ========================================
   // 3. Create Comments (skip if already exists)
@@ -2136,7 +2136,7 @@ async function main() {
     });
     counts.commentsCreated++;
   }
-  console.log('✅ Comments: ${counts.commentsCreated} created, ${counts.commentsSkipped} skipped\n');
+  console.log(`✅ Comments: ${counts.commentsCreated} created, ${counts.commentsSkipped} skipped\n`);
 
   // ========================================
   // 4. Create Likes (skip if already exists)
@@ -2159,7 +2159,7 @@ async function main() {
     });
     counts.likesCreated++;
   }
-  console.log('✅ Likes: ${counts.likesCreated} created, ${counts.likesSkipped} skipped\n');
+  console.log(`✅ Likes: ${counts.likesCreated} created, ${counts.likesSkipped} skipped\n`);
 
   // ========================================
   // 5. Create Follow Relationships (skip if already exists)
@@ -2181,7 +2181,7 @@ async function main() {
     });
     counts.followsCreated++;
   }
-  console.log('✅ Follows: ${counts.followsCreated} created, ${counts.followsSkipped} skipped\n');
+  console.log(`✅ Follows: ${counts.followsCreated} created, ${counts.followsSkipped} skipped\n`);
 
   // ========================================
   // 6. Create Stories (skip if author already has stories)
@@ -2216,7 +2216,7 @@ async function main() {
     });
     counts.storiesCreated++;
   }
-  console.log('✅ Stories: ${counts.storiesCreated} created, ${counts.storiesSkipped} skipped\n');
+  console.log(`✅ Stories: ${counts.storiesCreated} created, ${counts.storiesSkipped} skipped\n`);
 
   // ========================================
   // 7. Create Reels (skip if already exists)
@@ -2245,7 +2245,7 @@ async function main() {
     });
     counts.reelsCreated++;
   }
-  console.log('✅ Reels: ${counts.reelsCreated} created, ${counts.reelsSkipped} skipped\n');
+  console.log(`✅ Reels: ${counts.reelsCreated} created, ${counts.reelsSkipped} skipped\n`);
 
   // ========================================
   // 8. Create Dance Challenge + Entries (skip if already exists)
@@ -2291,7 +2291,7 @@ async function main() {
     });
     counts.danceCreated++;
   }
-  console.log('✅ Dance: ${counts.danceCreated} created, ${counts.danceSkipped} skipped\n');
+  console.log(`✅ Dance: ${counts.danceCreated} created, ${counts.danceSkipped} skipped\n`);
 
   // ========================================
   // 9. Create Hubs + Members + Posts (skip if already exists)
@@ -2345,7 +2345,7 @@ async function main() {
       });
     }
   }
-  console.log('✅ Hubs: ${counts.hubsCreated} created, ${counts.hubsSkipped} skipped\n');
+  console.log(`✅ Hubs: ${counts.hubsCreated} created, ${counts.hubsSkipped} skipped\n`);
 
   // ========================================
   // 10. Create Chat Conversations (skip if already exists)
@@ -2386,7 +2386,7 @@ async function main() {
     }
     counts.chatsCreated++;
   }
-  console.log('✅ Chats: ${counts.chatsCreated} created, ${counts.chatsSkipped} skipped\n');
+  console.log(`✅ Chats: ${counts.chatsCreated} created, ${counts.chatsSkipped} skipped\n`);
 
   // ========================================
   // 11. Create Notifications (skip if already exists)
@@ -2413,7 +2413,7 @@ async function main() {
     });
     counts.notifsCreated++;
   }
-  console.log('✅ Notifications: ${counts.notifsCreated} created, ${counts.notifsSkipped} skipped\n');
+  console.log(`✅ Notifications: ${counts.notifsCreated} created, ${counts.notifsSkipped} skipped\n`);
 
   // ========================================
   // 12. ALWAYS ensure founder password is correct
@@ -2442,17 +2442,17 @@ async function main() {
   // ========================================
   console.log('🎉 ORRA database seeded (safe mode)!\n');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('👤 Users:         ${counts.usersCreated} created / ${counts.usersSkipped} skipped');
-  console.log('📝 Posts:         ${counts.postsCreated} created / ${counts.postsSkipped} skipped');
-  console.log('💬 Comments:      ${counts.commentsCreated} created / ${counts.commentsSkipped} skipped');
-  console.log('❤️  Likes:         ${counts.likesCreated} created / ${counts.likesSkipped} skipped');
-  console.log('🔗 Follows:       ${counts.followsCreated} created / ${counts.followsSkipped} skipped');
-  console.log('📸 Stories:       ${counts.storiesCreated} created / ${counts.storiesSkipped} skipped');
-  console.log('🎬 Reels:         ${counts.reelsCreated} created / ${counts.reelsSkipped} skipped');
-  console.log('💃 Dance:         ${counts.danceCreated} created / ${counts.danceSkipped} skipped');
-  console.log('🏠 Hubs:          ${counts.hubsCreated} created / ${counts.hubsSkipped} skipped');
-  console.log('💬 Chats:         ${counts.chatsCreated} created / ${counts.chatsSkipped} skipped');
-  console.log('🔔 Notifications: ${counts.notifsCreated} created / ${counts.notifsSkipped} skipped');
+  console.log(`👤 Users:         ${counts.usersCreated} created / ${counts.usersSkipped} skipped`);
+  console.log(`📝 Posts:         ${counts.postsCreated} created / ${counts.postsSkipped} skipped`);
+  console.log(`💬 Comments:      ${counts.commentsCreated} created / ${counts.commentsSkipped} skipped`);
+  console.log(`❤️  Likes:         ${counts.likesCreated} created / ${counts.likesSkipped} skipped`);
+  console.log(`🔗 Follows:       ${counts.followsCreated} created / ${counts.followsSkipped} skipped`);
+  console.log(`📸 Stories:       ${counts.storiesCreated} created / ${counts.storiesSkipped} skipped`);
+  console.log(`🎬 Reels:         ${counts.reelsCreated} created / ${counts.reelsSkipped} skipped`);
+  console.log(`💃 Dance:         ${counts.danceCreated} created / ${counts.danceSkipped} skipped`);
+  console.log(`🏠 Hubs:          ${counts.hubsCreated} created / ${counts.hubsSkipped} skipped`);
+  console.log(`💬 Chats:         ${counts.chatsCreated} created / ${counts.chatsSkipped} skipped`);
+  console.log(`🔔 Notifications: ${counts.notifsCreated} created / ${counts.notifsSkipped} skipped`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 }
 
