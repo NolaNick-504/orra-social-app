@@ -61,10 +61,13 @@ upload/orra-backup/src-backup/db/
 *.tar
 *.bundle
 
-# Backup directories - not needed in GitHub
-backups/
+# Database directory (use backup/ for restores)
 db/
 upload/
+
+# Keep the backup directory with JSON export and restore script
+# but exclude large .db files
+backup/*.db
 
 # Large media files - stored separately
 public/videos/
@@ -79,6 +82,47 @@ git-old-backup/
 
 # Download directory (screenshots, not needed in repo)
 download/
+
+# Agent context files
+agent-ctx/
+
+# Deprecated scripts
+_deprecated_scripts/
+
+# Protected backups
+protected-backups/
+
+# Research notes
+research/
+
+# Screenshots and reference images in root
+*.png
+!public/**/*.png
+!public/**/*.jpg
+!public/**/*.jpeg
+!public/**/*.webp
+!public/**/*.svg
+!public/**/*.ico
+!public/**/*.mp3
+
+# Misc files in root
+3
+5000
+logs/
+fix-db.js
+load-test.js
+load-test.py
+mobile-screenshot.js
+test-login.js
+test-app.js
+orra-keepalive.sh
+backup-db.sh
+orra-deploy.sh
+orra-server.pid
+ecosystem.config.cjs
+ecosystem.config.js
+Caddyfile
+PROJECT_STATE.md
 
 # Test results
 test-results/

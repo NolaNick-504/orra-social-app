@@ -1,0 +1,4078 @@
+{
+  "exportedAt": "2026-05-24T15:49:29.121Z",
+  "version": "v1-final-save",
+  "users": [
+    {
+      "id": "founder",
+      "email": "nickjoseph8087@gmail.com",
+      "name": "Nick Joseph ",
+      "handle": "@nickorraceo",
+      "bio": "Founder of ORRA — building the next-gen social universe where creativity meets connection. Turning vision into reality, one pulse at a time. New Orleans born, worldwide impact.",
+      "avatar": "/api/uploads?file=avatar-founder-29e30909.jpg",
+      "coverImage": "/images/covers/founder-orra.jpg",
+      "location": "New Orleans, LA",
+      "website": "orra.app",
+      "verified": true,
+      "auraTokens": 100000,
+      "auraLevel": 51,
+      "auraXP": 750,
+      "dailyStreak": 0,
+      "badges": "[\"Early Adopter\",\"ORRA OG\",\"Founder\",\"Visionary\",\"ORRA Architect\"]",
+      "profileSongUrl": "/music/orra/orra.mp3",
+      "profileSongTitle": "ORRA",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p0founder",
+          "text": "Welcome to ORRA! This is the future of social media — real connections, real content, real rewards. We are just getting started. The best is yet to come!",
+          "images": "[]",
+          "vibeTag": "hyped",
+          "type": "text",
+          "likesCount": 50000,
+          "commentsCount": 2500,
+          "sharesCount": 10000,
+          "createdAt": "2026-05-19T22:48:20.380Z",
+          "comments": [
+            {
+              "id": "c01",
+              "text": "ORRA is about to change the game! Let us go!",
+              "authorId": "bot04",
+              "createdAt": "2026-05-20T02:42:34.856Z"
+            },
+            {
+              "id": "c02",
+              "text": "Already in love with this platform. The vibes are immaculate.",
+              "authorId": "bot06",
+              "createdAt": "2026-05-20T06:35:52.313Z"
+            },
+            {
+              "id": "c03",
+              "text": "The future is NOW. Proud to be here from day one!",
+              "authorId": "bot10",
+              "createdAt": "2026-05-21T05:17:51.263Z"
+            },
+            {
+              "id": "c04",
+              "text": "My grandkids showed me this app and I am OBSESSED. Abuela is online!",
+              "authorId": "bot22",
+              "createdAt": "2026-05-22T17:39:30.370Z"
+            },
+            {
+              "id": "c05",
+              "text": "This platform is giving everything it needs to give. Period.",
+              "authorId": "bot13",
+              "createdAt": "2026-05-23T02:16:44.269Z"
+            }
+          ]
+        },
+        {
+          "id": "p0founder2",
+          "text": "Late night in the studio working on something special for the ORRA community. The updates coming this month are going to change everything. Stay tuned.",
+          "images": "[\"/images/posts/studio.jpg\"]",
+          "vibeTag": "focused",
+          "type": "image",
+          "likesCount": 32400,
+          "commentsCount": 1800,
+          "sharesCount": 7200,
+          "createdAt": "2026-05-24T04:45:25.647Z",
+          "comments": [
+            {
+              "id": "c81",
+              "text": "Whatever is coming, we are ready! ORRA keeps getting better!",
+              "authorId": "bot04",
+              "createdAt": "2026-05-21T12:34:16.131Z"
+            },
+            {
+              "id": "c82",
+              "text": "Late nights building something great — that is the energy! We got you Nick!",
+              "authorId": "bot15",
+              "createdAt": "2026-05-23T19:41:24.831Z"
+            },
+            {
+              "id": "c83",
+              "text": "The community sees the work. Thank you for building something that feels different.",
+              "authorId": "bot03",
+              "createdAt": "2026-05-21T17:09:13.679Z"
+            }
+          ]
+        },
+        {
+          "id": "p0founder3",
+          "text": "ORRA just hit 1000 users and I am beyond grateful. Every single one of you believed in this vision before anyone else did. This is YOUR platform. We building together.",
+          "images": "[]",
+          "vibeTag": "hyped",
+          "type": "text",
+          "likesCount": 42000,
+          "commentsCount": 3200,
+          "sharesCount": 15000,
+          "createdAt": "2026-05-21T16:52:56.026Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "bot01",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot02",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot03",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot04",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot05",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot06",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot07",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot08",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot09",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot10",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot11",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot12",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot13",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot14",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot15",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot16",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot17",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot18",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot19",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot20",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot21",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot22",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot23",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot24",
+          "followingId": "founder"
+        },
+        {
+          "followerId": "bot25",
+          "followingId": "founder"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "founder",
+          "followingId": "bot01"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot02"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot03"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot04"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot05"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot06"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot07"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot08"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot09"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot10"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot11"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot12"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot13"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot14"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot15"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot16"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot17"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot18"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot19"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot20"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot21"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot22"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot23"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot24"
+        },
+        {
+          "followerId": "founder",
+          "followingId": "bot25"
+        }
+      ]
+    },
+    {
+      "id": "bot01",
+      "email": "bot01@orra.app",
+      "name": "Amira Johnson",
+      "handle": "@amiraj",
+      "bio": "Pediatric nurse by day, plant mom always. Trying to keep my succulents alive and my heart full. Coffee is a food group.",
+      "avatar": "/images/avatars/bots/bot01.jpg",
+      "coverImage": "/images/covers/bot01.jpg",
+      "location": "Houston, TX",
+      "website": "amiraj.orra.app",
+      "verified": false,
+      "auraTokens": 320,
+      "auraLevel": 4,
+      "auraXP": 180,
+      "dailyStreak": 0,
+      "badges": "[\"Early Adopter\",\"Plant Parent\"]",
+      "profileSongUrl": "/music/orra/back-of-the-tracks.mp3",
+      "profileSongTitle": "Back of the Tracks",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p01a",
+          "text": "12 hour shift done and my snake plant is still alive. Honestly one of those days where the little wins are everything. Grateful for my coworkers who kept me sane today.",
+          "images": "[\"/images/posts/nurse-shift.jpg\"]",
+          "vibeTag": "chill",
+          "type": "image",
+          "likesCount": 845,
+          "commentsCount": 67,
+          "sharesCount": 23,
+          "createdAt": "2026-05-18T22:28:12.811Z",
+          "comments": []
+        },
+        {
+          "id": "p01b",
+          "text": "My patient today told me I made her hospital stay bearable. I almost cried right there at the nurses station. This is why I do what I do.",
+          "images": "[]",
+          "vibeTag": "peaceful",
+          "type": "text",
+          "likesCount": 2100,
+          "commentsCount": 189,
+          "sharesCount": 340,
+          "createdAt": "2026-05-24T13:50:44.811Z",
+          "comments": []
+        },
+        {
+          "id": "p01c",
+          "text": "Night shift nurses, I see you. The silence at 3 AM when all your patients are sleeping is both peaceful and terrifying. Stay strong out there.",
+          "images": "[\"/images/posts/nurse-shift.jpg\"]",
+          "vibeTag": "peaceful",
+          "type": "image",
+          "likesCount": 2100,
+          "commentsCount": 167,
+          "sharesCount": 234,
+          "createdAt": "2026-05-17T19:19:21.639Z",
+          "comments": [
+            {
+              "id": "c88",
+              "text": "The 3 AM quiet is a whole mood. Hang in there fellow night shift warriors.",
+              "authorId": "bot01",
+              "createdAt": "2026-05-21T17:33:40.861Z"
+            }
+          ]
+        },
+        {
+          "id": "p01d",
+          "text": "My succulent collection is officially out of control. 27 plants and counting. My apartment looks like a greenhouse and I am not even a little bit sorry about it.",
+          "images": "[]",
+          "vibeTag": "chill",
+          "type": "text",
+          "likesCount": 1340,
+          "commentsCount": 89,
+          "sharesCount": 45,
+          "createdAt": "2026-05-23T13:07:51.452Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot01"
+        },
+        {
+          "followerId": "bot16",
+          "followingId": "bot01"
+        },
+        {
+          "followerId": "bot20",
+          "followingId": "bot01"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot01",
+          "followingId": "bot16"
+        },
+        {
+          "followerId": "bot01",
+          "followingId": "bot20"
+        },
+        {
+          "followerId": "bot01",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot02",
+      "email": "bot02@orra.app",
+      "name": "Devin Mitchell",
+      "handle": "@devinmitch",
+      "bio": "High school football coach. Still think about that one play in 2019. Raising two wild boys and trying to be the man they deserve.",
+      "avatar": "/images/avatars/bots/bot02.jpg",
+      "coverImage": "/images/covers/bot02.jpg",
+      "location": "Birmingham, AL",
+      "website": "",
+      "verified": false,
+      "auraTokens": 145,
+      "auraLevel": 2,
+      "auraXP": 90,
+      "dailyStreak": 0,
+      "badges": "[]",
+      "profileSongUrl": "/music/orra/welcome-to-my-page.mp3",
+      "profileSongTitle": "Welcome to My Page",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p02a",
+          "text": "One of my kids asked me if I ever get tired of coaching. Told him I get tired of LOSING. But seriously, watching these boys grow into young men makes every 5 AM worth it.",
+          "images": "[\"/images/posts/coaching-field.jpg\"]",
+          "vibeTag": "focused",
+          "type": "image",
+          "likesCount": 1567,
+          "commentsCount": 98,
+          "sharesCount": 45,
+          "createdAt": "2026-05-21T10:33:19.919Z",
+          "comments": []
+        },
+        {
+          "id": "p02b",
+          "text": "My youngest just beat me in Madden. I am not even mad, I am terrified for the future. This kid has no mercy.",
+          "images": "[]",
+          "vibeTag": "laughing",
+          "type": "text",
+          "likesCount": 4200,
+          "commentsCount": 312,
+          "sharesCount": 890,
+          "createdAt": "2026-05-21T10:38:51.895Z",
+          "comments": [
+            {
+              "id": "c21",
+              "text": "Your kid has no mercy and I respect that. Future champion in the making!",
+              "authorId": "bot24",
+              "createdAt": "2026-05-20T23:43:32.974Z"
+            },
+            {
+              "id": "c22",
+              "text": "My students beat me at Smash Bros all the time. The youth are terrifying.",
+              "authorId": "bot25",
+              "createdAt": "2026-05-23T08:22:10.625Z"
+            },
+            {
+              "id": "c23",
+              "text": "He talked trash the whole game too. Gets it from his mama honestly.",
+              "authorId": "bot02",
+              "createdAt": "2026-05-19T15:03:41.246Z"
+            }
+          ]
+        },
+        {
+          "id": "p02c",
+          "text": "First game of the season Friday night! These boys have been grinding all summer. If you are in Birmingham, come through. We about to put on a show.",
+          "images": "[\"/images/posts/coaching-field.jpg\"]",
+          "vibeTag": "hyped",
+          "type": "image",
+          "likesCount": 2100,
+          "commentsCount": 134,
+          "sharesCount": 67,
+          "createdAt": "2026-05-20T07:40:35.045Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot02"
+        },
+        {
+          "followerId": "bot24",
+          "followingId": "bot02"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot02",
+          "followingId": "bot24"
+        },
+        {
+          "followerId": "bot02",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot03",
+      "email": "bot03@orra.app",
+      "name": "Sofia Reyes",
+      "handle": "@sofiareyes",
+      "bio": "First-gen college grad. Marketing coordinator who spends too much on iced matcha. My dog Bruno is my entire personality.",
+      "avatar": "/images/avatars/bots/bot03.jpg",
+      "coverImage": "/images/covers/bot03.jpg",
+      "location": "Phoenix, AZ",
+      "website": "sofiareyes.orra.app",
+      "verified": true,
+      "auraTokens": 480,
+      "auraLevel": 6,
+      "auraXP": 310,
+      "dailyStreak": 0,
+      "badges": "[\"Trendsetter\",\"Early Adopter\"]",
+      "profileSongUrl": "/music/orra/like-and-follow.mp3",
+      "profileSongTitle": "Like and Follow",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p03a",
+          "text": "Bruno ate my favorite sandals and I still kissed him goodnight. This is what unconditional love looks like and it is embarrassing.",
+          "images": "[\"/images/posts/dog-sandals.jpg\"]",
+          "vibeTag": "laughing",
+          "type": "image",
+          "likesCount": 5600,
+          "commentsCount": 234,
+          "sharesCount": 670,
+          "createdAt": "2026-05-23T03:08:52.730Z",
+          "comments": []
+        },
+        {
+          "id": "p03b",
+          "text": "First gen grads, where you at? Just paid off my last student loan and I am literally crying at my desk. Three jobs, no sleep, but we made it. Mama, we made it.",
+          "images": "[\"/images/posts/student-loan-paid.jpg\"]",
+          "vibeTag": "hyped",
+          "type": "image",
+          "likesCount": 18500,
+          "commentsCount": 1200,
+          "sharesCount": 4500,
+          "createdAt": "2026-05-24T04:18:41.509Z",
+          "comments": [
+            {
+              "id": "c06",
+              "text": "As a first-gen student still in the struggle, this gives me so much hope. Congrats Sofia!",
+              "authorId": "bot17",
+              "createdAt": "2026-05-20T05:17:14.257Z"
+            },
+            {
+              "id": "c07",
+              "text": "Paying off student loans is no joke. You should be SO proud of yourself!",
+              "authorId": "bot20",
+              "createdAt": "2026-05-21T23:08:39.935Z"
+            },
+            {
+              "id": "c08",
+              "text": "We made it! First gen grads run the world. Congrats!",
+              "authorId": "bot21",
+              "createdAt": "2026-05-20T22:39:14.258Z"
+            },
+            {
+              "id": "c09",
+              "text": "Thank you everyone! Could not have done it without the village. Mama sacrificed everything for this moment.",
+              "authorId": "bot03",
+              "createdAt": "2026-05-21T11:42:07.209Z"
+            }
+          ]
+        },
+        {
+          "id": "p03c",
+          "text": "This AI just generated a full album in 30 seconds and honestly some of the tracks are genuinely good. Are we watching the birth of a new genre or the death of human creativity? Discuss.",
+          "images": "[]",
+          "vibeTag": "focused",
+          "type": "text",
+          "likesCount": 15600,
+          "commentsCount": 1200,
+          "sharesCount": 4500,
+          "createdAt": "2026-05-20T08:53:07.797Z",
+          "comments": [
+            {
+              "id": "c90",
+              "text": "As a producer this terrifies and excites me. AI cannot replace soul though. At least I hope not.",
+              "authorId": "bot09",
+              "createdAt": "2026-05-19T21:43:05.559Z"
+            }
+          ]
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot03"
+        },
+        {
+          "followerId": "bot13",
+          "followingId": "bot03"
+        },
+        {
+          "followerId": "bot06",
+          "followingId": "bot03"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot03",
+          "followingId": "bot06"
+        },
+        {
+          "followerId": "bot03",
+          "followingId": "bot13"
+        },
+        {
+          "followerId": "bot03",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot04",
+      "email": "bot04@orra.app",
+      "name": "Marcus Rivera",
+      "handle": "@marcusr",
+      "bio": "Dance instructor and choreographer. If my body can move, I am creating. Every beat tells a story and I am just trying to translate it.",
+      "avatar": "/images/avatars/bots/bot04.jpg",
+      "coverImage": "/images/covers/bot04.jpg",
+      "location": "Miami, FL",
+      "website": "marcusr.orra.app",
+      "verified": true,
+      "auraTokens": 650,
+      "auraLevel": 8,
+      "auraXP": 420,
+      "dailyStreak": 0,
+      "badges": "[\"Top Creator\",\"Dance King\"]",
+      "profileSongUrl": "/music/orra/orra-gives-me-everything.mp3",
+      "profileSongTitle": "ORRA Gives Me Everything",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p04a",
+          "text": "Dance practice went hard today! New choreo dropping this weekend. Been working on something special for the ORRA Dance Off!",
+          "images": "[\"/images/posts/dance-studio.jpg\"]",
+          "vibeTag": "hyped",
+          "type": "image",
+          "likesCount": 5678,
+          "commentsCount": 234,
+          "sharesCount": 156,
+          "createdAt": "2026-05-21T16:30:40.633Z",
+          "comments": [
+            {
+              "id": "c14",
+              "text": "Those moves are CLEAN. You are going to destroy the Dance Off this year!",
+              "authorId": "bot15",
+              "createdAt": "2026-05-22T20:13:55.318Z"
+            },
+            {
+              "id": "c15",
+              "text": "The energy in this video is unmatched! We need a collab!",
+              "authorId": "bot10",
+              "createdAt": "2026-05-20T05:24:54.962Z"
+            }
+          ]
+        },
+        {
+          "id": "p04b",
+          "text": "One of my students just nailed a routine she has been struggling with for weeks. The look on her face was everything. This is why I teach.",
+          "images": "[\"/images/posts/dance-studio.jpg\"]",
+          "vibeTag": "peaceful",
+          "type": "image",
+          "likesCount": 3400,
+          "commentsCount": 178,
+          "sharesCount": 120,
+          "createdAt": "2026-05-22T22:16:25.797Z",
+          "comments": [
+            {
+              "id": "c16",
+              "text": "Moments like that are why we do what we do. That student will remember you forever.",
+              "authorId": "bot19",
+              "createdAt": "2026-05-20T18:57:38.110Z"
+            },
+            {
+              "id": "c17",
+              "text": "Teaching is the most underrated superpower. Keep inspiring Marcus!",
+              "authorId": "bot16",
+              "createdAt": "2026-05-21T02:48:54.699Z"
+            }
+          ]
+        },
+        {
+          "id": "p04c",
+          "text": "Choreography tip: Stop thinking about the steps and start feeling the music. Your body already knows what to do. Trust the rhythm and let it move you.",
+          "images": "[]",
+          "vibeTag": "focused",
+          "type": "text",
+          "likesCount": 4200,
+          "commentsCount": 267,
+          "sharesCount": 345,
+          "createdAt": "2026-05-19T04:18:31.492Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot04"
+        },
+        {
+          "followerId": "bot15",
+          "followingId": "bot04"
+        },
+        {
+          "followerId": "bot10",
+          "followingId": "bot04"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot04",
+          "followingId": "bot10"
+        },
+        {
+          "followerId": "bot04",
+          "followingId": "bot15"
+        },
+        {
+          "followerId": "bot04",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot05",
+      "email": "bot05@orra.app",
+      "name": "Raj Patel",
+      "handle": "@rajp",
+      "bio": "Software engineer who accidentally became a food blogger. My code compiles, my curries simmer. Life is about balance.",
+      "avatar": "/images/avatars/bots/bot05.jpg",
+      "coverImage": "/images/covers/bot05.jpg",
+      "location": "Austin, TX",
+      "website": "rajp.orra.app",
+      "verified": false,
+      "auraTokens": 210,
+      "auraLevel": 3,
+      "auraXP": 140,
+      "dailyStreak": 0,
+      "badges": "[\"Foodie Elite\"]",
+      "profileSongUrl": "/music/orra/back-of-the-tracks.mp3",
+      "profileSongTitle": "Back of the Tracks",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p05a",
+          "text": "My code works! *changes nothing* My code does not work... Welcome to programming! Also I made butter chicken from scratch tonight so at least one thing went right today.",
+          "images": "[\"/images/posts/butter-chicken.jpg\"]",
+          "vibeTag": "laughing",
+          "type": "image",
+          "likesCount": 7800,
+          "commentsCount": 456,
+          "sharesCount": 1200,
+          "createdAt": "2026-05-20T22:38:05.394Z",
+          "comments": [
+            {
+              "id": "c18",
+              "text": "The butter chicken was the real MVP tonight. Code can wait, curry cannot.",
+              "authorId": "bot05",
+              "createdAt": "2026-05-21T15:19:36.327Z"
+            },
+            {
+              "id": "c19",
+              "text": "That butter chicken recipe when? Asking for literally everyone!",
+              "authorId": "bot12",
+              "createdAt": "2026-05-23T02:07:28.871Z"
+            },
+            {
+              "id": "c20",
+              "text": "As a fellow code-and-cook person, I respect this deeply. The duality of man.",
+              "authorId": "bot23",
+              "createdAt": "2026-05-20T02:01:59.949Z"
+            }
+          ]
+        },
+        {
+          "id": "p05b",
+          "text": "Deployed my first smart contract today! The decentralized web is the future and I am here for it. Web3 developers, where you at?",
+          "images": "[\"/images/posts/laptop-code.jpg\"]",
+          "vibeTag": "focused",
+          "type": "image",
+          "likesCount": 3200,
+          "commentsCount": 234,
+          "sharesCount": 567,
+          "createdAt": "2026-05-22T14:42:17.581Z",
+          "comments": []
+        },
+        {
+          "id": "p05c",
+          "text": "Meal prep Sunday is my therapy. 5 days of butter chicken, dal, and fresh naan. My coworkers are jealous every single Monday and I am not sharing. Okay maybe a little.",
+          "images": "[\"/images/posts/butter-chicken.jpg\"]",
+          "vibeTag": "chill",
+          "type": "image",
+          "likesCount": 4500,
+          "commentsCount": 289,
+          "sharesCount": 567,
+          "createdAt": "2026-05-23T17:02:25.518Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot05"
+        },
+        {
+          "followerId": "bot12",
+          "followingId": "bot05"
+        },
+        {
+          "followerId": "bot21",
+          "followingId": "bot05"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot05",
+          "followingId": "bot12"
+        },
+        {
+          "followerId": "bot05",
+          "followingId": "bot21"
+        },
+        {
+          "followerId": "bot05",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot06",
+      "email": "bot06@orra.app",
+      "name": "Tasha Washington",
+      "handle": "@tashawash",
+      "bio": "Hair stylist and salon owner. Been doing hair since I was 12. Your crown is my canvas. Black girl magic is not a trend, it is a lifestyle.",
+      "avatar": "/images/avatars/bots/bot06.jpg",
+      "coverImage": "/images/covers/bot06.jpg",
+      "location": "Atlanta, GA",
+      "website": "tashawash.orra.app",
+      "verified": true,
+      "auraTokens": 530,
+      "auraLevel": 7,
+      "auraXP": 380,
+      "dailyStreak": 0,
+      "badges": "[\"Style Icon\",\"ORRA OG\"]",
+      "profileSongUrl": "/music/orra/like-and-follow.mp3",
+      "profileSongTitle": "Like and Follow",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p06a",
+          "text": "Client walked in with a Pinterest board and said \"I trust you.\" That is the highest compliment a stylist can get. Came out looking like a whole different woman.",
+          "images": "[\"/images/posts/salon-chair.jpg\"]",
+          "vibeTag": "dramatic",
+          "type": "image",
+          "likesCount": 8900,
+          "commentsCount": 567,
+          "sharesCount": 1234,
+          "createdAt": "2026-05-18T10:05:46.641Z",
+          "comments": []
+        },
+        {
+          "id": "p06b",
+          "text": "Six years ago I was renting a chair in someone else shop. Today I signed the lease on my SECOND salon location. Never let anyone tell you your dream is too big.",
+          "images": "[\"/images/posts/salon-chair.jpg\"]",
+          "vibeTag": "hyped",
+          "type": "image",
+          "likesCount": 24500,
+          "commentsCount": 1800,
+          "sharesCount": 5600,
+          "createdAt": "2026-05-22T13:01:27.891Z",
+          "comments": [
+            {
+              "id": "c10",
+              "text": "QUEEN! This is what hard work looks like. So proud of you!",
+              "authorId": "bot13",
+              "createdAt": "2026-05-20T18:53:34.038Z"
+            },
+            {
+              "id": "c11",
+              "text": "From renting a chair to two locations! You are an inspiration Tasha!",
+              "authorId": "bot01",
+              "createdAt": "2026-05-23T13:57:38.555Z"
+            },
+            {
+              "id": "c12",
+              "text": "Six years of blood, sweat, and hair dye! Thank you all for believing in me!",
+              "authorId": "bot06",
+              "createdAt": "2026-05-21T03:48:42.248Z"
+            },
+            {
+              "id": "c13",
+              "text": "This is the kind of story that makes me believe in people. Congratulations mija!",
+              "authorId": "bot22",
+              "createdAt": "2026-05-22T18:42:22.489Z"
+            }
+          ]
+        },
+        {
+          "id": "p06c",
+          "text": "Pop-up shop in SoHo this weekend! My new hair care line drops exclusively on ORRA first. Limited bottles, first come first serve. Set your reminders!",
+          "images": "[\"/images/posts/pop-up-shop.jpg\"]",
+          "vibeTag": "hyped",
+          "type": "image",
+          "likesCount": 14200,
+          "commentsCount": 980,
+          "sharesCount": 3400,
+          "createdAt": "2026-05-19T15:29:21.195Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot06"
+        },
+        {
+          "followerId": "bot13",
+          "followingId": "bot06"
+        },
+        {
+          "followerId": "bot03",
+          "followingId": "bot06"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot06",
+          "followingId": "bot03"
+        },
+        {
+          "followerId": "bot06",
+          "followingId": "bot13"
+        },
+        {
+          "followerId": "bot06",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot07",
+      "email": "bot07@orra.app",
+      "name": "Chris Nakamura",
+      "handle": "@chrisnaka",
+      "bio": "Electrician by trade, gamer by night. My van has more RGB than my PC and I am not sorry about it. Catch me on ORRA Prism at midnight.",
+      "avatar": "/images/avatars/bots/bot07.jpg",
+      "coverImage": "/images/covers/bot07.jpg",
+      "location": "Portland, OR",
+      "website": "",
+      "verified": false,
+      "auraTokens": 95,
+      "auraLevel": 1,
+      "auraXP": 55,
+      "dailyStreak": 0,
+      "badges": "[]",
+      "profileSongUrl": "/music/orra/welcome-to-my-page.mp3",
+      "profileSongTitle": "Welcome to My Page",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p07a",
+          "text": "When your WiFi dies mid-game and you just stare at the screen like... RIP my killstreak. Anyone else been there?",
+          "images": "[]",
+          "vibeTag": "laughing",
+          "type": "text",
+          "likesCount": 6700,
+          "commentsCount": 345,
+          "sharesCount": 567,
+          "createdAt": "2026-05-20T14:52:45.250Z",
+          "comments": [
+            {
+              "id": "c56",
+              "text": "This is the most relatable post on ORRA. WiFi dying mid-game is a crime against humanity.",
+              "authorId": "bot14",
+              "createdAt": "2026-05-23T20:27:59.637Z"
+            },
+            {
+              "id": "c57",
+              "text": "I made a beat about this exact feeling. It is called \"Disconnected\" lol",
+              "authorId": "bot09",
+              "createdAt": "2026-05-21T21:05:04.315Z"
+            }
+          ]
+        },
+        {
+          "id": "p07b",
+          "text": "Just rewired my entire gaming setup with custom LEDs. My electricity bill is going to be a problem but my setup is going to be UNREAL.",
+          "images": "[\"/images/posts/gaming-setup-leds.jpg\"]",
+          "vibeTag": "hyped",
+          "type": "image",
+          "likesCount": 2300,
+          "commentsCount": 145,
+          "sharesCount": 89,
+          "createdAt": "2026-05-18T04:52:29.940Z",
+          "comments": [
+            {
+              "id": "c58",
+              "text": "The custom LEDs are going to be insane. Post a video when it is done!",
+              "authorId": "bot07",
+              "createdAt": "2026-05-21T07:09:58.090Z"
+            }
+          ]
+        },
+        {
+          "id": "p07c",
+          "text": "The RGB debate is settled. More lights = more FPS. I will not be taking questions at this time. My van has more LEDs than my PC and I regret nothing.",
+          "images": "[\"/images/posts/gaming-setup-leds.jpg\"]",
+          "vibeTag": "laughing",
+          "type": "image",
+          "likesCount": 3400,
+          "commentsCount": 234,
+          "sharesCount": 567,
+          "createdAt": "2026-05-17T19:51:44.232Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot07"
+        },
+        {
+          "followerId": "bot14",
+          "followingId": "bot07"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot07",
+          "followingId": "bot14"
+        },
+        {
+          "followerId": "bot07",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot08",
+      "email": "bot08@orra.app",
+      "name": "Elena Vasquez",
+      "handle": "@elenav",
+      "bio": "Wanderlust is my default setting. 23 countries and counting. I collect sunsets and questionable street food. Life is too short for boring meals.",
+      "avatar": "/images/avatars/bots/bot08.jpg",
+      "coverImage": "/images/covers/bot08.jpg",
+      "location": "San Diego, CA",
+      "website": "elenav.orra.app",
+      "verified": true,
+      "auraTokens": 390,
+      "auraLevel": 5,
+      "auraXP": 250,
+      "dailyStreak": 0,
+      "badges": "[\"Explorer\",\"Early Adopter\"]",
+      "profileSongUrl": "/music/orra/back-of-the-tracks.mp3",
+      "profileSongTitle": "Back of the Tracks",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p08a",
+          "text": "Sunset vibes from Barcelona! Travel changes your perspective on everything. Every corner of this city tells a story, and I am here for all of it.",
+          "images": "[\"/images/posts/barcelona-alley.jpg\"]",
+          "vibeTag": "chill",
+          "type": "image",
+          "likesCount": 4500,
+          "commentsCount": 189,
+          "sharesCount": 340,
+          "createdAt": "2026-05-23T14:56:56.043Z",
+          "comments": [
+            {
+              "id": "c66",
+              "text": "Barcelona has my heart. The architecture alone is worth the trip!",
+              "authorId": "bot08",
+              "createdAt": "2026-05-20T23:30:21.751Z"
+            },
+            {
+              "id": "c67",
+              "text": "Adding Barcelona to my bucket list right now. This is stunning!",
+              "authorId": "bot03",
+              "createdAt": "2026-05-23T19:22:59.431Z"
+            }
+          ]
+        },
+        {
+          "id": "p08b",
+          "text": "Got lost in the streets of Lisbon at 2 AM and found the most incredible live music in a basement bar. The best moments are never planned.",
+          "images": "[\"/images/posts/lisbon-cafe.jpg\"]",
+          "vibeTag": "chill",
+          "type": "image",
+          "likesCount": 6800,
+          "commentsCount": 312,
+          "sharesCount": 890,
+          "createdAt": "2026-05-20T01:34:51.385Z",
+          "comments": [
+            {
+              "id": "c68",
+              "text": "2 AM basement jazz in Lisbon? That sounds like a movie scene. Incredible!",
+              "authorId": "bot12",
+              "createdAt": "2026-05-22T23:54:36.352Z"
+            }
+          ]
+        },
+        {
+          "id": "p08c",
+          "text": "Hidden gem in Lisbon — this cafe has the best pastel de nata I have ever tasted. Travel is the only thing you buy that makes you richer.",
+          "images": "[\"/images/posts/lisbon-cafe.jpg\"]",
+          "vibeTag": "chill",
+          "type": "image",
+          "likesCount": 4200,
+          "commentsCount": 234,
+          "sharesCount": 456,
+          "createdAt": "2026-05-24T03:17:39.540Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot08"
+        },
+        {
+          "followerId": "bot09",
+          "followingId": "bot08"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot08",
+          "followingId": "bot09"
+        },
+        {
+          "followerId": "bot08",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot09",
+      "email": "bot09@orra.app",
+      "name": "Donte Jackson",
+      "handle": "@dontej",
+      "bio": "Aspiring music producer working out of my bedroom. My mama says my beats slap and she is never wrong. Chicago born, raised on house music.",
+      "avatar": "/images/avatars/bots/bot09.jpg",
+      "coverImage": "/images/covers/bot09.jpg",
+      "location": "Chicago, IL",
+      "website": "dontej.orra.app",
+      "verified": false,
+      "auraTokens": 175,
+      "auraLevel": 2,
+      "auraXP": 110,
+      "dailyStreak": 0,
+      "badges": "[\"Beat Maker\"]",
+      "profileSongUrl": "/music/orra/orra-gives-me-everything.mp3",
+      "profileSongTitle": "ORRA Gives Me Everything",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p09a",
+          "text": "NEW TRACK ALERT! Just dropped my latest beat. This one samples 4 different genres. Hip-hop meets jazz meets electronic meets soul. Preview coming tonight!",
+          "images": "[\"/images/posts/studio-beats.jpg\"]",
+          "vibeTag": "hyped",
+          "type": "image",
+          "likesCount": 2300,
+          "commentsCount": 167,
+          "sharesCount": 234,
+          "createdAt": "2026-05-21T04:50:59.699Z",
+          "comments": [
+            {
+              "id": "c63",
+              "text": "This kid has serious talent. The multi-genre sampling is next level.",
+              "authorId": "bot15",
+              "createdAt": "2026-05-24T09:02:11.496Z"
+            },
+            {
+              "id": "c64",
+              "text": "We need to dance to this! The beat is infectious!",
+              "authorId": "bot04",
+              "createdAt": "2026-05-21T10:30:15.342Z"
+            }
+          ]
+        },
+        {
+          "id": "p09b",
+          "text": "Studio session went until 4 AM. My neighbors probably hate me but this beat is going to shake the culture. Mama said my beats slap and she is never wrong.",
+          "images": "[]",
+          "vibeTag": "focused",
+          "type": "text",
+          "likesCount": 1800,
+          "commentsCount": 123,
+          "sharesCount": 178,
+          "createdAt": "2026-05-24T13:32:05.813Z",
+          "comments": [
+            {
+              "id": "c65",
+              "text": "4 AM is when the magic happens. Or the madness. Same thing really.",
+              "authorId": "bot09",
+              "createdAt": "2026-05-22T17:49:38.552Z"
+            }
+          ]
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot09"
+        },
+        {
+          "followerId": "bot08",
+          "followingId": "bot09"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot09",
+          "followingId": "bot08"
+        },
+        {
+          "followerId": "bot09",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot10",
+      "email": "bot10@orra.app",
+      "name": "Luna Kim",
+      "handle": "@lunakim",
+      "bio": "Freelance illustrator and cat enthusiast. I draw things that make people feel something. My two cats supervise all my work and they are harsh critics.",
+      "avatar": "/images/avatars/bots/bot10.jpg",
+      "coverImage": "/images/covers/bot10.jpg",
+      "location": "Seattle, WA",
+      "website": "lunakim.art",
+      "verified": true,
+      "auraTokens": 420,
+      "auraLevel": 5,
+      "auraXP": 290,
+      "dailyStreak": 0,
+      "badges": "[\"Top Creator\",\"Art Soul\"]",
+      "profileSongUrl": "/music/orra/orra.mp3",
+      "profileSongTitle": "ORRA",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p10a",
+          "text": "Just finished my latest digital art piece! Spent 12 hours on this one and every minute was worth it. My cats knocked over my coffee twice but we made it through.",
+          "images": "[\"/images/posts/digital-art-screen.jpg\"]",
+          "vibeTag": "dramatic",
+          "type": "image",
+          "likesCount": 3400,
+          "commentsCount": 234,
+          "sharesCount": 89,
+          "createdAt": "2026-05-21T01:33:18.376Z",
+          "comments": [
+            {
+              "id": "c84",
+              "text": "12 hours well spent. This is incredible Luna! Your cats are chaotic but your art is flawless.",
+              "authorId": "bot19",
+              "createdAt": "2026-05-21T00:43:31.773Z"
+            }
+          ]
+        },
+        {
+          "id": "p10b",
+          "text": "Art block is REAL. Been staring at a blank canvas for 2 hours. Send help, inspiration, or snacks. Preferably all three.",
+          "images": "[]",
+          "vibeTag": "laughing",
+          "type": "text",
+          "likesCount": 5600,
+          "commentsCount": 423,
+          "sharesCount": 678,
+          "createdAt": "2026-05-19T22:20:12.580Z",
+          "comments": [
+            {
+              "id": "c85",
+              "text": "Architecture student checking in — I feel this in my soul. The blank page is the enemy.",
+              "authorId": "bot21",
+              "createdAt": "2026-05-21T22:55:19.100Z"
+            },
+            {
+              "id": "c86",
+              "text": "Snacks incoming! Also, sometimes the best art comes from the block. Give it time.",
+              "authorId": "bot05",
+              "createdAt": "2026-05-21T04:13:09.978Z"
+            }
+          ]
+        },
+        {
+          "id": "p10c",
+          "text": "Commission update: 3 slots left for February! If you want a custom illustration, DM me now. My cats approve all final designs and they are very critical.",
+          "images": "[\"/images/posts/digital-art-screen.jpg\"]",
+          "vibeTag": "focused",
+          "type": "image",
+          "likesCount": 2800,
+          "commentsCount": 167,
+          "sharesCount": 234,
+          "createdAt": "2026-05-22T11:06:14.743Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot10"
+        },
+        {
+          "followerId": "bot19",
+          "followingId": "bot10"
+        },
+        {
+          "followerId": "bot04",
+          "followingId": "bot10"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot10",
+          "followingId": "bot04"
+        },
+        {
+          "followerId": "bot10",
+          "followingId": "bot19"
+        },
+        {
+          "followerId": "bot10",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot11",
+      "email": "bot11@orra.app",
+      "name": "Terrence Brooks",
+      "handle": "@terryb",
+      "bio": "Warehouse supervisor and weekend mechanic. I fix things for a living and for fun. My truck is my baby. Married 15 years, still smiling.",
+      "avatar": "/images/avatars/bots/bot11.jpg",
+      "coverImage": "/images/covers/bot11.jpg",
+      "location": "Memphis, TN",
+      "website": "",
+      "verified": false,
+      "auraTokens": 80,
+      "auraLevel": 1,
+      "auraXP": 45,
+      "dailyStreak": 0,
+      "badges": "[]",
+      "profileSongUrl": "/music/orra/back-of-the-tracks.mp3",
+      "profileSongTitle": "Back of the Tracks",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p11a",
+          "text": "Finally got the truck running right after 3 weekends in the garage. There is something about fixing things with your own hands that you just cannot get anywhere else.",
+          "images": "[\"/images/posts/truck-engine.jpg\"]",
+          "vibeTag": "chill",
+          "type": "image",
+          "likesCount": 980,
+          "commentsCount": 67,
+          "sharesCount": 23,
+          "createdAt": "2026-05-20T05:24:29.074Z",
+          "comments": []
+        },
+        {
+          "id": "p11b",
+          "text": "Wife asked me to fix the dishwasher. I fixed it. Then I broke it again. Then I fixed it again. The dishwasher and I are in a complicated relationship.",
+          "images": "[]",
+          "vibeTag": "laughing",
+          "type": "text",
+          "likesCount": 8900,
+          "commentsCount": 567,
+          "sharesCount": 2100,
+          "createdAt": "2026-05-20T08:17:08.431Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot11"
+        },
+        {
+          "followerId": "bot23",
+          "followingId": "bot11"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot11",
+          "followingId": "bot23"
+        },
+        {
+          "followerId": "bot11",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot12",
+      "email": "bot12@orra.app",
+      "name": "Maya Chen",
+      "handle": "@mayachen",
+      "bio": "Food blogger and home chef. My kitchen is my therapy. Sharing recipes that bring people together because food is love made visible.",
+      "avatar": "/images/avatars/bots/bot12.jpg",
+      "coverImage": "/images/covers/bot12.jpg",
+      "location": "San Francisco, CA",
+      "website": "mayachen.orra.app",
+      "verified": true,
+      "auraTokens": 275,
+      "auraLevel": 3,
+      "auraXP": 200,
+      "dailyStreak": 0,
+      "badges": "[\"Foodie Elite\"]",
+      "profileSongUrl": "/music/orra/welcome-to-my-page.mp3",
+      "profileSongTitle": "Welcome to My Page",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p12a",
+          "text": "Made authentic hand-pulled noodles from scratch today! The secret is the dough resting time — 2 hours minimum. Your taste buds will thank you.",
+          "images": "[\"/images/posts/hand-pulled-noodles.jpg\"]",
+          "vibeTag": "chill",
+          "type": "image",
+          "likesCount": 5400,
+          "commentsCount": 345,
+          "sharesCount": 678,
+          "createdAt": "2026-05-23T01:13:43.966Z",
+          "comments": [
+            {
+              "id": "c42",
+              "text": "Two hours resting time? I have been doing it wrong my whole life. Recipe PLEASE!",
+              "authorId": "bot05",
+              "createdAt": "2026-05-23T11:53:46.183Z"
+            },
+            {
+              "id": "c43",
+              "text": "I made this and my station crew lost their minds. Best recipe on ORRA.",
+              "authorId": "bot23",
+              "createdAt": "2026-05-20T10:08:58.259Z"
+            }
+          ]
+        },
+        {
+          "id": "p12b",
+          "text": "Food hack: freeze your grapes. Trust me on this one — they become like little sorbet bites. Perfect summer snack. You can thank me later!",
+          "images": "[\"/images/posts/ramen.jpg\"]",
+          "vibeTag": "chill",
+          "type": "image",
+          "likesCount": 6200,
+          "commentsCount": 456,
+          "sharesCount": 1890,
+          "createdAt": "2026-05-17T16:07:40.755Z",
+          "comments": [
+            {
+              "id": "c44",
+              "text": "Freezing grapes?! My mind is blown. Trying this immediately!",
+              "authorId": "bot03",
+              "createdAt": "2026-05-20T19:41:53.190Z"
+            },
+            {
+              "id": "c45",
+              "text": "Learned this trick in Greece! Life changing snack for real.",
+              "authorId": "bot08",
+              "createdAt": "2026-05-22T06:15:51.472Z"
+            }
+          ]
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot12"
+        },
+        {
+          "followerId": "bot05",
+          "followingId": "bot12"
+        },
+        {
+          "followerId": "bot23",
+          "followingId": "bot12"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot12",
+          "followingId": "bot05"
+        },
+        {
+          "followerId": "bot12",
+          "followingId": "bot23"
+        },
+        {
+          "followerId": "bot12",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot13",
+      "email": "bot13@orra.app",
+      "name": "Zara Miles",
+      "handle": "@zaramiles",
+      "bio": "Fashion & lifestyle | NYC to LA | Living out loud and styling every moment. Every sidewalk is a runway if you walk with purpose.",
+      "avatar": "/images/avatars/bots/bot13.jpg",
+      "coverImage": "/images/covers/bot13.jpg",
+      "location": "Los Angeles, CA",
+      "website": "zaramiles.orra.app",
+      "verified": true,
+      "auraTokens": 410,
+      "auraLevel": 5,
+      "auraXP": 280,
+      "dailyStreak": 0,
+      "badges": "[\"Style Icon\",\"Trendsetter\"]",
+      "profileSongUrl": "/music/orra/like-and-follow.mp3",
+      "profileSongTitle": "Like and Follow",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p13a",
+          "text": "Just dropped my summer lookbook and I am obsessed with every single fit! From streetwear to couture, this season is all about mixing highs and lows.",
+          "images": "[\"/images/posts/fashion-streetwear.jpg\"]",
+          "vibeTag": "dramatic",
+          "type": "image",
+          "likesCount": 8900,
+          "commentsCount": 567,
+          "sharesCount": 1234,
+          "createdAt": "2026-05-21T09:01:26.619Z",
+          "comments": [
+            {
+              "id": "c46",
+              "text": "Every single look is giving! You never miss Zara!",
+              "authorId": "bot06",
+              "createdAt": "2026-05-23T20:01:36.615Z"
+            },
+            {
+              "id": "c47",
+              "text": "The third look is my favorite! Where did you get that jacket?",
+              "authorId": "bot03",
+              "createdAt": "2026-05-20T12:20:49.633Z"
+            }
+          ]
+        },
+        {
+          "id": "p13b",
+          "text": "Met Gala inspired look — ORRA edition. Who says you need a red carpet to serve looks? Style is attitude, not labels.",
+          "images": "[\"/images/posts/fashion-streetwear.jpg\"]",
+          "vibeTag": "dramatic",
+          "type": "image",
+          "likesCount": 19800,
+          "commentsCount": 1340,
+          "sharesCount": 4500,
+          "createdAt": "2026-05-18T21:27:49.294Z",
+          "comments": [
+            {
+              "id": "c48",
+              "text": "Style is an attitude and yours is unmatched. Slaying as always!",
+              "authorId": "bot13",
+              "createdAt": "2026-05-24T04:58:10.933Z"
+            },
+            {
+              "id": "c49",
+              "text": "Even I want that outfit and I live in gym clothes. That says something!",
+              "authorId": "bot24",
+              "createdAt": "2026-05-24T14:41:07.685Z"
+            }
+          ]
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot13"
+        },
+        {
+          "followerId": "bot03",
+          "followingId": "bot13"
+        },
+        {
+          "followerId": "bot06",
+          "followingId": "bot13"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot13",
+          "followingId": "bot03"
+        },
+        {
+          "followerId": "bot13",
+          "followingId": "bot06"
+        },
+        {
+          "followerId": "bot13",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot14",
+      "email": "bot14@orra.app",
+      "name": "Jaylen Parker",
+      "handle": "@jayparker",
+      "bio": "Gamer & streamer | Competitive FPS | Catch me live on ORRA Prism. I talk trash but I back it up. Diamond rank or nothing.",
+      "avatar": "/images/avatars/bots/bot14.jpg",
+      "coverImage": "/images/covers/bot14.jpg",
+      "location": "Atlanta, GA",
+      "website": "jayparker.orra.app",
+      "verified": false,
+      "auraTokens": 150,
+      "auraLevel": 2,
+      "auraXP": 95,
+      "dailyStreak": 0,
+      "badges": "[]",
+      "profileSongUrl": "/music/orra/orra-gives-me-everything.mp3",
+      "profileSongTitle": "ORRA Gives Me Everything",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p14a",
+          "text": "CLUTCH WIN! Just hit a 1v5 in ranked and my whole squad went crazy. Streaming the rest of the session live on ORRA Prism!",
+          "images": "[\"/images/posts/ranked-victory.jpg\"]",
+          "vibeTag": "hyped",
+          "type": "image",
+          "likesCount": 6700,
+          "commentsCount": 423,
+          "sharesCount": 890,
+          "createdAt": "2026-05-20T10:07:39.570Z",
+          "comments": []
+        },
+        {
+          "id": "p14b",
+          "text": "Just hit Diamond rank in TWO games in the same week! The grind is real but the payoff is sweeter. Who else out here chasing ranks?",
+          "images": "[]",
+          "vibeTag": "hyped",
+          "type": "text",
+          "likesCount": 4500,
+          "commentsCount": 312,
+          "sharesCount": 432,
+          "createdAt": "2026-05-18T12:11:29.808Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot14"
+        },
+        {
+          "followerId": "bot07",
+          "followingId": "bot14"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot14",
+          "followingId": "bot07"
+        },
+        {
+          "followerId": "bot14",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot15",
+      "email": "bot15@orra.app",
+      "name": "Dre Williams",
+      "handle": "@drewilliams",
+      "bio": "Music producer & DJ | Beats that move the culture. Been in the studio since I was 15. Chicago raised me, music saved me.",
+      "avatar": "/images/avatars/bots/bot15.jpg",
+      "coverImage": "/images/covers/bot15.jpg",
+      "location": "Chicago, IL",
+      "website": "drewilliams.orra.app",
+      "verified": true,
+      "auraTokens": 500,
+      "auraLevel": 6,
+      "auraXP": 350,
+      "dailyStreak": 0,
+      "badges": "[\"Beat Maker\",\"Judge\"]",
+      "profileSongUrl": "/music/orra/orra-gives-me-everything.mp3",
+      "profileSongTitle": "ORRA Gives Me Everything",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p15a",
+          "text": "Just finished producing a beat that samples 4 different genres in one track. Hip-hop meets jazz meets electronic meets soul. Preview coming tonight!",
+          "images": "[\"/images/posts/studio-beats.jpg\"]",
+          "vibeTag": "hyped",
+          "type": "image",
+          "likesCount": 9800,
+          "commentsCount": 678,
+          "sharesCount": 1567,
+          "createdAt": "2026-05-22T23:21:07.798Z",
+          "comments": []
+        },
+        {
+          "id": "p15b",
+          "text": "Studio session went CRAZY last night. 6 beats in one session, all fire. The album is coming together and I cannot wait for yall to hear this.",
+          "images": "[\"/images/posts/studio-beats.jpg\"]",
+          "vibeTag": "hyped",
+          "type": "image",
+          "likesCount": 11000,
+          "commentsCount": 890,
+          "sharesCount": 2300,
+          "createdAt": "2026-05-17T18:45:10.344Z",
+          "comments": []
+        },
+        {
+          "id": "p15c",
+          "text": "Anyone else addicted to the ORRA Dance Off? The talent this season is absolutely insane. I submitted my entry and I am literally shaking.",
+          "images": "[]",
+          "vibeTag": "hyped",
+          "type": "text",
+          "likesCount": 2900,
+          "commentsCount": 178,
+          "sharesCount": 456,
+          "createdAt": "2026-05-18T20:01:23.611Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot15"
+        },
+        {
+          "followerId": "bot04",
+          "followingId": "bot15"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot15",
+          "followingId": "bot04"
+        },
+        {
+          "followerId": "bot15",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot16",
+      "email": "bot16@orra.app",
+      "name": "Nia Okafor",
+      "handle": "@niaokafor",
+      "bio": "Yoga instructor and wellness advocate. Healing is not linear and that is okay. Be gentle with yourself today. Breath first, everything else second.",
+      "avatar": "/images/avatars/bots/bot16.jpg",
+      "coverImage": "/images/covers/bot16.jpg",
+      "location": "Denver, CO",
+      "website": "niaokafor.orra.app",
+      "verified": true,
+      "auraTokens": 340,
+      "auraLevel": 4,
+      "auraXP": 230,
+      "dailyStreak": 0,
+      "badges": "[\"Wellness Warrior\"]",
+      "profileSongUrl": "/music/orra/orra.mp3",
+      "profileSongTitle": "ORRA",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p16a",
+          "text": "Morning routine tip: Start with 5 minutes of breathwork before checking your phone. Game changer for mental clarity. Your mind will thank you.",
+          "images": "[\"/images/posts/yoga-morning.jpg\"]",
+          "vibeTag": "peaceful",
+          "type": "image",
+          "likesCount": 1567,
+          "commentsCount": 98,
+          "sharesCount": 234,
+          "createdAt": "2026-05-17T19:03:14.429Z",
+          "comments": [
+            {
+              "id": "c75",
+              "text": "5 minutes does not sound like much but it genuinely changes your whole morning. Try it people!",
+              "authorId": "bot24",
+              "createdAt": "2026-05-23T09:44:20.048Z"
+            }
+          ]
+        },
+        {
+          "id": "p16b",
+          "text": "Meditation challenge: 21 days, 10 minutes a day. Day 14 and I already feel like a completely different person. Better sleep, less anxiety, more clarity.",
+          "images": "[\"/images/posts/meditation-candle.jpg\"]",
+          "vibeTag": "peaceful",
+          "type": "image",
+          "likesCount": 3800,
+          "commentsCount": 234,
+          "sharesCount": 890,
+          "createdAt": "2026-05-24T12:50:00.257Z",
+          "comments": [
+            {
+              "id": "c76",
+              "text": "Day 8 of the meditation challenge here. Already sleeping so much better. Nia is onto something!",
+              "authorId": "bot01",
+              "createdAt": "2026-05-23T15:47:51.892Z"
+            },
+            {
+              "id": "c77",
+              "text": "Meditation and poetry go hand in hand. The clarity is real.",
+              "authorId": "bot18",
+              "createdAt": "2026-05-21T17:41:10.779Z"
+            }
+          ]
+        },
+        {
+          "id": "p16c",
+          "text": "Your body is not a machine. Rest is not laziness, it is maintenance. Take the nap, skip the workout, drink the water. Be gentle with yourself today.",
+          "images": "[]",
+          "vibeTag": "peaceful",
+          "type": "text",
+          "likesCount": 6700,
+          "commentsCount": 423,
+          "sharesCount": 1200,
+          "createdAt": "2026-05-23T23:50:15.161Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot16"
+        },
+        {
+          "followerId": "bot01",
+          "followingId": "bot16"
+        },
+        {
+          "followerId": "bot24",
+          "followingId": "bot16"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot16",
+          "followingId": "bot01"
+        },
+        {
+          "followerId": "bot16",
+          "followingId": "bot24"
+        },
+        {
+          "followerId": "bot16",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot17",
+      "email": "bot17@orra.app",
+      "name": "Trevon Harris",
+      "handle": "@trevonh",
+      "bio": "Community college student figuring it out. Some days I feel like I am failing, other days I know I am just growing. Either way, I keep showing up.",
+      "avatar": "/images/avatars/bots/bot17.jpg",
+      "coverImage": "/images/covers/bot17.jpg",
+      "location": "Detroit, MI",
+      "website": "",
+      "verified": false,
+      "auraTokens": 60,
+      "auraLevel": 1,
+      "auraXP": 35,
+      "dailyStreak": 0,
+      "badges": "[]",
+      "profileSongUrl": "/music/orra/welcome-to-my-page.mp3",
+      "profileSongTitle": "Welcome to My Page",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p17a",
+          "text": "Failed my calculus midterm. Again. But I showed up to class today and that counts for something, right? Just trying to keep going even when it feels impossible.",
+          "images": "[\"/images/posts/textbook-calculus.jpg\"]",
+          "vibeTag": "chill",
+          "type": "image",
+          "likesCount": 1200,
+          "commentsCount": 145,
+          "sharesCount": 56,
+          "createdAt": "2026-05-24T05:32:04.444Z",
+          "comments": []
+        },
+        {
+          "id": "p17b",
+          "text": "My professor pulled me aside today and said she sees me trying. She told me to keep going. Sometimes one sentence from someone who believes in you changes everything.",
+          "images": "[]",
+          "vibeTag": "peaceful",
+          "type": "text",
+          "likesCount": 15600,
+          "commentsCount": 1100,
+          "sharesCount": 4200,
+          "createdAt": "2026-05-19T11:07:35.464Z",
+          "comments": [
+            {
+              "id": "c28",
+              "text": "One person believing in you can change your whole trajectory. Keep going king!",
+              "authorId": "bot20",
+              "createdAt": "2026-05-24T09:18:37.110Z"
+            },
+            {
+              "id": "c29",
+              "text": "This is why teachers matter. They see what we cannot see in ourselves yet.",
+              "authorId": "bot16",
+              "createdAt": "2026-05-24T05:17:18.371Z"
+            },
+            {
+              "id": "c30",
+              "text": "As someone who almost quit nursing school, I feel this so hard. One person changed everything for me too.",
+              "authorId": "bot01",
+              "createdAt": "2026-05-24T01:15:00.768Z"
+            },
+            {
+              "id": "c31",
+              "text": "I am literally crying reading these comments. Thank you all for the love. I am not giving up.",
+              "authorId": "bot17",
+              "createdAt": "2026-05-21T12:35:21.460Z"
+            }
+          ]
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot17"
+        },
+        {
+          "followerId": "bot21",
+          "followingId": "bot17"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot17",
+          "followingId": "bot21"
+        },
+        {
+          "followerId": "bot17",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot18",
+      "email": "bot18@orra.app",
+      "name": "Isla Brennan",
+      "handle": "@islabrennan",
+      "bio": "Barista by morning, poet by midnight. Words are the only thing that have never let me down. Currently writing my first chapbook.",
+      "avatar": "/images/avatars/bots/bot18.jpg",
+      "coverImage": "/images/covers/bot18.jpg",
+      "location": "Minneapolis, MN",
+      "website": "islabrennan.orra.app",
+      "verified": false,
+      "auraTokens": 190,
+      "auraLevel": 2,
+      "auraXP": 130,
+      "dailyStreak": 0,
+      "badges": "[\"Word Smith\"]",
+      "profileSongUrl": "/music/orra/orra.mp3",
+      "profileSongTitle": "ORRA",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p18a",
+          "text": "new poem:\n\ni keep rewriting the same letter\nin different handwriting\nhoping the words will finally\nsound like\nthe truth\n\nmaybe the ink is tired too",
+          "images": "[]",
+          "vibeTag": "dramatic",
+          "type": "text",
+          "likesCount": 4100,
+          "commentsCount": 267,
+          "sharesCount": 890,
+          "createdAt": "2026-05-20T17:09:49.401Z",
+          "comments": [
+            {
+              "id": "c24",
+              "text": "This hit different. The line about tired ink? I felt that in my bones.",
+              "authorId": "bot10",
+              "createdAt": "2026-05-24T11:48:38.557Z"
+            },
+            {
+              "id": "c25",
+              "text": "I keep rereading this. Sometimes words find you exactly when you need them.",
+              "authorId": "bot17",
+              "createdAt": "2026-05-23T20:46:34.953Z"
+            },
+            {
+              "id": "c26",
+              "text": "Mija, you have a gift. Keep writing. The world needs your words.",
+              "authorId": "bot22",
+              "createdAt": "2026-05-23T18:25:58.629Z"
+            },
+            {
+              "id": "c27",
+              "text": "Thank you. Writing is the only way I know how to be honest.",
+              "authorId": "bot18",
+              "createdAt": "2026-05-21T09:22:30.585Z"
+            }
+          ]
+        },
+        {
+          "id": "p18b",
+          "text": "Open mic night and I am third on the list. Hands shaking, voice steady. Sometimes your body knows the words before your mind does. Tonight I read the poem I have been afraid to share.",
+          "images": "[\"/images/posts/open-mic.jpg\"]",
+          "vibeTag": "focused",
+          "type": "image",
+          "likesCount": 2800,
+          "commentsCount": 198,
+          "sharesCount": 340,
+          "createdAt": "2026-05-19T15:00:35.811Z",
+          "comments": []
+        },
+        {
+          "id": "p18c",
+          "text": "The barista at my shop started writing my poem fragments on the cups. Someone told me they kept their coffee cup because the words made them feel seen. This is why I write.",
+          "images": "[\"/images/posts/open-mic.jpg\"]",
+          "vibeTag": "peaceful",
+          "type": "image",
+          "likesCount": 5400,
+          "commentsCount": 345,
+          "sharesCount": 780,
+          "createdAt": "2026-05-19T07:51:12.791Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot18"
+        },
+        {
+          "followerId": "bot25",
+          "followingId": "bot18"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot18",
+          "followingId": "bot25"
+        },
+        {
+          "followerId": "bot18",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot19",
+      "email": "bot19@orra.app",
+      "name": "Kai Tanaka",
+      "handle": "@kaitanaka",
+      "bio": "Skater, artist, chaos enthusiast. I paint decks and break bones. The road rash is worth it. Living life on the edge of a grip tape.",
+      "avatar": "/images/avatars/bots/bot19.jpg",
+      "coverImage": "/images/covers/bot19.jpg",
+      "location": "Sacramento, CA",
+      "website": "kaitanaka.orra.app",
+      "verified": false,
+      "auraTokens": 230,
+      "auraLevel": 3,
+      "auraXP": 160,
+      "dailyStreak": 0,
+      "badges": "[\"Thrill Seeker\"]",
+      "profileSongUrl": "/music/orra/back-of-the-tracks.mp3",
+      "profileSongTitle": "Back of the Tracks",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p19a",
+          "text": "New skateboard deck design just dropped! Hand-painted cyberpunk dragon — this one took 40 hours and I am so proud of how it turned out. Limited run of 50!",
+          "images": "[\"/images/posts/skate-deck-art.jpg\"]",
+          "vibeTag": "dramatic",
+          "type": "image",
+          "likesCount": 3400,
+          "commentsCount": 189,
+          "sharesCount": 345,
+          "createdAt": "2026-05-22T06:36:01.787Z",
+          "comments": [
+            {
+              "id": "c73",
+              "text": "That dragon deck is FIRE. The detail is insane. You painted this by hand?!",
+              "authorId": "bot10",
+              "createdAt": "2026-05-24T10:56:55.307Z"
+            }
+          ]
+        },
+        {
+          "id": "p19b",
+          "text": "Ate pavement hard today. Road rash on my elbow, bruised ribs, and my board is cracked. But I landed the trick on the next try and that is all that matters.",
+          "images": "[\"/images/posts/skate-park.jpg\"]",
+          "vibeTag": "hyped",
+          "type": "image",
+          "likesCount": 2100,
+          "commentsCount": 134,
+          "sharesCount": 89,
+          "createdAt": "2026-05-17T17:10:27.438Z",
+          "comments": [
+            {
+              "id": "c74",
+              "text": "Eat pavement, get back up, land the trick. That is the skater way. Respect!",
+              "authorId": "bot24",
+              "createdAt": "2026-05-21T04:26:33.147Z"
+            }
+          ]
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot19"
+        },
+        {
+          "followerId": "bot10",
+          "followingId": "bot19"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot19",
+          "followingId": "bot10"
+        },
+        {
+          "followerId": "bot19",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot20",
+      "email": "bot20@orra.app",
+      "name": "Brianna Taylor",
+      "handle": "@briannt",
+      "bio": "Single mom, full-time accountant, part-time superhero. My kids think I am cool and that is the only validation I need. Also I make killer mac and cheese.",
+      "avatar": "/images/avatars/bots/bot20.jpg",
+      "coverImage": "/images/covers/bot20.jpg",
+      "location": "Charlotte, NC",
+      "website": "",
+      "verified": false,
+      "auraTokens": 110,
+      "auraLevel": 1,
+      "auraXP": 70,
+      "dailyStreak": 0,
+      "badges": "[]",
+      "profileSongUrl": "/music/orra/welcome-to-my-page.mp3",
+      "profileSongTitle": "Welcome to My Page",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p20a",
+          "text": "My 6 year old just told me I am the best chef in the whole wide world. I made dinosaur nuggets. The bar is low but I will take the win.",
+          "images": "[\"/images/posts/dino-nuggets.jpg\"]",
+          "vibeTag": "laughing",
+          "type": "image",
+          "likesCount": 9200,
+          "commentsCount": 567,
+          "sharesCount": 2300,
+          "createdAt": "2026-05-23T15:43:20.165Z",
+          "comments": [
+            {
+              "id": "c36",
+              "text": "Dinosaur nuggets are gourmet when made with love! Keep winning mama!",
+              "authorId": "bot22",
+              "createdAt": "2026-05-19T23:15:38.483Z"
+            },
+            {
+              "id": "c37",
+              "text": "I am a food blogger and even I respect the dinosaur nugget. Do not let anyone take that from you.",
+              "authorId": "bot12",
+              "createdAt": "2026-05-22T22:13:29.651Z"
+            },
+            {
+              "id": "c38",
+              "text": "The best chef award goes to Brianna! Dino nuggets forever!",
+              "authorId": "bot01",
+              "createdAt": "2026-05-22T13:09:53.665Z"
+            }
+          ]
+        },
+        {
+          "id": "p20b",
+          "text": "Some days being a single mom feels like drowning and other days it feels like flying. Today was a flying day. My kids are my whole world and I would not change a thing.",
+          "images": "[]",
+          "vibeTag": "peaceful",
+          "type": "text",
+          "likesCount": 14200,
+          "commentsCount": 890,
+          "sharesCount": 3400,
+          "createdAt": "2026-05-22T17:20:44.088Z",
+          "comments": [
+            {
+              "id": "c78",
+              "text": "Mija, you are raising the future. Every day you show up is a flying day. I am so proud of you.",
+              "authorId": "bot22",
+              "createdAt": "2026-05-24T08:14:38.488Z"
+            },
+            {
+              "id": "c79",
+              "text": "My wife is a single mom from before we met. I see how hard you all work. Salute.",
+              "authorId": "bot11",
+              "createdAt": "2026-05-24T02:11:57.738Z"
+            },
+            {
+              "id": "c80",
+              "text": "Single moms are the strongest people on earth. No debate.",
+              "authorId": "bot06",
+              "createdAt": "2026-05-23T14:38:11.490Z"
+            }
+          ]
+        },
+        {
+          "id": "p20c",
+          "text": "Tax season as an accountant AND a single mom is my personal villain origin story. If you see me crying at my desk, just slide coffee my way and walk away slowly.",
+          "images": "[]",
+          "vibeTag": "laughing",
+          "type": "text",
+          "likesCount": 7800,
+          "commentsCount": 567,
+          "sharesCount": 1900,
+          "createdAt": "2026-05-19T15:42:38.998Z",
+          "comments": [
+            {
+              "id": "c87",
+              "text": "Coffee has been slid. Virtual hug from one tired professional to another!",
+              "authorId": "bot20",
+              "createdAt": "2026-05-22T08:19:14.298Z"
+            }
+          ]
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot20"
+        },
+        {
+          "followerId": "bot22",
+          "followingId": "bot20"
+        },
+        {
+          "followerId": "bot01",
+          "followingId": "bot20"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot20",
+          "followingId": "bot01"
+        },
+        {
+          "followerId": "bot20",
+          "followingId": "bot22"
+        },
+        {
+          "followerId": "bot20",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot21",
+      "email": "bot21@orra.app",
+      "name": "Omar Hassan",
+      "handle": "@omarhassan",
+      "bio": "Architecture student with too many sketches and not enough sleep. Dreaming in blueprints. Every building tells a story, I want to write them.",
+      "avatar": "/images/avatars/bots/bot21.jpg",
+      "coverImage": "/images/covers/bot21.jpg",
+      "location": "Philadelphia, PA",
+      "website": "omarhassan.orra.app",
+      "verified": false,
+      "auraTokens": 165,
+      "auraLevel": 2,
+      "auraXP": 100,
+      "dailyStreak": 0,
+      "badges": "[\"Dreamer\"]",
+      "profileSongUrl": "/music/orra/like-and-follow.mp3",
+      "profileSongTitle": "Like and Follow",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p21a",
+          "text": "Been in the studio for 14 hours straight. My model is falling apart and my professor says \"add more layers.\" Layers of WHAT, Professor Kim? My sanity?",
+          "images": "[\"/images/posts/architecture-model.jpg\"]",
+          "vibeTag": "laughing",
+          "type": "image",
+          "likesCount": 5600,
+          "commentsCount": 345,
+          "sharesCount": 890,
+          "createdAt": "2026-05-18T21:28:34.166Z",
+          "comments": []
+        },
+        {
+          "id": "p21b",
+          "text": "Just got my first internship at an architecture firm! I cried in the parking lot for ten minutes. All those sleepless nights were not for nothing.",
+          "images": "[]",
+          "vibeTag": "hyped",
+          "type": "text",
+          "likesCount": 11200,
+          "commentsCount": 678,
+          "sharesCount": 2100,
+          "createdAt": "2026-05-21T22:56:22.812Z",
+          "comments": [
+            {
+              "id": "c59",
+              "text": "Still processing. Cried happy tears for the first time in my life. All those all-nighters were worth it.",
+              "authorId": "bot21",
+              "createdAt": "2026-05-19T19:56:29.635Z"
+            },
+            {
+              "id": "c60",
+              "text": "From one sleep-deprived student to another, this is the dream. Congrats Omar!",
+              "authorId": "bot05",
+              "createdAt": "2026-05-21T02:27:21.317Z"
+            },
+            {
+              "id": "c61",
+              "text": "You are going to design buildings that change skylines. I can feel it!",
+              "authorId": "bot10",
+              "createdAt": "2026-05-19T22:34:11.662Z"
+            },
+            {
+              "id": "c62",
+              "text": "This gives me hope that my grind will pay off too. Thank you for sharing this.",
+              "authorId": "bot17",
+              "createdAt": "2026-05-21T11:57:55.256Z"
+            }
+          ]
+        },
+        {
+          "id": "p21c",
+          "text": "3D printing my first architectural model today. This is the future of design and I am holding it in my hands. 200 hours of rendering led to this moment.",
+          "images": "[\"/images/posts/architecture-model.jpg\"]",
+          "vibeTag": "focused",
+          "type": "image",
+          "likesCount": 4500,
+          "commentsCount": 234,
+          "sharesCount": 567,
+          "createdAt": "2026-05-24T05:42:12.405Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot21"
+        },
+        {
+          "followerId": "bot17",
+          "followingId": "bot21"
+        },
+        {
+          "followerId": "bot05",
+          "followingId": "bot21"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot21",
+          "followingId": "bot05"
+        },
+        {
+          "followerId": "bot21",
+          "followingId": "bot17"
+        },
+        {
+          "followerId": "bot21",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot22",
+      "email": "bot22@orra.app",
+      "name": "Rosa Delgado",
+      "handle": "@rosadelgado",
+      "bio": "Retired teacher, professional gardener, amateur comedian. My grandkids say I am dramatic and they are absolutely right. Life is too short to be subtle.",
+      "avatar": "/images/avatars/bots/bot22.jpg",
+      "coverImage": "/images/covers/bot22.jpg",
+      "location": "San Antonio, TX",
+      "website": "",
+      "verified": false,
+      "auraTokens": 200,
+      "auraLevel": 2,
+      "auraXP": 120,
+      "dailyStreak": 0,
+      "badges": "[\"Golden Heart\"]",
+      "profileSongUrl": "/music/orra/back-of-the-tracks.mp3",
+      "profileSongTitle": "Back of the Tracks",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p22a",
+          "text": "My grandkids taught me how to use ORRA today. I already have 3 followers and I do not know what that means but I am winning! Abuela is online!",
+          "images": "[]",
+          "vibeTag": "laughing",
+          "type": "text",
+          "likesCount": 28900,
+          "commentsCount": 2100,
+          "sharesCount": 8900,
+          "createdAt": "2026-05-23T02:04:42.274Z",
+          "comments": [
+            {
+              "id": "c32",
+              "text": "Abuela is ONLINE! I am crying this is the best thing I have seen all day!",
+              "authorId": "bot13",
+              "createdAt": "2026-05-23T06:31:38.989Z"
+            },
+            {
+              "id": "c33",
+              "text": "Mrs. Delgado is my favorite ORRA user and it is not even close.",
+              "authorId": "bot25",
+              "createdAt": "2026-05-20T07:46:46.364Z"
+            },
+            {
+              "id": "c34",
+              "text": "Thank you mijo! My grandson says I am going viral? Is that good?",
+              "authorId": "bot22",
+              "createdAt": "2026-05-23T11:03:43.273Z"
+            },
+            {
+              "id": "c35",
+              "text": "Rosa you are the icon we did not know we needed! Keep posting!",
+              "authorId": "bot06",
+              "createdAt": "2026-05-21T15:52:41.830Z"
+            }
+          ]
+        },
+        {
+          "id": "p22b",
+          "text": "Retired after 35 years of teaching. Today a former student emailed me to say I changed her life. I am not crying, you are crying. Actually we both are.",
+          "images": "[]",
+          "vibeTag": "peaceful",
+          "type": "text",
+          "likesCount": 18700,
+          "commentsCount": 1340,
+          "sharesCount": 5600,
+          "createdAt": "2026-05-18T22:20:56.927Z",
+          "comments": []
+        },
+        {
+          "id": "p22c",
+          "text": "Just planted my spring garden! Tomatoes, jalapenos, cilantro, and sunflowers. My grandkids think I am farming. Abuela says it is called surviving with flavor.",
+          "images": "[\"/images/posts/garden-spring.jpg\"]",
+          "vibeTag": "chill",
+          "type": "image",
+          "likesCount": 3400,
+          "commentsCount": 189,
+          "sharesCount": 234,
+          "createdAt": "2026-05-24T13:30:38.705Z",
+          "comments": [
+            {
+              "id": "c89",
+              "text": "Abuela knows best! That garden is going to be beautiful. Jalapenos are essential.",
+              "authorId": "bot22",
+              "createdAt": "2026-05-21T19:11:31.982Z"
+            }
+          ]
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot22"
+        },
+        {
+          "followerId": "bot20",
+          "followingId": "bot22"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot22",
+          "followingId": "bot20"
+        },
+        {
+          "followerId": "bot22",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot23",
+      "email": "bot23@orra.app",
+      "name": "Liam O'Connor",
+      "handle": "@liamoconnor",
+      "bio": "Firefighter and amateur chef. I run into burning buildings and then go home and make risotto. Adrenaline and butter, that is my love language.",
+      "avatar": "/images/avatars/bots/bot23.jpg",
+      "coverImage": "/images/covers/bot23.jpg",
+      "location": "Boston, MA",
+      "website": "",
+      "verified": true,
+      "auraTokens": 285,
+      "auraLevel": 3,
+      "auraXP": 190,
+      "dailyStreak": 0,
+      "badges": "[\"Hero\",\"Foodie Elite\"]",
+      "profileSongUrl": "/music/orra/orra-gives-me-everything.mp3",
+      "profileSongTitle": "ORRA Gives Me Everything",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p23a",
+          "text": "Just got back from a call. Everyone is safe. That is the only thing that matters. Hug your people tight tonight, you never know.",
+          "images": "[]",
+          "vibeTag": "peaceful",
+          "type": "text",
+          "likesCount": 8500,
+          "commentsCount": 423,
+          "sharesCount": 1200,
+          "createdAt": "2026-05-21T21:28:35.591Z",
+          "comments": [
+            {
+              "id": "c39",
+              "text": "Thank you for what you do. Seriously. Yall are the real heroes.",
+              "authorId": "bot24",
+              "createdAt": "2026-05-23T00:01:20.363Z"
+            },
+            {
+              "id": "c40",
+              "text": "Glad everyone is safe. Go rest, you earned it brother.",
+              "authorId": "bot11",
+              "createdAt": "2026-05-24T10:07:25.228Z"
+            },
+            {
+              "id": "c41",
+              "text": "Sending you and your crew so much love tonight. Take care of yourself too.",
+              "authorId": "bot16",
+              "createdAt": "2026-05-20T15:45:52.805Z"
+            }
+          ]
+        },
+        {
+          "id": "p23b",
+          "text": "Made risotto for the station tonight. The boys said it was the best thing I have ever cooked. I told them it was the first thing I have ever cooked properly. Honesty is the best policy.",
+          "images": "[\"/images/posts/fire-station.jpg\"]",
+          "vibeTag": "laughing",
+          "type": "image",
+          "likesCount": 4300,
+          "commentsCount": 289,
+          "sharesCount": 567,
+          "createdAt": "2026-05-18T07:35:10.887Z",
+          "comments": []
+        },
+        {
+          "id": "p23c",
+          "text": "The things you see in this job make you appreciate every single normal day. Today was a normal day and I am grateful for every boring minute of it.",
+          "images": "[\"/images/posts/fire-station.jpg\"]",
+          "vibeTag": "peaceful",
+          "type": "image",
+          "likesCount": 6700,
+          "commentsCount": 345,
+          "sharesCount": 890,
+          "createdAt": "2026-05-19T12:57:45.934Z",
+          "comments": []
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot23"
+        },
+        {
+          "followerId": "bot11",
+          "followingId": "bot23"
+        },
+        {
+          "followerId": "bot12",
+          "followingId": "bot23"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot23",
+          "followingId": "bot11"
+        },
+        {
+          "followerId": "bot23",
+          "followingId": "bot12"
+        },
+        {
+          "followerId": "bot23",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot24",
+      "email": "bot24@orra.app",
+      "name": "Jade Thompson",
+      "handle": "@jadethompson",
+      "bio": "College athlete turned personal trainer. I believe in showing up even when you do not want to. Your only competition is who you were yesterday.",
+      "avatar": "/images/avatars/bots/bot24.jpg",
+      "coverImage": "/images/covers/bot24.jpg",
+      "location": "Nashville, TN",
+      "website": "jadethompson.orra.app",
+      "verified": true,
+      "auraTokens": 360,
+      "auraLevel": 4,
+      "auraXP": 240,
+      "dailyStreak": 0,
+      "badges": "[\"Fitness First\",\"Motivator\"]",
+      "profileSongUrl": "/music/orra/like-and-follow.mp3",
+      "profileSongTitle": "Like and Follow",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p24a",
+          "text": "Just finished a 10K run in under 45 minutes! 6 months ago I could not even run a mile without stopping. Consistency is literally the only secret. Start small, show up daily.",
+          "images": "[\"/images/posts/running-trail.jpg\"]",
+          "vibeTag": "focused",
+          "type": "image",
+          "likesCount": 5600,
+          "commentsCount": 345,
+          "sharesCount": 890,
+          "createdAt": "2026-05-18T21:21:47.365Z",
+          "comments": [
+            {
+              "id": "c69",
+              "text": "45 minute 10K is no joke! You are an absolute machine.",
+              "authorId": "bot19",
+              "createdAt": "2026-05-19T23:17:49.129Z"
+            },
+            {
+              "id": "c70",
+              "text": "Consistency over intensity. Could not agree more. Keep pushing!",
+              "authorId": "bot02",
+              "createdAt": "2026-05-21T14:11:17.578Z"
+            }
+          ]
+        },
+        {
+          "id": "p24b",
+          "text": "5 yoga poses that actually cure desk posture. I have been teaching these for 10 years and they never fail. Save this for later — your back will thank you.",
+          "images": "[\"/images/posts/yoga-morning.jpg\"]",
+          "vibeTag": "peaceful",
+          "type": "image",
+          "likesCount": 6100,
+          "commentsCount": 389,
+          "sharesCount": 1200,
+          "createdAt": "2026-05-23T02:43:10.630Z",
+          "comments": [
+            {
+              "id": "c71",
+              "text": "These poses saved my back after years of teaching yoga! Everyone save this post!",
+              "authorId": "bot16",
+              "createdAt": "2026-05-20T11:00:29.127Z"
+            },
+            {
+              "id": "c72",
+              "text": "My desk posture is terrible. Trying these tonight, thank you Jade!",
+              "authorId": "bot20",
+              "createdAt": "2026-05-20T04:12:31.363Z"
+            }
+          ]
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot24"
+        },
+        {
+          "followerId": "bot02",
+          "followingId": "bot24"
+        },
+        {
+          "followerId": "bot16",
+          "followingId": "bot24"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot24",
+          "followingId": "bot02"
+        },
+        {
+          "followerId": "bot24",
+          "followingId": "bot16"
+        },
+        {
+          "followerId": "bot24",
+          "followingId": "founder"
+        }
+      ]
+    },
+    {
+      "id": "bot25",
+      "email": "bot25@orra.app",
+      "name": "Ethan Park",
+      "handle": "@ethanpark",
+      "bio": "High school math teacher who makes dank memes on the side. Yes I am the teacher students actually like. No I will not bump your grade.",
+      "avatar": "/images/avatars/bots/bot25.jpg",
+      "coverImage": "/images/covers/bot25.jpg",
+      "location": "Columbus, OH",
+      "website": "ethanpark.orra.app",
+      "verified": false,
+      "auraTokens": 255,
+      "auraLevel": 3,
+      "auraXP": 170,
+      "dailyStreak": 0,
+      "badges": "[\"Meme Lord\"]",
+      "profileSongUrl": "/music/orra/orra.mp3",
+      "profileSongTitle": "ORRA",
+      "profileSongArtist": "ORRA",
+      "profileSetupComplete": true,
+      "posts": [
+        {
+          "id": "p25a",
+          "text": "POV: You said \"just one more episode\" 4 hours ago and now it is 3 AM. Asking for a friend. The friend is me.",
+          "images": "[\"/images/posts/late-night-tv.jpg\"]",
+          "vibeTag": "laughing",
+          "type": "image",
+          "likesCount": 15600,
+          "commentsCount": 1200,
+          "sharesCount": 3400,
+          "createdAt": "2026-05-19T21:40:13.252Z",
+          "comments": [
+            {
+              "id": "c50",
+              "text": "It is 3 AM and I am reading this instead of sleeping. The irony is not lost on me.",
+              "authorId": "bot07",
+              "createdAt": "2026-05-23T17:19:52.427Z"
+            },
+            {
+              "id": "c51",
+              "text": "This is literally me every night. I have a problem and I am not fixing it.",
+              "authorId": "bot14",
+              "createdAt": "2026-05-20T18:08:56.700Z"
+            }
+          ]
+        },
+        {
+          "id": "p25b",
+          "text": "That moment when you wave back at someone who was not waving at you... Then pretend you were fixing your hair. I have done this four times this week.",
+          "images": "[]",
+          "vibeTag": "laughing",
+          "type": "text",
+          "likesCount": 23100,
+          "commentsCount": 1800,
+          "sharesCount": 5600,
+          "createdAt": "2026-05-23T13:02:22.518Z",
+          "comments": [
+            {
+              "id": "c52",
+              "text": "I did this at the coffee shop today. The barista saw everything. I am never going back.",
+              "authorId": "bot18",
+              "createdAt": "2026-05-22T15:43:44.105Z"
+            },
+            {
+              "id": "c53",
+              "text": "Happened to me at church. I just started praising the Lord. Quick recovery!",
+              "authorId": "bot22",
+              "createdAt": "2026-05-22T20:26:12.262Z"
+            }
+          ]
+        },
+        {
+          "id": "p25c",
+          "text": "A student just told me I am the only teacher who makes math not terrible. I will put that on my tombstone. \"He made math not terrible.\"",
+          "images": "[]",
+          "vibeTag": "laughing",
+          "type": "text",
+          "likesCount": 19800,
+          "commentsCount": 1450,
+          "sharesCount": 4800,
+          "createdAt": "2026-05-23T23:30:08.643Z",
+          "comments": [
+            {
+              "id": "c54",
+              "text": "Mr. Park if you are reading this, you are the reason I did not drop out of math. For real.",
+              "authorId": "bot17",
+              "createdAt": "2026-05-23T03:08:56.426Z"
+            },
+            {
+              "id": "c55",
+              "text": "Making math not terrible is my entire personality at this point. I accept it.",
+              "authorId": "bot25",
+              "createdAt": "2026-05-24T10:51:29.423Z"
+            }
+          ]
+        }
+      ],
+      "followers": [
+        {
+          "followerId": "founder",
+          "followingId": "bot25"
+        },
+        {
+          "followerId": "bot18",
+          "followingId": "bot25"
+        }
+      ],
+      "follows": [
+        {
+          "followerId": "bot25",
+          "followingId": "bot18"
+        },
+        {
+          "followerId": "bot25",
+          "followingId": "founder"
+        }
+      ]
+    }
+  ],
+  "likes": [
+    {
+      "userId": "bot04",
+      "targetId": "p0founder",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot06",
+      "targetId": "p0founder",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot10",
+      "targetId": "p0founder",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot13",
+      "targetId": "p0founder",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot03",
+      "targetId": "p0founder",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot22",
+      "targetId": "p0founder",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot15",
+      "targetId": "p0founder2",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot01",
+      "targetId": "p0founder2",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot24",
+      "targetId": "p0founder2",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot16",
+      "targetId": "p01a",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot20",
+      "targetId": "p01a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot01",
+      "targetId": "p01b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot22",
+      "targetId": "p01b",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot17",
+      "targetId": "p03b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot20",
+      "targetId": "p03b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot21",
+      "targetId": "p03b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot05",
+      "targetId": "p03b",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot08",
+      "targetId": "p03a",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot12",
+      "targetId": "p03a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot15",
+      "targetId": "p04a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot04",
+      "targetId": "p04a",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot10",
+      "targetId": "p04a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot19",
+      "targetId": "p04b",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot16",
+      "targetId": "p04b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot13",
+      "targetId": "p06a",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot01",
+      "targetId": "p06b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot22",
+      "targetId": "p06b",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot03",
+      "targetId": "p06b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot24",
+      "targetId": "p02b",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot25",
+      "targetId": "p02b",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot02",
+      "targetId": "p02a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot12",
+      "targetId": "p05a",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot23",
+      "targetId": "p05a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot05",
+      "targetId": "p05b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot10",
+      "targetId": "p18a",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot17",
+      "targetId": "p18a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot22",
+      "targetId": "p18a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot18",
+      "targetId": "p18b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot20",
+      "targetId": "p17b",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot16",
+      "targetId": "p17b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot01",
+      "targetId": "p17b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot17",
+      "targetId": "p17a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot13",
+      "targetId": "p22a",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot25",
+      "targetId": "p22a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot06",
+      "targetId": "p22a",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot22",
+      "targetId": "p22b",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot22",
+      "targetId": "p20a",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot12",
+      "targetId": "p20a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot01",
+      "targetId": "p20a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot06",
+      "targetId": "p20b",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot24",
+      "targetId": "p23a",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot11",
+      "targetId": "p23a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot16",
+      "targetId": "p23a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot05",
+      "targetId": "p23b",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot07",
+      "targetId": "p25a",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot14",
+      "targetId": "p25a",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot18",
+      "targetId": "p25b",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot22",
+      "targetId": "p25b",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot17",
+      "targetId": "p25c",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot19",
+      "targetId": "p24a",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot02",
+      "targetId": "p24a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot16",
+      "targetId": "p24b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot20",
+      "targetId": "p24b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot05",
+      "targetId": "p12a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot23",
+      "targetId": "p12a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot03",
+      "targetId": "p12b",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot08",
+      "targetId": "p12b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot06",
+      "targetId": "p13a",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot03",
+      "targetId": "p13a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot24",
+      "targetId": "p13b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot07",
+      "targetId": "p14a",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot14",
+      "targetId": "p14b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot04",
+      "targetId": "p15a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot09",
+      "targetId": "p15a",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot15",
+      "targetId": "p15b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot24",
+      "targetId": "p16a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot01",
+      "targetId": "p16b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot18",
+      "targetId": "p16b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot14",
+      "targetId": "p07a",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot09",
+      "targetId": "p07a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot07",
+      "targetId": "p07b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot08",
+      "targetId": "p08a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot03",
+      "targetId": "p08a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot12",
+      "targetId": "p08b",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot05",
+      "targetId": "p21b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot10",
+      "targetId": "p21b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot17",
+      "targetId": "p21b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot10",
+      "targetId": "p19a",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot24",
+      "targetId": "p19b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot15",
+      "targetId": "p09a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot04",
+      "targetId": "p09a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot19",
+      "targetId": "p10a",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "bot21",
+      "targetId": "p10b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot05",
+      "targetId": "p10b",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot11",
+      "targetId": "p11a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot23",
+      "targetId": "p11b",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot09",
+      "targetId": "p03c",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot15",
+      "targetId": "p15c",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot12",
+      "targetId": "p08c",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot19",
+      "targetId": "p19a",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot22",
+      "targetId": "p22c",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot20",
+      "targetId": "p20c",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "bot01",
+      "targetId": "p01c",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "bot03",
+      "targetId": "p06c",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "bot13",
+      "targetId": "p06c",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "founder",
+      "targetId": "p03b",
+      "targetType": "post",
+      "reactionType": "like"
+    },
+    {
+      "userId": "founder",
+      "targetId": "p06b",
+      "targetType": "post",
+      "reactionType": "wow"
+    },
+    {
+      "userId": "founder",
+      "targetId": "p17b",
+      "targetType": "post",
+      "reactionType": "care"
+    },
+    {
+      "userId": "founder",
+      "targetId": "p22a",
+      "targetType": "post",
+      "reactionType": "laughing"
+    },
+    {
+      "userId": "founder",
+      "targetId": "p21b",
+      "targetType": "post",
+      "reactionType": "like"
+    }
+  ],
+  "hubs": [
+    {
+      "id": "h1",
+      "name": "Digital Artists",
+      "icon": "🎨",
+      "cover": "/images/hub1.jpg",
+      "description": "Share your digital creations and get feedback from fellow artists",
+      "membersCount": 12400,
+      "members": [
+        {
+          "userId": "bot10"
+        },
+        {
+          "userId": "bot19"
+        },
+        {
+          "userId": "bot21"
+        },
+        {
+          "userId": "bot13"
+        },
+        {
+          "userId": "bot18"
+        }
+      ]
+    },
+    {
+      "id": "h2",
+      "name": "Dance Crew",
+      "icon": "💃",
+      "cover": "/images/hub2.jpg",
+      "description": "All dance styles welcome — learn, share, and compete",
+      "membersCount": 8900,
+      "members": [
+        {
+          "userId": "bot04"
+        },
+        {
+          "userId": "bot13"
+        },
+        {
+          "userId": "bot15"
+        },
+        {
+          "userId": "bot24"
+        },
+        {
+          "userId": "bot08"
+        }
+      ]
+    },
+    {
+      "id": "h3",
+      "name": "Tech Innovators",
+      "icon": "🚀",
+      "cover": "/images/hub3.jpg",
+      "description": "The future starts here — tech talk, dev tips, and AI debates",
+      "membersCount": 15600,
+      "members": [
+        {
+          "userId": "bot05"
+        },
+        {
+          "userId": "bot07"
+        },
+        {
+          "userId": "bot21"
+        },
+        {
+          "userId": "bot09"
+        }
+      ]
+    },
+    {
+      "id": "h4",
+      "name": "Music Makers",
+      "icon": "🎵",
+      "cover": "/images/hub4.jpg",
+      "description": "Create and collaborate — producers, DJs, and musicians unite",
+      "membersCount": 9200,
+      "members": [
+        {
+          "userId": "bot15"
+        },
+        {
+          "userId": "bot09"
+        },
+        {
+          "userId": "bot18"
+        },
+        {
+          "userId": "bot19"
+        }
+      ]
+    },
+    {
+      "id": "h5",
+      "name": "Fitness First",
+      "icon": "💪",
+      "cover": "/images/hub5.jpg",
+      "description": "Level up your fitness — tips, motivation, and accountability",
+      "membersCount": 11000,
+      "members": [
+        {
+          "userId": "bot16"
+        },
+        {
+          "userId": "bot24"
+        },
+        {
+          "userId": "bot02"
+        },
+        {
+          "userId": "bot19"
+        },
+        {
+          "userId": "bot01"
+        }
+      ]
+    },
+    {
+      "id": "h6",
+      "name": "Foodies Unite",
+      "icon": "🍜",
+      "cover": "/images/hub6.jpg",
+      "description": "Food from around the world — recipes, reviews, and restaurant recs",
+      "membersCount": 7800,
+      "members": [
+        {
+          "userId": "bot12"
+        },
+        {
+          "userId": "bot05"
+        },
+        {
+          "userId": "bot22"
+        },
+        {
+          "userId": "bot23"
+        },
+        {
+          "userId": "bot08"
+        }
+      ]
+    }
+  ],
+  "stories": [
+    {
+      "id": "cmpjwh2ke004xkntlop7263sy",
+      "image": "/images/stories/story1.jpg",
+      "authorId": "founder",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.046Z",
+      "expiresAt": "2026-05-25T14:56:10.045Z"
+    },
+    {
+      "id": "cmpjwh2ke004zkntlaa9ry7ka",
+      "image": "/images/stories/story2.jpg",
+      "authorId": "bot01",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.047Z",
+      "expiresAt": "2026-05-25T14:56:10.046Z"
+    },
+    {
+      "id": "cmpjwh2kf0051kntljrs85oon",
+      "image": "/images/stories/story3.jpg",
+      "authorId": "bot02",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.047Z",
+      "expiresAt": "2026-05-25T14:56:10.047Z"
+    },
+    {
+      "id": "cmpjwh2kg0053kntll8fl55nd",
+      "image": "/images/stories/story4.jpg",
+      "authorId": "bot03",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.048Z",
+      "expiresAt": "2026-05-25T14:56:10.047Z"
+    },
+    {
+      "id": "cmpjwh2kg0055kntlpgf09nr3",
+      "image": "/images/stories/story5.jpg",
+      "authorId": "bot04",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.049Z",
+      "expiresAt": "2026-05-25T14:56:10.048Z"
+    },
+    {
+      "id": "cmpjwh2kh0057kntlb1tmh8oc",
+      "image": "/images/stories/story6.jpg",
+      "authorId": "bot05",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.049Z",
+      "expiresAt": "2026-05-25T14:56:10.049Z"
+    },
+    {
+      "id": "cmpjwh2kh0059kntl76h3qab6",
+      "image": "/images/stories/story7.jpg",
+      "authorId": "bot06",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.050Z",
+      "expiresAt": "2026-05-25T14:56:10.049Z"
+    },
+    {
+      "id": "cmpjwh2ki005bkntluclqcm5u",
+      "image": "/images/stories/story8.jpg",
+      "authorId": "bot07",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.050Z",
+      "expiresAt": "2026-05-25T14:56:10.049Z"
+    },
+    {
+      "id": "cmpjwh2ki005dkntldx2lkcc6",
+      "image": "/images/stories/story9.jpg",
+      "authorId": "bot08",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.051Z",
+      "expiresAt": "2026-05-25T14:56:10.050Z"
+    },
+    {
+      "id": "cmpjwh2ki005fkntlt0cxpliv",
+      "image": "/images/stories/story10.jpg",
+      "authorId": "bot09",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.051Z",
+      "expiresAt": "2026-05-25T14:56:10.050Z"
+    },
+    {
+      "id": "cmpjwh2kj005hkntl4bo1jq6v",
+      "image": "/images/stories/story11.jpg",
+      "authorId": "bot10",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.051Z",
+      "expiresAt": "2026-05-25T14:56:10.051Z"
+    },
+    {
+      "id": "cmpjwh2kj005jkntl28tupr6z",
+      "image": "/images/stories/story12.jpg",
+      "authorId": "bot11",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.052Z",
+      "expiresAt": "2026-05-25T14:56:10.051Z"
+    },
+    {
+      "id": "cmpjwh2kk005lkntl3w9db3p5",
+      "image": "/images/stories/story13.jpg",
+      "authorId": "bot12",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.052Z",
+      "expiresAt": "2026-05-25T14:56:10.051Z"
+    },
+    {
+      "id": "cmpjwh2kk005nkntl4ixzw5qb",
+      "image": "/images/stories/story14.jpg",
+      "authorId": "bot13",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.052Z",
+      "expiresAt": "2026-05-25T14:56:10.052Z"
+    },
+    {
+      "id": "cmpjwh2kk005pkntl995mfzgt",
+      "image": "/images/stories/story15.jpg",
+      "authorId": "bot14",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.053Z",
+      "expiresAt": "2026-05-25T14:56:10.052Z"
+    },
+    {
+      "id": "cmpjwh2kl005rkntlvnighwry",
+      "image": "/images/stories/story16.jpg",
+      "authorId": "bot15",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.053Z",
+      "expiresAt": "2026-05-25T14:56:10.053Z"
+    },
+    {
+      "id": "cmpjwh2kl005tkntlovi5512p",
+      "image": "/images/dance-party.png",
+      "authorId": "bot16",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.054Z",
+      "expiresAt": "2026-05-25T14:56:10.053Z"
+    },
+    {
+      "id": "cmpjwh2km005vkntl8bafmygy",
+      "image": "/images/stories/story1.jpg",
+      "authorId": "bot17",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.054Z",
+      "expiresAt": "2026-05-25T14:56:10.053Z"
+    },
+    {
+      "id": "cmpjwh2km005xkntls5blitb8",
+      "image": "/images/stories/story2.jpg",
+      "authorId": "bot18",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.054Z",
+      "expiresAt": "2026-05-25T14:56:10.054Z"
+    },
+    {
+      "id": "cmpjwh2km005zkntlpshve1vx",
+      "image": "/images/stories/story3.jpg",
+      "authorId": "bot19",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.055Z",
+      "expiresAt": "2026-05-25T14:56:10.054Z"
+    },
+    {
+      "id": "cmpjwh2kn0061kntl3mcbagzy",
+      "image": "/images/stories/story4.jpg",
+      "authorId": "bot20",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.055Z",
+      "expiresAt": "2026-05-25T14:56:10.055Z"
+    },
+    {
+      "id": "cmpjwh2kn0063kntlc66098m9",
+      "image": "/images/stories/story5.jpg",
+      "authorId": "bot21",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.056Z",
+      "expiresAt": "2026-05-25T14:56:10.055Z"
+    },
+    {
+      "id": "cmpjwh2ko0065kntlyfjh3hhp",
+      "image": "/images/stories/story6.jpg",
+      "authorId": "bot22",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.056Z",
+      "expiresAt": "2026-05-25T14:56:10.055Z"
+    },
+    {
+      "id": "cmpjwh2ko0067kntlex26urpp",
+      "image": "/images/stories/story7.jpg",
+      "authorId": "bot23",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.056Z",
+      "expiresAt": "2026-05-25T14:56:10.056Z"
+    },
+    {
+      "id": "cmpjwh2ko0069kntljrjwd2uf",
+      "image": "/images/stories/story8.jpg",
+      "authorId": "bot24",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.057Z",
+      "expiresAt": "2026-05-25T14:56:10.056Z"
+    },
+    {
+      "id": "cmpjwh2kp006bkntlk7htyncd",
+      "image": "/images/stories/story9.jpg",
+      "authorId": "bot25",
+      "viewed": false,
+      "createdAt": "2026-05-24T14:56:10.057Z",
+      "expiresAt": "2026-05-25T14:56:10.057Z"
+    }
+  ],
+  "reels": [
+    {
+      "id": "r1",
+      "title": "Neon Dance Routine",
+      "thumbnail": "/images/reels/reel1.jpg",
+      "category": "Dance",
+      "song": "ORRA Gives Me Everything - ORRA",
+      "views": 2400000,
+      "likesCount": 189000,
+      "commentsCount": 12400,
+      "creatorId": "bot04"
+    },
+    {
+      "id": "r2",
+      "title": "Cooking Hacks: 5min Meals",
+      "thumbnail": "/images/reels/reel2.jpg",
+      "category": "Food",
+      "song": "Welcome to My Page - ORRA",
+      "views": 890000,
+      "likesCount": 67000,
+      "commentsCount": 5600,
+      "creatorId": "bot12"
+    },
+    {
+      "id": "r3",
+      "title": "Beat Making From Scratch",
+      "thumbnail": "/images/reels/reel3.jpg",
+      "category": "Music",
+      "song": "Back of the Tracks - ORRA",
+      "views": 1200000,
+      "likesCount": 145000,
+      "commentsCount": 8900,
+      "creatorId": "bot09"
+    },
+    {
+      "id": "r4",
+      "title": "Morning Yoga Flow",
+      "thumbnail": "/images/reels/reel4.jpg",
+      "category": "Sports",
+      "song": "ORRA - ORRA",
+      "views": 567000,
+      "likesCount": 34000,
+      "commentsCount": 2300,
+      "creatorId": "bot16"
+    },
+    {
+      "id": "r5",
+      "title": "Street Art Process",
+      "thumbnail": "/images/reels/reel5.jpg",
+      "category": "Art",
+      "song": "Like and Follow - ORRA",
+      "views": 1800000,
+      "likesCount": 210000,
+      "commentsCount": 15600,
+      "creatorId": "bot10"
+    },
+    {
+      "id": "r6",
+      "title": "Comedy: When WiFi Dies",
+      "thumbnail": "/images/reels/reel6.jpg",
+      "category": "Comedy",
+      "song": "Back of the Tracks - ORRA",
+      "views": 3100000,
+      "likesCount": 445000,
+      "commentsCount": 34200,
+      "creatorId": "bot07"
+    },
+    {
+      "id": "r7",
+      "title": "Skateboard Tricks",
+      "thumbnail": "/images/reels/reel7.jpg",
+      "category": "Sports",
+      "song": "ORRA Gives Me Everything - ORRA",
+      "views": 920000,
+      "likesCount": 78000,
+      "commentsCount": 4500,
+      "creatorId": "bot19"
+    },
+    {
+      "id": "r8",
+      "title": "Beat Making Tutorial",
+      "thumbnail": "/images/reels/reel8.jpg",
+      "category": "Music",
+      "song": "Like and Follow - ORRA",
+      "views": 1500000,
+      "likesCount": 167000,
+      "commentsCount": 11200,
+      "creatorId": "bot15"
+    },
+    {
+      "id": "r9",
+      "title": "Fashion Haul: Summer",
+      "thumbnail": "/images/reels/reel9.jpg",
+      "category": "Trending",
+      "song": "Welcome to My Page - ORRA",
+      "views": 670000,
+      "likesCount": 45000,
+      "commentsCount": 3200,
+      "creatorId": "bot13"
+    },
+    {
+      "id": "r10",
+      "title": "Dance Battle Finals",
+      "thumbnail": "/images/reels/reel10.jpg",
+      "category": "Dance",
+      "song": "ORRA Gives Me Everything - ORRA",
+      "views": 4200000,
+      "likesCount": 567000,
+      "commentsCount": 45600,
+      "creatorId": "bot04"
+    },
+    {
+      "id": "r11",
+      "title": "Sunset Timelapse",
+      "thumbnail": "/images/reels/reel11.jpg",
+      "category": "Trending",
+      "song": "ORRA - ORRA",
+      "views": 1100000,
+      "likesCount": 98000,
+      "commentsCount": 6700,
+      "creatorId": "bot08"
+    },
+    {
+      "id": "r12",
+      "title": "Classroom Comedy",
+      "thumbnail": "/images/reels/reel12.jpg",
+      "category": "Comedy",
+      "song": "Back of the Tracks - ORRA",
+      "views": 780000,
+      "likesCount": 56000,
+      "commentsCount": 4100,
+      "creatorId": "bot25"
+    }
+  ],
+  "danceEntries": [
+    {
+      "id": "de1",
+      "description": "Electric slide meets hip-hop — bringing that Miami flavor!",
+      "thumbnail": "/images/dance/entry0.jpg",
+      "likesCount": 98420,
+      "authorId": "bot04",
+      "challengeId": "dc1"
+    },
+    {
+      "id": "de2",
+      "description": "Contemporary fusion with a fashion twist",
+      "thumbnail": "/images/dance/entry1.jpg",
+      "likesCount": 87650,
+      "authorId": "bot13",
+      "challengeId": "dc1"
+    },
+    {
+      "id": "de3",
+      "description": "Voguing with a digital art twist",
+      "thumbnail": "/images/dance/entry2.jpg",
+      "likesCount": 76340,
+      "authorId": "bot10",
+      "challengeId": "dc1"
+    },
+    {
+      "id": "de4",
+      "description": "Breakdance meets ballet — the duality",
+      "thumbnail": "/images/dance/entry3.jpg",
+      "likesCount": 65230,
+      "authorId": "bot15",
+      "challengeId": "dc1"
+    },
+    {
+      "id": "de5",
+      "description": "Latin dance fusion from around the world",
+      "thumbnail": "/images/dance/entry4.jpg",
+      "likesCount": 54120,
+      "authorId": "bot08",
+      "challengeId": "dc1"
+    },
+    {
+      "id": "de6",
+      "description": "Krump energy with skate style!",
+      "thumbnail": "/images/dance/entry5.jpg",
+      "likesCount": 43010,
+      "authorId": "bot19",
+      "challengeId": "dc1"
+    },
+    {
+      "id": "de7",
+      "description": "Robot dance challenge — engineer style",
+      "thumbnail": "/images/dance/entry6.jpg",
+      "likesCount": 38900,
+      "authorId": "bot05",
+      "challengeId": "dc1"
+    },
+    {
+      "id": "de8",
+      "description": "Cyberpunk choreography — gaming meets dance",
+      "thumbnail": "/images/dance/entry7.jpg",
+      "likesCount": 32780,
+      "authorId": "bot07",
+      "challengeId": "dc1"
+    },
+    {
+      "id": "de9",
+      "description": "Athletic flow — fitness meets rhythm",
+      "thumbnail": "/images/dance/entry8.jpg",
+      "likesCount": 28450,
+      "authorId": "bot24",
+      "challengeId": "dc1"
+    },
+    {
+      "id": "de10",
+      "description": "Chicago house meets hip-hop — born on the South Side",
+      "thumbnail": "/images/dance/entry9.jpg",
+      "likesCount": 24120,
+      "authorId": "bot09",
+      "challengeId": "dc1"
+    }
+  ]
+}
