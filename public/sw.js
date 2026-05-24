@@ -1,7 +1,8 @@
-// ORRA Service Worker v101 - Force Cache Clear
+// ORRA Service Worker v102 - Network-first for chunks
+// v102: Network-first for /_next/static/ chunks to prevent stale cache after rebuilds.
 // v101: Force-clears all previous caches to ensure fresh JS chunks after rebuilds.
-const STATIC_CACHE = 'orra-static-v101';
-const IMAGE_CACHE = 'orra-images-v101';
+const STATIC_CACHE = 'orra-static-v102';
+const IMAGE_CACHE = 'orra-images-v102';
 
 self.addEventListener('install', (event) => {
   // Skip waiting to activate immediately
