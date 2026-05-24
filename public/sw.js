@@ -1,10 +1,8 @@
-// ORRA Service Worker v99 - FORCE CACHE CLEAR
-// This version number is intentionally high to ensure ALL previous
-// cached versions (v1-v8) are deleted when this SW activates.
-// After a fresh build, old chunk filenames no longer exist on the server,
-// so any cached chunks from previous builds are stale and MUST be deleted.
-const STATIC_CACHE = 'orra-static-v99';
-const IMAGE_CACHE = 'orra-images-v99';
+// ORRA Service Worker v100 - Robust Navigation Handling
+// v100: Fixed 404 issue where navigation fallback to empty cache left users stranded.
+// Now: navigation fetch failures redirect to home instead of showing a blank 404.
+const STATIC_CACHE = 'orra-static-v100';
+const IMAGE_CACHE = 'orra-images-v100';
 
 self.addEventListener('install', (event) => {
   // Skip waiting to activate immediately
@@ -21,7 +19,7 @@ self.addEventListener('activate', (event) => {
           cacheNames
             .filter((name) => name !== STATIC_CACHE && name !== IMAGE_CACHE)
             .map((cacheName) => {
-              console.log('[SW v99] Deleting stale cache:', cacheName);
+              console.log('[SW v100] Deleting stale cache:', cacheName);
               return caches.delete(cacheName);
             })
         );
@@ -33,15 +31,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // For navigation requests (HTML pages), always fetch fresh from network
+  // For navigation requests (HTML pages), always fetch fresh from network.
+  // If network fails, redirect to home page instead of showing a blank 404.
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
+          // If server returns a valid response (even 404), pass it through.
+          // The not-found.tsx will handle 404s by redirecting to /.
           return response;
         })
         .catch(() => {
-          return caches.match(event.request);
+          // Network completely failed — redirect to home with cache-bust
+          // instead of showing a blank error page
+          return Response.redirect(url.origin + '/?_cb=' + Date.now(), 302);
         })
     );
     return;
@@ -55,7 +58,10 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          return caches.match(event.request);
+          return new Response(JSON.stringify({ error: 'Network error' }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
+          });
         })
     );
     return;
@@ -78,7 +84,10 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         }).catch(() => {
-          return new Response('Network error', { status: 503 });
+          return new Response('/* chunk not found */', {
+            status: 404,
+            headers: { 'Content-Type': 'application/javascript' }
+          });
         });
       })
     );
@@ -101,7 +110,11 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         }).catch(() => {
-          return caches.match(event.request);
+          // Return a 1x1 transparent pixel instead of a broken image
+          return new Response(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
+            { status: 200, headers: { 'Content-Type': 'image/svg+xml' } }
+          );
         });
       })
     );
