@@ -51,3 +51,35 @@ Stage Summary:
 - clear-cache.html page available at /clear-cache.html for manual cache clearing
 - Server running on port 3000 with BUILD_ID: orra-v2-stable
 - App fully functional: login, feed, navigation, all working
+---
+Task ID: 1
+Agent: Main
+Task: Fix 5-minute timeout crash and add shareable test page
+
+Work Log:
+- Analyzed user's screenshot showing "Something went wrong — ORRA hit a snag" error
+- Diagnosed root cause: platform proxy drops idle connections after ~5 minutes, causing fetch failures that crash the ErrorBoundary
+- Previous ErrorBoundary required manual "Refresh ORRA" button — no auto-recovery
+- Keep-alive was only pinging every 25 seconds — not aggressive enough
+- No recovery mechanism for when user returns to a backgrounded tab
+
+Fixes Applied:
+1. ErrorBoundary auto-recovers after 3 seconds (resets error state) instead of showing dead error page
+2. Only shows manual button after 5+ consecutive failures
+3. Shows "Reconnecting..." with animated progress bar during auto-recovery
+4. Keep-alive interval reduced from 25s to 15s with immediate ping on load
+5. Added visibilitychange handler: auto health-check when user returns to tab, reload if dead
+6. Added 'online' event handler for network recovery
+7. Fetch retry now covers dynamic imports (/_next/static/) not just API routes
+8. Triple-retry for failed fetches (2s delay, then 3s, then 3s)
+9. Global error boundary shows auto-reload countdown with 5s timer
+10. Created /join.html shareable test page with auto SW cleanup, test account info, Enter ORRA button
+11. Created /api/sw route for self-destructing service worker (replaces old cached SWs)
+12. Fixed middleware: sw.js and .html files now get no-cache headers
+13. All changes pushed to GitHub
+
+Stage Summary:
+- Error boundary now auto-recovers instead of requiring manual refresh
+- Keep-alive more aggressive (15s interval + visibility recovery)
+- Shareable test URL: /join.html
+- Self-destructing service worker at /api/sw to kill old cached SWs
