@@ -17,7 +17,7 @@ if [ -z "$GITHUB_TOKEN" ]; then
 fi
 
 # Your GitHub username (update if different)
-GITHUB_USER="nickjoseph8087"
+GITHUB_USER="NolaNick-504"
 REPO_NAME="orra-social-app"
 
 echo "Creating GitHub repository: $GITHUB_USER/$REPO_NAME"
