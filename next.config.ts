@@ -5,11 +5,10 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  // Use a stable build ID so browsers don't force-reload on every deploy
-  // Next.js chunk filenames already include content hashes, so caching is safe
-  generateBuildId: async () => {
-    return 'orra-v2-' + Date.now().toString(36);
-  },
+  // Use a FIXED build ID — never changes between deploys.
+  // Next.js chunk filenames already include content hashes, so caching is safe.
+  // A changing BUILD_ID causes stale chunk mismatches and 404s after deploys.
+  generateBuildId: async () => 'orra-v2-stable',
   experimental: {
     serverActions: {
       bodySizeLimit: '50mb',

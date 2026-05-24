@@ -2,12 +2,18 @@
 
 import { useEffect } from 'react';
 
-// Root not-found page — ultimate safety net.
-// If the user lands on a path that Next.js can't resolve, redirect to home.
-// This should almost never happen because the middleware rewrites all paths to /.
+// Root not-found page — redirect to home so the user isn't stuck on a 404.
+// Uses replace() to avoid adding the 404 URL to browser history.
 export default function RootNotFound() {
   useEffect(() => {
-    // Redirect to home with cache-bust to ensure fresh HTML
+    // Only redirect once per session to prevent loops
+    try {
+      if (sessionStorage.getItem('orra_404_redirect') === '1') {
+        console.warn('ORRA: Already redirected from 404, stopping loop');
+        return;
+      }
+      sessionStorage.setItem('orra_404_redirect', '1');
+    } catch {}
     window.location.replace('/?_cb=' + Date.now());
   }, []);
 

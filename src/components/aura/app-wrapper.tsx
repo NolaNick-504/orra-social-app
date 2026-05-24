@@ -46,13 +46,29 @@ function StoreHydrator({ children }: { children: React.ReactNode }) {
         if (!res.ok) {
           console.warn('/api/me returned status:', res.status);
           // If user not found (DB was reset), force sign out so user can re-login
+          // BUT: only do this for genuine 404s, not network/proxy timeouts
+          // that return non-200 status codes temporarily.
           if (res.status === 404) {
-            console.warn('ORRA: User not found in DB — forcing sign out for re-login');
-            try { await signOut({ redirect: false }); } catch {}
-            useAuraStore.setState({ isHydrated: false, profileSetupComplete: false });
-            localStorage.removeItem('aura-storage');
+            // Check if this is a real 404 from our API (has JSON body with error)
+            // vs a proxy/gateway 404 (has HTML body)
+            try {
+              const cloned = res.clone();
+              const body = await cloned.text();
+              if (body.includes('"success"') || body.includes('"error"')) {
+                // This is our API returning a proper JSON 404 — user genuinely doesn't exist
+                console.warn('ORRA: User not found in DB — forcing sign out for re-login');
+                try { await signOut({ redirect: false }); } catch {}
+                useAuraStore.setState({ isHydrated: false, profileSetupComplete: false });
+                localStorage.removeItem('aura-storage');
+                return;
+              }
+            } catch {}
+            // Not our API 404 — probably a proxy timeout. Use fallback instead.
+            console.warn('ORRA: 404 from proxy/gateway, using fallback hydration');
+            hydrateFromFallback();
             return;
           }
+          // 5xx, timeout, etc. — use fallback, don't sign out
           hydrateFromFallback();
           return;
         }

@@ -3,9 +3,6 @@
 import { useEffect, useState } from 'react';
 import { Sparkles, RefreshCw } from 'lucide-react';
 
-const MAX_AUTO_RETRIES = 2;
-const RETRY_KEY = 'orra_error_retry_count';
-
 export default function Error({
   error,
   reset,
@@ -14,30 +11,40 @@ export default function Error({
   reset: () => void;
 }) {
   const [countdown, setCountdown] = useState(3);
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     console.warn('ORRA Page Error:', error?.message || error);
   }, [error]);
 
-  // Auto-reload with retry counter to prevent infinite loops
+  // Try in-place recovery FIRST (using Next.js reset), only full-reload as fallback
   useEffect(() => {
-    let retryCount = 0;
+    // First attempt: try Next.js reset() which re-renders the page component
+    // without a full page reload. This recovers from most transient errors.
+    const retryTimer = setTimeout(() => {
+      try {
+        reset();
+      } catch (e) {
+        // reset() failed — will fall through to countdown below
+        console.warn('ORRA: reset() failed, will do full reload');
+      }
+    }, 1500);
+
+    return () => clearTimeout(retryTimer);
+  }, [error, reset]);
+
+  // If still showing after 5 seconds, do a full reload (but only once)
+  useEffect(() => {
+    let alreadyReloaded = false;
     try {
-      retryCount = parseInt(sessionStorage.getItem(RETRY_KEY) || '0', 10);
+      alreadyReloaded = sessionStorage.getItem('orra_error_reload') === '1';
     } catch {}
 
-    if (retryCount >= MAX_AUTO_RETRIES) {
-      // Already retried too many times — stop auto-reloading
-      console.warn('ORRA: Max auto-retries reached, showing manual error page');
+    if (alreadyReloaded) {
+      // Already reloaded once — don't loop. Show manual button.
       return;
     }
 
-    // Increment retry counter
-    try {
-      sessionStorage.setItem(RETRY_KEY, String(retryCount + 1));
-    } catch {}
-
-    // Countdown timer
     const countdownInterval = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -48,64 +55,38 @@ export default function Error({
       });
     }, 1000);
 
-    // Auto-reload after delay
-    const timer = setTimeout(() => {
+    const reloadTimer = setTimeout(() => {
+      try { sessionStorage.setItem('orra_error_reload', '1'); } catch {}
       window.location.replace('/?_cb=' + Date.now());
-    }, 2000);
+    }, 5000);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(reloadTimer);
       clearInterval(countdownInterval);
     };
-  }, [error]);
+  }, []);
 
-  // Check if we've exceeded retries
-  let retryCount = 0;
-  try {
-    retryCount = parseInt(sessionStorage.getItem(RETRY_KEY) || '0', 10);
-  } catch {}
-
-  const hasExceededRetries = retryCount > MAX_AUTO_RETRIES;
-
-  if (!hasExceededRetries) {
-    // Show auto-reconnecting overlay with countdown
-    return (
-      <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-4 animate-pulse">
-            <Sparkles className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-xl font-bold text-white mb-2">Reconnecting...</h2>
-          <p className="text-slate-400 text-sm mb-2">ORRA is refreshing. Hang tight!</p>
-          <div className="w-32 h-1 bg-white/10 rounded-full mx-auto overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all duration-1000"
-              style={{ width: `${((3 - countdown) / 3) * 100}%` }}
-            />
-          </div>
-          <p className="text-slate-600 text-xs mt-2">{countdown}s</p>
-          <p className="text-slate-700 text-xs mt-3">Attempt {retryCount} of {MAX_AUTO_RETRIES}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Exceeded retries — show error with manual reload only
   return (
     <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
       <div className="text-center max-w-md">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-4">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-4 animate-pulse">
           <Sparkles className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-xl font-bold text-white mb-2">Something went wrong</h2>
-        <p className="text-slate-400 text-sm mb-4">ORRA hit a snag. Your data is safe — just reload.</p>
+        <h2 className="text-xl font-bold text-white mb-2">Reconnecting...</h2>
+        <p className="text-slate-400 text-sm mb-2">ORRA hit a snag. Auto-recovering...</p>
+        <div className="w-32 h-1 bg-white/10 rounded-full mx-auto overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full transition-all duration-1000"
+            style={{ width: `${((3 - countdown) / 3) * 100}%` }}
+          />
+        </div>
+        <p className="text-slate-600 text-xs mt-2">{countdown}s</p>
         <button
           onClick={() => {
-            // Clear retry counter on manual reload
-            try { sessionStorage.removeItem(RETRY_KEY); } catch {}
+            try { sessionStorage.removeItem('orra_error_reload'); } catch {}
             window.location.replace('/?_cb=' + Date.now());
           }}
-          className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold text-sm flex items-center gap-2 mx-auto"
+          className="mt-4 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold text-sm flex items-center gap-2 mx-auto"
         >
           <RefreshCw className="w-4 h-4" /> Reload ORRA
         </button>
