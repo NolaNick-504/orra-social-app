@@ -1,13 +1,14 @@
 #!/bin/bash
 # ORRA Custom Startup Script
 # This runs automatically when the container starts (called by /start.sh)
-# It builds, seeds (if needed), and starts Next.js with auto-restart.
+# It restores DB from backup (if available), or seeds fresh, and starts Next.js.
 
 set -e
 
 PROJECT_DIR=/home/z/my-project
 LOG_FILE=$PROJECT_DIR/next-supervisor.log
 DB_FILE=$PROJECT_DIR/db/custom.db
+PERSISTENT_BACKUP=/home/sync/orra-db-backup/latest.db
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ORRA-Startup] $1" | tee -a "$LOG_FILE"
@@ -27,38 +28,75 @@ cd "$PROJECT_DIR"
 log "Generating Prisma client..."
 npx prisma generate 2>&1 | tee -a "$LOG_FILE"
 
-# Step 3: Push database schema (creates tables if they don't exist)
-log "Pushing database schema..."
-npx prisma db push 2>&1 | tee -a "$LOG_FILE"
-
-# Step 4: Seed database if empty (no users = fresh DB after container rebuild)
-# The DB is in .gitignore so it gets wiped on container rebuild.
-# The seed script creates the founder account + 25 bots + posts + everything.
-SEED_NEEDED=false
-if [ ! -f "$DB_FILE" ]; then
-  SEED_NEEDED=true
-  log "Database file not found, seeding needed"
-else
-  # Check if there are any users in the DB
+# Step 3: Check for persistent backup FIRST (before creating any DB)
+# The persistent backup at /home/sync/ survives container rebuilds
+if [ -f "$PERSISTENT_BACKUP" ]; then
+  log "Found persistent DB backup at $PERSISTENT_BACKUP"
+  
+  # Ensure db directory exists
+  mkdir -p "$PROJECT_DIR/db"
+  
+  # Copy backup to active DB location
+  cp "$PERSISTENT_BACKUP" "$DB_FILE"
+  log "Restored database from persistent backup"
+  
+  # Push schema to ensure it's up to date (adds any new columns)
+  log "Pushing database schema (non-destructive)..."
+  npx prisma db push 2>&1 | tee -a "$LOG_FILE"
+  
+  # Verify the database has users
   USER_COUNT=$(cd "$PROJECT_DIR" && node -e "
     const { PrismaClient } = require('@prisma/client');
     const db = new PrismaClient();
-    db.user.count().then(c => { console.log(c); db.\$disconnect(); });
+    db.user.count().then(c => { console.log(c); db.\$disconnect(); }).catch(() => { console.log('0'); db.\$disconnect(); });
   " 2>/dev/null || echo "0")
+  
   if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then
+    log "Restored DB has 0 users, falling back to seed..."
     SEED_NEEDED=true
-    log "Database is empty (0 users), seeding needed"
   else
-    log "Database has $USER_COUNT users, no seed needed"
+    log "Restored DB has $USER_COUNT users — no seed needed!"
+    SEED_NEEDED=false
+    
+    # Update founder password
+    log "Ensuring founder password is set..."
+    node -e "
+      const { PrismaClient } = require('@prisma/client');
+      const bcrypt = require('bcryptjs');
+      const db = new PrismaClient();
+      async function main() {
+        const hash = await bcrypt.hash('Weareone504', 12);
+        try {
+          await db.user.update({ where: { id: 'founder' }, data: { password: hash } });
+          console.log('Founder password set');
+        } catch {
+          // Try by email
+          try {
+            await db.user.update({ where: { email: 'nickjoseph8087@gmail.com' }, data: { password: hash } });
+            console.log('Founder password set (by email)');
+          } catch { console.log('No founder to update'); }
+        }
+      }
+      main().catch(console.error).finally(() => db.\$disconnect());
+    " 2>&1 | tee -a "$LOG_FILE"
   fi
+else
+  log "No persistent backup found, creating fresh database..."
+  
+  # Push schema to create tables
+  log "Pushing database schema..."
+  npx prisma db push 2>&1 | tee -a "$LOG_FILE"
+  
+  SEED_NEEDED=true
 fi
 
+# Step 4: Seed if needed (only when no backup exists or backup was empty)
 if [ "$SEED_NEEDED" = true ]; then
-  log "Seeding database with founder + 25 bots + posts + everything..."
+  log "Seeding database with founder + 25 bots + posts..."
   cd "$PROJECT_DIR"
   npm run db:seed 2>&1 | tee -a "$LOG_FILE"
 
-  # Update founder password to user's expected password
+  # Update founder password
   log "Setting founder password..."
   node -e "
     const { PrismaClient } = require('@prisma/client');
@@ -71,7 +109,12 @@ if [ "$SEED_NEEDED" = true ]; then
     }
     main().catch(console.error).finally(() => db.\$disconnect());
   " 2>&1 | tee -a "$LOG_FILE"
-  log "Database seeded successfully!"
+  
+  # Make initial backup so we have something for next time
+  log "Creating initial backup..."
+  mkdir -p /home/sync/orra-db-backup
+  cp "$DB_FILE" /home/sync/orra-db-backup/latest.db
+  log "Initial backup created"
 fi
 
 # Step 5: Build if .next doesn't exist
@@ -114,6 +157,11 @@ while [ $RESTART_COUNT -lt $MAX_RESTARTS ]; do
     log "Clean shutdown, not restarting"
     break
   fi
+
+  # Before restarting, back up the database
+  log "Backing up database before restart..."
+  mkdir -p /home/sync/orra-db-backup
+  cp "$DB_FILE" /home/sync/orra-db-backup/latest.db 2>/dev/null || true
 
   # Wait before restarting
   log "Waiting 3 seconds before restart..."
