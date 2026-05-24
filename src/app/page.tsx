@@ -390,6 +390,12 @@ export default function Home() {
 
   const isAuthenticated = status === 'authenticated' && session;
 
+  // Signal to the hydration safety net in layout.tsx that React has mounted.
+  // This prevents the 6-second force-reload from triggering on a working app.
+  useEffect(() => {
+    window.__ORRA_HYDRATED = true;
+  }, []);
+
   // Determine if the initial session check is done.
   // Key insight: during a session refetch, `status` briefly goes back to 'loading',
   // but `session` retains its previous value. So we check both:

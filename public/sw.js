@@ -1,9 +1,10 @@
-// ORRA Service Worker v5 - Smart Caching Strategy
-// - Cache-first for /_next/static/ chunks (content-hashed filenames, safe to cache)
-// - Cache-first for images (avatars, covers, etc.)
-// - Network-first for API calls and HTML pages (always fresh data)
-const STATIC_CACHE = 'orra-static-v5';
-const IMAGE_CACHE = 'orra-images-v5';
+// ORRA Service Worker v99 - FORCE CACHE CLEAR
+// This version number is intentionally high to ensure ALL previous
+// cached versions (v1-v8) are deleted when this SW activates.
+// After a fresh build, old chunk filenames no longer exist on the server,
+// so any cached chunks from previous builds are stale and MUST be deleted.
+const STATIC_CACHE = 'orra-static-v99';
+const IMAGE_CACHE = 'orra-images-v99';
 
 self.addEventListener('install', (event) => {
   // Skip waiting to activate immediately
@@ -12,15 +13,15 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   // Claim all clients immediately so the new SW takes control
+  // Then DELETE ALL OLD CACHES from previous SW versions
   event.waitUntil(
     clients.claim().then(() => {
-      // Delete OLD caches (previous versions only)
       return caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames
             .filter((name) => name !== STATIC_CACHE && name !== IMAGE_CACHE)
             .map((cacheName) => {
-              console.log('[SW v5] Deleting old cache:', cacheName);
+              console.log('[SW v99] Deleting stale cache:', cacheName);
               return caches.delete(cacheName);
             })
         );
@@ -40,14 +41,13 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // Offline fallback - try cache
           return caches.match(event.request);
         })
     );
     return;
   }
 
-  // For API calls (including uploads) - network first, never cache
+  // For API calls - network first, never cache
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request)
@@ -63,16 +63,13 @@ self.addEventListener('fetch', (event) => {
 
   // For /_next/static/ chunks - CACHE FIRST strategy
   // These files have content-hash filenames, so cached versions are always valid.
-  // Caching them prevents re-downloading MB of JS on every page load.
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         if (cachedResponse) {
           return cachedResponse;
         }
-        // Not in cache — fetch from network and cache for next time
         return fetch(event.request).then((networkResponse) => {
-          // Only cache successful responses
           if (networkResponse && networkResponse.status === 200) {
             const responseToCache = networkResponse.clone();
             caches.open(STATIC_CACHE).then((cache) => {
@@ -81,7 +78,6 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         }).catch(() => {
-          // Network failed and no cache — return offline page for navigations
           return new Response('Network error', { status: 503 });
         });
       })
@@ -112,7 +108,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For CSS/JS not in /_next/static/ (e.g. third-party) - network first
+  // For CSS/JS not in /_next/static/ - network first
   if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
     event.respondWith(
       fetch(event.request)
