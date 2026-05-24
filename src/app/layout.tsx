@@ -50,14 +50,17 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
-        {/* NO SERVICE WORKER REGISTRATION.
-            The old SW was caching stale chunks and causing users to get stuck
-            on "Loading ORRA...". SW registration is completely removed.
-            If we add SW back later, it MUST be a network-first strategy
-            with aggressive timeout fallbacks. */}
+        {/* Bootstrap script — runs BEFORE React hydrates.
+            1. Kills old service workers by registering a "killer" SW that self-destructs
+            2. Clears all Cache Storage
+            3. Starts keep-alive pings to prevent proxy timeouts
+            4. Adds global fetch error recovery
+            5. Catches chunk load errors */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-            // 1. Kill ALL service workers immediately on every page load
+            // 1. KILL OLD SERVICE WORKERS
+            //    Instead of just unregistering (which requires the old SW to cooperate),
+            //    we try to unregister them directly, and also clear all caches.
             if ('serviceWorker' in navigator) {
               navigator.serviceWorker.getRegistrations().then(function(regs) {
                 for (var i = 0; i < regs.length; i++) {
@@ -65,7 +68,8 @@ export default function RootLayout({
                 }
               }).catch(function() {});
             }
-            // 2. Clear ALL cache storage
+
+            // 2. Clear ALL Cache Storage
             if ('caches' in window) {
               caches.keys().then(function(names) {
                 for (var i = 0; i < names.length; i++) {
@@ -73,6 +77,7 @@ export default function RootLayout({
                 }
               }).catch(function() {});
             }
+
             // 3. Clear stale aura-storage if it has broken data
             try {
               var s = localStorage.getItem('aura-storage');
@@ -88,34 +93,22 @@ export default function RootLayout({
 
             // 4. KEEP-ALIVE: Ping the server every 25 seconds to prevent
             //    proxy/platform idle connection timeouts.
-            //    This is the fix for "works for a few minutes then 404s".
             var keepAliveUrl = '/api/build-id';
-            var keepAliveInterval = 25000; // 25 seconds
-            var keepAliveTimer = null;
+            var keepAliveInterval = 25000;
 
             function doKeepAlive() {
               fetch(keepAliveUrl, {
                 method: 'GET',
                 cache: 'no-store',
                 headers: { 'X-Keep-Alive': '1' }
-              }).then(function(res) {
-                if (!res.ok) {
-                  // Server responded but with error — schedule next ping
-                }
-              }).catch(function() {
-                // Network error — don't crash, just try again next interval
-              });
+              }).then(function(res) {}).catch(function() {});
             }
 
-            // Start keep-alive after initial page load
-            keepAliveTimer = setInterval(doKeepAlive, keepAliveInterval);
+            setInterval(doKeepAlive, keepAliveInterval);
 
             // 5. GLOBAL FETCH ERROR RECOVERY
-            //    When a fetch fails due to network issues (timeout, connection reset),
-            //    instead of letting the React error boundary crash the app,
-            //    we intercept and retry automatically.
+            //    Auto-retry failed API requests once before showing errors.
             var originalFetch = window.fetch;
-            var retryableStatusCodes = [408, 429, 500, 502, 503, 504];
 
             window.fetch = function(input, init) {
               var url = typeof input === 'string' ? input : (input instanceof Request ? input.url : String(input));
@@ -130,15 +123,11 @@ export default function RootLayout({
               }
 
               return originalFetch.apply(this, arguments).catch(function(err) {
-                // Network error (timeout, connection reset, etc.)
-                // Only retry for same-origin API requests
                 if (url.startsWith('/api/') || url.startsWith(window.location.origin + '/api/')) {
                   console.warn('ORRA: Fetch failed, retrying in 2s:', url, err.message || err);
                   return new Promise(function(resolve) {
                     setTimeout(function() {
                       originalFetch.apply(window, [input, init]).then(resolve).catch(function() {
-                        // Second retry failed — let the caller handle it
-                        console.warn('ORRA: Retry also failed for:', url);
                         resolve(originalFetch.apply(window, [input, init]));
                       });
                     }, 2000);
@@ -149,14 +138,11 @@ export default function RootLayout({
             };
 
             // 6. Prevent chunk load errors from crashing the app
-            //    When Next.js tries to load a chunk that's been invalidated
-            //    (e.g., after a rebuild), catch the error and reload once.
             window.addEventListener('error', function(e) {
               var msg = (e.message || '').toLowerCase();
               if (msg.includes('loading chunk') || msg.includes('chunk load') ||
                   msg.includes('unexpected token') || msg.includes('failed to fetch dynamically imported module')) {
                 e.preventDefault();
-                // Only reload once per session to prevent loops
                 if (!sessionStorage.getItem('orra_chunk_reload')) {
                   sessionStorage.setItem('orra_chunk_reload', '1');
                   window.location.replace('/?_cb=' + Date.now());

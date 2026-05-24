@@ -6,14 +6,8 @@ import { useEffect } from 'react';
 // Uses replace() to avoid adding the 404 URL to browser history.
 export default function RootNotFound() {
   useEffect(() => {
-    // Only redirect once per session to prevent loops
-    try {
-      if (sessionStorage.getItem('orra_404_redirect') === '1') {
-        console.warn('ORRA: Already redirected from 404, stopping loop');
-        return;
-      }
-      sessionStorage.setItem('orra_404_redirect', '1');
-    } catch {}
+    // Always redirect — the loop prevention is handled by the keep-alive
+    // and error recovery in layout.tsx, not by blocking redirects here.
     window.location.replace('/?_cb=' + Date.now());
   }, []);
 

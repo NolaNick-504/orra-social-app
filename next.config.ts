@@ -17,7 +17,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // No-cache for HTML pages only — ensures fresh HTML on every visit
+        // HTML pages — no-cache to ensure fresh HTML on every visit
+        // NOTE: Do NOT use Clear-Site-Data here — it clears ALL HTTP cache
+        // including static JS chunks, which causes React hydration failures.
         source: '/(.*)',
         headers: [
           { key: 'Cache-Control', value: 'no-cache, must-revalidate' },
@@ -25,8 +27,6 @@ const nextConfig: NextConfig = {
       },
       {
         // Static chunks have content-hash filenames — safe to cache forever
-        // This is critical for performance: without caching, browsers re-download
-        // ALL JavaScript on every page load, causing 5+ second white screens
         source: '/_next/static/(.*)',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },

@@ -49,15 +49,15 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // 6. ALL other HTML page requests — aggressive no-cache + SPA rewrite
+  // 6. ALL other HTML page requests — aggressive no-cache
   //    This ensures the browser NEVER serves stale HTML from cache
-  //    and always gets fresh HTML with the correct JS chunk references
+  //    and always gets fresh HTML with the correct JS chunk references.
+  //    NOTE: We do NOT use Clear-Site-Data here because it clears ALL HTTP cache
+  //    including the static JS chunks, which causes React hydration failures.
   const response = NextResponse.next();
   response.headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate');
   response.headers.set('Pragma', 'no-cache');
   response.headers.set('Expires', '0');
-  // Also prevent service workers from caching
-  response.headers.set('X-Content-Type-Options', 'nosniff');
   return response;
 }
 
