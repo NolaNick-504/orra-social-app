@@ -61,8 +61,14 @@ upload/orra-backup/src-backup/db/
 *.tar
 *.bundle
 
-# Database directory (use backup/ for restores)
-db/
+# Database - DO NOT IGNORE! The database MUST be committed to git
+# so user customizations survive container rebuilds.
+# Only ignore WAL/SHM temp files (they're recreated automatically)
+db/*.db-wal
+db/*.db-shm
+db/custom-seed-backup.db
+
+# Upload directory (regenerated, too large for git)
 upload/
 
 # Keep the backup directory with JSON export and restore script

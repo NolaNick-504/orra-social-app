@@ -1965,48 +1965,97 @@ const notificationsData = [
 // SEED FUNCTION
 // ============================================================
 
+// Counters for safe-seed reporting
+interface SeedCounts {
+  created: number;
+  skipped: number;
+}
+
+
+// ============================================================
+// SAFE SEED: Only creates data that doesn't already exist.
+// NEVER wipes user customizations (profile changes, ads, etc.)
+// Set ORRA_SEED_FORCE=1 to force full wipe + reseed (DANGEROUS).
+// ============================================================
+
+interface SeedCounts {
+  usersCreated: number; usersSkipped: number;
+  postsCreated: number; postsSkipped: number;
+  commentsCreated: number; commentsSkipped: number;
+  likesCreated: number; likesSkipped: number;
+  followsCreated: number; followsSkipped: number;
+  storiesCreated: number; storiesSkipped: number;
+  reelsCreated: number; reelsSkipped: number;
+  danceCreated: number; danceSkipped: number;
+  hubsCreated: number; hubsSkipped: number;
+  chatsCreated: number; chatsSkipped: number;
+  notifsCreated: number; notifsSkipped: number;
+}
+
 async function main() {
-  console.log('🌱 Seeding ORRA database...\n');
+  const counts: SeedCounts = {
+    usersCreated: 0, usersSkipped: 0,
+    postsCreated: 0, postsSkipped: 0,
+    commentsCreated: 0, commentsSkipped: 0,
+    likesCreated: 0, likesSkipped: 0,
+    followsCreated: 0, followsSkipped: 0,
+    storiesCreated: 0, storiesSkipped: 0,
+    reelsCreated: 0, reelsSkipped: 0,
+    danceCreated: 0, danceSkipped: 0,
+    hubsCreated: 0, hubsSkipped: 0,
+    chatsCreated: 0, chatsSkipped: 0,
+    notifsCreated: 0, notifsSkipped: 0,
+  };
 
-  // Clean up existing data
-  console.log('🗑️  Cleaning existing data...');
-  const deleteOps = [
-    () => prisma.sharedPost.deleteMany(),
-    () => prisma.tokenAction.deleteMany(),
-    () => prisma.notification.deleteMany(),
-    () => prisma.directMessage.deleteMany(),
-    () => prisma.chatMember.deleteMany(),
-    () => prisma.chat.deleteMany(),
-    () => prisma.hubPost.deleteMany(),
-    () => prisma.hubMember.deleteMany(),
-    () => prisma.hub.deleteMany(),
-    () => prisma.danceEntry.deleteMany(),
-    () => prisma.danceChallenge.deleteMany(),
-    () => prisma.reel.deleteMany(),
-    () => prisma.story.deleteMany(),
-    () => prisma.save.deleteMany(),
-    () => prisma.repost.deleteMany(),
-    () => prisma.like.deleteMany(),
-    () => prisma.comment.deleteMany(),
-    () => prisma.post.deleteMany(),
-    () => prisma.follow.deleteMany(),
-    () => prisma.account.deleteMany(),
-    () => prisma.session.deleteMany(),
-    () => prisma.user.deleteMany(),
-  ];
-  for (const op of deleteOps) {
-    try { await op(); } catch { /* Table may not exist after fresh reset */ }
+  const FORCE_WIPE = process.env.ORRA_SEED_FORCE === '1';
+
+  if (FORCE_WIPE) {
+    console.log('⚠️  FORCE WIPE MODE — Deleting all existing data!\n');
+    const deleteOps = [
+      () => prisma.sharedPost.deleteMany(),
+      () => prisma.tokenAction.deleteMany(),
+      () => prisma.notification.deleteMany(),
+      () => prisma.directMessage.deleteMany(),
+      () => prisma.chatMember.deleteMany(),
+      () => prisma.chat.deleteMany(),
+      () => prisma.hubPost.deleteMany(),
+      () => prisma.hubMember.deleteMany(),
+      () => prisma.hub.deleteMany(),
+      () => prisma.danceEntry.deleteMany(),
+      () => prisma.danceChallenge.deleteMany(),
+      () => prisma.reel.deleteMany(),
+      () => prisma.story.deleteMany(),
+      () => prisma.save.deleteMany(),
+      () => prisma.repost.deleteMany(),
+      () => prisma.like.deleteMany(),
+      () => prisma.comment.deleteMany(),
+      () => prisma.post.deleteMany(),
+      () => prisma.follow.deleteMany(),
+      () => prisma.account.deleteMany(),
+      () => prisma.session.deleteMany(),
+      () => prisma.user.deleteMany(),
+    ];
+    for (const op of deleteOps) {
+      try { await op(); } catch { /* Table may not exist */ }
+    }
+    console.log('✅ All data wiped\n');
   }
-  console.log('✅ Existing data cleaned\n');
+
+  console.log('🌱 Seeding ORRA database (safe mode — preserving existing data)...\n');
 
   // ========================================
-  // 1. Create Users
+  // 1. Create Users (skip if already exists)
   // ========================================
-  console.log('👤 Creating users...');
+  console.log('👤 Ensuring users exist...');
   const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, SALT_ROUNDS);
   const founderPassword = await bcrypt.hash('Weareone504', SALT_ROUNDS);
 
   for (const u of mockUsers) {
+    const existing = await prisma.user.findFirst({ where: { id: u.id } });
+    if (existing) {
+      counts.usersSkipped++;
+      continue;
+    }
     const song = u.profileSong ?? ORRA_SONGS[0];
     await prisma.user.create({
       data: {
@@ -2032,14 +2081,20 @@ async function main() {
         profileSongArtist: song.artist,
       },
     });
+    counts.usersCreated++;
   }
-  console.log(`✅ Created ${mockUsers.length} users\n`);
+  console.log('✅ Users: ${counts.usersCreated} created, ${counts.usersSkipped} skipped\n');
 
   // ========================================
-  // 2. Create Posts
+  // 2. Create Posts (skip if already exists)
   // ========================================
-  console.log('📝 Creating posts...');
+  console.log('📝 Ensuring posts exist...');
   for (const p of feedPosts) {
+    const existing = await prisma.post.findFirst({ where: { id: p.id } });
+    if (existing) {
+      counts.postsSkipped++;
+      continue;
+    }
     await prisma.post.create({
       data: {
         id: p.id,
@@ -2054,14 +2109,20 @@ async function main() {
         createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
       },
     });
+    counts.postsCreated++;
   }
-  console.log(`✅ Created ${feedPosts.length} posts\n`);
+  console.log('✅ Posts: ${counts.postsCreated} created, ${counts.postsSkipped} skipped\n');
 
   // ========================================
-  // 3. Create Comments
+  // 3. Create Comments (skip if already exists)
   // ========================================
-  console.log('💬 Creating comments...');
+  console.log('💬 Ensuring comments exist...');
   for (const c of commentsData) {
+    const existing = await prisma.comment.findFirst({ where: { id: c.id } });
+    if (existing) {
+      counts.commentsSkipped++;
+      continue;
+    }
     await prisma.comment.create({
       data: {
         id: c.id,
@@ -2073,14 +2134,20 @@ async function main() {
         createdAt: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000),
       },
     });
+    counts.commentsCreated++;
   }
-  console.log(`✅ Created ${commentsData.length} comments\n`);
+  console.log('✅ Comments: ${counts.commentsCreated} created, ${counts.commentsSkipped} skipped\n');
 
   // ========================================
-  // 4. Create Likes
+  // 4. Create Likes (skip if already exists)
   // ========================================
-  console.log('❤️  Creating likes...');
+  console.log('❤️  Ensuring likes exist...');
   for (const l of likesData) {
+    const existing = await prisma.like.findFirst({ where: { id: l.id } });
+    if (existing) {
+      counts.likesSkipped++;
+      continue;
+    }
     await prisma.like.create({
       data: {
         id: l.id,
@@ -2090,28 +2157,36 @@ async function main() {
         reactionType: l.reactionType,
       },
     });
+    counts.likesCreated++;
   }
-  console.log(`✅ Created ${likesData.length} likes\n`);
+  console.log('✅ Likes: ${counts.likesCreated} created, ${counts.likesSkipped} skipped\n');
 
   // ========================================
-  // 5. Create Follow Relationships
+  // 5. Create Follow Relationships (skip if already exists)
   // ========================================
-  console.log('🔗 Creating follow relationships...');
+  console.log('🔗 Ensuring follow relationships exist...');
   for (const f of followsData) {
+    const existing = await prisma.follow.findFirst({
+      where: { followerId: f.followerId, followingId: f.followingId },
+    });
+    if (existing) {
+      counts.followsSkipped++;
+      continue;
+    }
     await prisma.follow.create({
       data: {
         followerId: f.followerId,
         followingId: f.followingId,
       },
     });
+    counts.followsCreated++;
   }
-  console.log(`✅ Created ${followsData.length} follow relationships\n`);
+  console.log('✅ Follows: ${counts.followsCreated} created, ${counts.followsSkipped} skipped\n');
 
   // ========================================
-  // 6. Create Stories
+  // 6. Create Stories (skip if author already has stories)
   // ========================================
-  console.log('📸 Creating stories...');
-  // One story per user, 24h expiry
+  console.log('📸 Ensuring stories exist...');
   const allUserIds = mockUsers.map(u => u.id);
   const storyImages = [
     '/images/stories/story1.jpg', '/images/stories/story2.jpg', '/images/stories/story3.jpg',
@@ -2126,6 +2201,11 @@ async function main() {
   ];
 
   for (let i = 0; i < allUserIds.length; i++) {
+    const existing = await prisma.story.findFirst({ where: { authorId: allUserIds[i] } });
+    if (existing) {
+      counts.storiesSkipped++;
+      continue;
+    }
     await prisma.story.create({
       data: {
         image: storyImages[i % storyImages.length],
@@ -2134,14 +2214,20 @@ async function main() {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
     });
+    counts.storiesCreated++;
   }
-  console.log(`✅ Created ${allUserIds.length} stories\n`);
+  console.log('✅ Stories: ${counts.storiesCreated} created, ${counts.storiesSkipped} skipped\n');
 
   // ========================================
-  // 7. Create Reels
+  // 7. Create Reels (skip if already exists)
   // ========================================
-  console.log('🎬 Creating reels...');
+  console.log('🎬 Ensuring reels exist...');
   for (const r of reelsData) {
+    const existing = await prisma.reel.findFirst({ where: { id: r.id } });
+    if (existing) {
+      counts.reelsSkipped++;
+      continue;
+    }
     await prisma.reel.create({
       data: {
         id: r.id,
@@ -2157,30 +2243,42 @@ async function main() {
         creatorId: r.creatorId,
       },
     });
+    counts.reelsCreated++;
   }
-  console.log(`✅ Created ${reelsData.length} reels\n`);
+  console.log('✅ Reels: ${counts.reelsCreated} created, ${counts.reelsSkipped} skipped\n');
 
   // ========================================
-  // 8. Create Dance Challenge + Entries
+  // 8. Create Dance Challenge + Entries (skip if already exists)
   // ========================================
-  console.log('💃 Creating dance challenge...');
-  const challenge = await prisma.danceChallenge.create({
-    data: {
-      id: 'dc1',
-      name: 'ORRA DANCE OFF 2027',
-      hashtag: '#OrraDanceOff2027',
-      song: 'ORRA Gives Me Everything - ORRA',
-      description: 'Show us your best moves! Create a dance video using the official ORRA track and tag #OrraDanceOff2027. The top 3 entries with the most likes win exclusive ORRA plaques and tokens!',
-      prize: '100,000 ORRA + Champion Plaque',
-      secondPrize: '50,000 ORRA + Runner-Up Plaque',
-      thirdPrize: '25,000 ORRA + 3rd Place Plaque',
-      bannerImage: '/images/dance-banner.png',
-      timeRemaining: 72 * 60 * 60,
-      active: true,
-    },
-  });
+  console.log('💃 Ensuring dance challenge exists...');
+  const existingChallenge = await prisma.danceChallenge.findFirst({ where: { id: 'dc1' } });
+  if (!existingChallenge) {
+    await prisma.danceChallenge.create({
+      data: {
+        id: 'dc1',
+        name: 'ORRA DANCE OFF 2027',
+        hashtag: '#OrraDanceOff2027',
+        song: 'ORRA Gives Me Everything - ORRA',
+        description: 'Show us your best moves! Create a dance video using the official ORRA track and tag #OrraDanceOff2027. The top 3 entries with the most likes win exclusive ORRA plaques and tokens!',
+        prize: '100,000 ORRA + Champion Plaque',
+        secondPrize: '50,000 ORRA + Runner-Up Plaque',
+        thirdPrize: '25,000 ORRA + 3rd Place Plaque',
+        bannerImage: '/images/dance-banner.png',
+        timeRemaining: 72 * 60 * 60,
+        active: true,
+      },
+    });
+    counts.danceCreated++;
+  } else {
+    counts.danceSkipped++;
+  }
 
   for (const e of danceEntriesData) {
+    const existing = await prisma.danceEntry.findFirst({ where: { id: e.id } });
+    if (existing) {
+      counts.danceSkipped++;
+      continue;
+    }
     await prisma.danceEntry.create({
       data: {
         id: e.id,
@@ -2188,43 +2286,53 @@ async function main() {
         thumbnail: e.thumbnail,
         likesCount: e.likesCount,
         authorId: e.authorId,
-        challengeId: challenge.id,
+        challengeId: 'dc1',
       },
     });
+    counts.danceCreated++;
   }
-  console.log(`✅ Created dance challenge with ${danceEntriesData.length} entries\n`);
+  console.log('✅ Dance: ${counts.danceCreated} created, ${counts.danceSkipped} skipped\n');
 
   // ========================================
-  // 9. Create Hubs + Members + Posts
+  // 9. Create Hubs + Members + Posts (skip if already exists)
   // ========================================
-  console.log('🏠 Creating hubs...');
+  console.log('🏠 Ensuring hubs exist...');
   for (const h of hubsData) {
-    await prisma.hub.create({
-      data: {
-        id: h.id,
-        name: h.name,
-        icon: h.icon,
-        cover: h.cover,
-        description: h.description,
-        membersCount: h.membersCount,
-        onlineCount: h.onlineCount,
-      },
-    });
-
-    // Add members
-    const members = hubMembersData[h.id] ?? [];
-    for (const userId of members) {
-      await prisma.hubMember.create({
+    const existingHub = await prisma.hub.findFirst({ where: { id: h.id } });
+    if (!existingHub) {
+      await prisma.hub.create({
         data: {
-          userId,
-          hubId: h.id,
+          id: h.id,
+          name: h.name,
+          icon: h.icon,
+          cover: h.cover,
+          description: h.description,
+          membersCount: h.membersCount,
+          onlineCount: h.onlineCount,
         },
+      });
+      counts.hubsCreated++;
+    } else {
+      counts.hubsSkipped++;
+    }
+
+    // Add members (skip if already joined)
+    const members = (hubMembersData as any)[h.id] ?? [];
+    for (const userId of members) {
+      const existingMember = await prisma.hubMember.findFirst({
+        where: { userId, hubId: h.id },
+      });
+      if (existingMember) continue;
+      await prisma.hubMember.create({
+        data: { userId, hubId: h.id },
       });
     }
 
-    // Add posts
-    const posts = hubPostsData[h.id] ?? [];
-    for (const hp of posts) {
+    // Add posts (skip if already exists)
+    const hubPosts = (hubPostsData as any)[h.id] ?? [];
+    for (const hp of hubPosts) {
+      const existingPost = await prisma.hubPost.findFirst({ where: { id: hp.id } });
+      if (existingPost) continue;
       await prisma.hubPost.create({
         data: {
           id: hp.id,
@@ -2237,17 +2345,21 @@ async function main() {
       });
     }
   }
-  console.log(`✅ Created ${hubsData.length} hubs with members and posts\n`);
+  console.log('✅ Hubs: ${counts.hubsCreated} created, ${counts.hubsSkipped} skipped\n');
 
   // ========================================
-  // 10. Create Chat Conversations
+  // 10. Create Chat Conversations (skip if already exists)
   // ========================================
-  console.log('💬 Creating chat conversations...');
+  console.log('💬 Ensuring chat conversations exist...');
   for (const chatData of chatHistoryData) {
+    const existingChat = await prisma.chat.findFirst({ where: { id: chatData.chatKey } });
+    if (existingChat) {
+      counts.chatsSkipped++;
+      continue;
+    }
+
     const chat = await prisma.chat.create({
-      data: {
-        id: chatData.chatKey,
-      },
+      data: { id: chatData.chatKey },
     });
 
     // Add members
@@ -2272,14 +2384,20 @@ async function main() {
         },
       });
     }
+    counts.chatsCreated++;
   }
-  console.log(`✅ Created ${chatHistoryData.length} chat conversations\n`);
+  console.log('✅ Chats: ${counts.chatsCreated} created, ${counts.chatsSkipped} skipped\n');
 
   // ========================================
-  // 11. Create Notifications
+  // 11. Create Notifications (skip if already exists)
   // ========================================
-  console.log('🔔 Creating notifications...');
+  console.log('🔔 Ensuring notifications exist...');
   for (const n of notificationsData) {
+    const existing = await prisma.notification.findFirst({ where: { id: n.id } });
+    if (existing) {
+      counts.notifsSkipped++;
+      continue;
+    }
     await prisma.notification.create({
       data: {
         id: n.id,
@@ -2293,26 +2411,49 @@ async function main() {
         createdAt: new Date(Date.now() - Math.random() * 3 * 24 * 60 * 60 * 1000),
       },
     });
+    counts.notifsCreated++;
   }
-  console.log(`✅ Created ${notificationsData.length} notifications\n`);
+  console.log('✅ Notifications: ${counts.notifsCreated} created, ${counts.notifsSkipped} skipped\n');
+
+  // ========================================
+  // 12. ALWAYS ensure founder password is correct
+  // ========================================
+  console.log('🔑 Ensuring founder password is set...');
+  try {
+    await prisma.user.update({
+      where: { id: 'founder' },
+      data: { password: founderPassword },
+    });
+    console.log('✅ Founder password set to Weareone504\n');
+  } catch {
+    try {
+      await prisma.user.update({
+        where: { email: 'nickjoseph8087@gmail.com' },
+        data: { password: founderPassword },
+      });
+      console.log('✅ Founder password set (by email)\n');
+    } catch {
+      console.log('⚠️  No founder account found to update password\n');
+    }
+  }
 
   // ========================================
   // Summary
   // ========================================
-  console.log('🎉 ORRA database seeded successfully!\n');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log(`👤 Users:         ${mockUsers.length}`);
-  console.log(`📝 Posts:         ${feedPosts.length}`);
-  console.log(`💬 Comments:      ${commentsData.length}`);
-  console.log(`❤️  Likes:         ${likesData.length}`);
-  console.log(`🔗 Follows:       ${followsData.length}`);
-  console.log(`📸 Stories:       ${allUserIds.length}`);
-  console.log(`🎬 Reels:         ${reelsData.length}`);
-  console.log(`💃 Dance Entries:  ${danceEntriesData.length}`);
-  console.log(`🏠 Hubs:          ${hubsData.length}`);
-  console.log(`💬 Chats:         ${chatHistoryData.length}`);
-  console.log(`🔔 Notifications: ${notificationsData.length}`);
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+  console.log('🎉 ORRA database seeded (safe mode)!\n');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('👤 Users:         ${counts.usersCreated} created / ${counts.usersSkipped} skipped');
+  console.log('📝 Posts:         ${counts.postsCreated} created / ${counts.postsSkipped} skipped');
+  console.log('💬 Comments:      ${counts.commentsCreated} created / ${counts.commentsSkipped} skipped');
+  console.log('❤️  Likes:         ${counts.likesCreated} created / ${counts.likesSkipped} skipped');
+  console.log('🔗 Follows:       ${counts.followsCreated} created / ${counts.followsSkipped} skipped');
+  console.log('📸 Stories:       ${counts.storiesCreated} created / ${counts.storiesSkipped} skipped');
+  console.log('🎬 Reels:         ${counts.reelsCreated} created / ${counts.reelsSkipped} skipped');
+  console.log('💃 Dance:         ${counts.danceCreated} created / ${counts.danceSkipped} skipped');
+  console.log('🏠 Hubs:          ${counts.hubsCreated} created / ${counts.hubsSkipped} skipped');
+  console.log('💬 Chats:         ${counts.chatsCreated} created / ${counts.chatsSkipped} skipped');
+  console.log('🔔 Notifications: ${counts.notifsCreated} created / ${counts.notifsSkipped} skipped');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 }
 
 main()
