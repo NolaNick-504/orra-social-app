@@ -30,6 +30,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // NEVER intercept the clear-cache.html page — it needs to work
+  // even when the SW is in a bad state
+  if (url.pathname === '/clear-cache.html') {
+    return;
+  }
+
   // For navigation requests (HTML pages), always fetch fresh from network.
   if (event.request.mode === 'navigate') {
     event.respondWith(
