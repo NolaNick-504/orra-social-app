@@ -2,8 +2,8 @@
 
 import { useAuraStore } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
-import { X, Camera, Upload, Trash2, Image as ImageIcon, AtSign, RefreshCw, Music, Search, ExternalLink } from 'lucide-react';
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { X, Camera, Upload, Trash2, Image as ImageIcon, AtSign, RefreshCw, Music, Search, ExternalLink, Play, Pause, Volume2 } from 'lucide-react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
@@ -45,6 +45,69 @@ export function EditProfileModal() {
   const [selectedGenre, setSelectedGenre] = useState('All');
   const [showSongPicker, setShowSongPicker] = useState(false);
 
+  // Song preview state
+  const [previewingSongId, setPreviewingSongId] = useState<string | null>(null);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Stop preview when modal closes
+  useEffect(() => {
+    if (!showEditProfile && previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+      setPreviewingSongId(null);
+      setIsPreviewPlaying(false);
+    }
+  }, [showEditProfile]);
+
+  const togglePreview = useCallback((song: ProfileSong) => {
+    // If same song is playing, pause it
+    if (previewingSongId === song.id && isPreviewPlaying) {
+      previewAudioRef.current?.pause();
+      setIsPreviewPlaying(false);
+      return;
+    }
+
+    // Stop any currently playing preview
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+
+    // Start playing new preview
+    const audio = new Audio(song.url);
+    audio.volume = 0.5;
+    audio.preload = 'auto';
+
+    audio.addEventListener('play', () => {
+      setIsPreviewPlaying(true);
+    });
+
+    audio.addEventListener('pause', () => {
+      setIsPreviewPlaying(false);
+      setPreviewingSongId(null);
+    });
+
+    audio.addEventListener('ended', () => {
+      setIsPreviewPlaying(false);
+      setPreviewingSongId(null);
+    });
+
+    audio.addEventListener('error', () => {
+      setIsPreviewPlaying(false);
+      setPreviewingSongId(null);
+    });
+
+    audio.play().catch(() => {
+      setIsPreviewPlaying(false);
+      setPreviewingSongId(null);
+    });
+
+    previewAudioRef.current = audio;
+    setPreviewingSongId(song.id);
+    setIsPreviewPlaying(true);
+  }, [previewingSongId, isPreviewPlaying]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,6 +140,13 @@ export function EditProfileModal() {
       setSongSearch('');
       setSelectedGenre('All');
       setShowSongPicker(false);
+      // Stop any playing preview
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        previewAudioRef.current = null;
+      }
+      setPreviewingSongId(null);
+      setIsPreviewPlaying(false);
     }
   }
 
@@ -571,38 +641,79 @@ export function EditProfileModal() {
                   </div>
 
                   {/* Song list */}
-                  <div className="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                  <div className="max-h-52 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
                     {filterSongsByGenre(selectedGenre)
                       .filter(s => !songSearch || s.title.toLowerCase().includes(songSearch.toLowerCase()) || s.artist.toLowerCase().includes(songSearch.toLowerCase()))
-                      .map((song) => (
-                        <button
-                          key={song.id}
-                          type="button"
-                          onClick={() => {
-                            setProfileSongUrl(song.url);
-                            setProfileSongTitle(song.title);
-                            setProfileSongArtist(song.artist);
-                            setShowSongPicker(false);
-                            toast.success(`Added "${song.title}" to your profile!`);
-                          }}
-                          className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-white/5 transition-all text-left group"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 flex items-center justify-center flex-shrink-0 border border-violet-500/10 group-hover:border-violet-500/30 transition-all overflow-hidden">
-                            {song.coverArt ? (
-                              <img src={song.coverArt} alt={song.title} className="w-full h-full object-cover" />
-                            ) : (
-                              <Music className="w-3.5 h-3.5 text-violet-400" />
-                            )}
+                      .map((song) => {
+                        const isThisPreview = previewingSongId === song.id && isPreviewPlaying;
+                        return (
+                          <div
+                            key={song.id}
+                            className={`flex items-center gap-2.5 p-2 rounded-xl transition-all group ${
+                              isThisPreview
+                                ? 'bg-violet-600/15 border border-violet-500/30'
+                                : 'hover:bg-white/5 border border-transparent'
+                            }`}
+                          >
+                            {/* Preview Play / Pause Button */}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); togglePreview(song); }}
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border transition-all ${
+                                isThisPreview
+                                  ? 'bg-gradient-to-br from-violet-600 to-fuchsia-600 border-violet-400/40 shadow-lg shadow-violet-500/30'
+                                  : 'bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 border-violet-500/10 group-hover:border-violet-500/30'
+                              } overflow-hidden`}
+                              title={isThisPreview ? 'Pause preview' : 'Preview song'}
+                            >
+                              {isThisPreview ? (
+                                <div className="relative flex items-center justify-center">
+                                  <Pause className="w-3.5 h-3.5 text-white" />
+                                  {/* Animated sound wave indicator */}
+                                  <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 flex items-end gap-[1px]">
+                                    <div className="w-[2px] bg-white/80 rounded-full animate-[sound1_0.4s_ease-in-out_infinite_alternate]" style={{ height: '3px' }} />
+                                    <div className="w-[2px] bg-white/80 rounded-full animate-[sound2_0.5s_ease-in-out_infinite_alternate]" style={{ height: '5px' }} />
+                                    <div className="w-[2px] bg-white/80 rounded-full animate-[sound1_0.3s_ease-in-out_infinite_alternate]" style={{ height: '2px' }} />
+                                  </div>
+                                </div>
+                              ) : song.coverArt ? (
+                                <img src={song.coverArt} alt={song.title} className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+                              ) : (
+                                <Play className="w-3.5 h-3.5 text-violet-400 ml-0.5" />
+                              )}
+                            </button>
+
+                            {/* Song Info - clickable to select */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                // Stop preview when selecting
+                                if (previewAudioRef.current) {
+                                  previewAudioRef.current.pause();
+                                  previewAudioRef.current = null;
+                                  setPreviewingSongId(null);
+                                  setIsPreviewPlaying(false);
+                                }
+                                setProfileSongUrl(song.url);
+                                setProfileSongTitle(song.title);
+                                setProfileSongArtist(song.artist);
+                                setShowSongPicker(false);
+                                toast.success(`Added "${song.title}" to your profile!`);
+                              }}
+                              className="flex-1 min-w-0 text-left"
+                            >
+                              <p className="text-xs font-semibold text-white truncate">{song.title}</p>
+                              <p className="text-[10px] text-slate-500 truncate">{song.artist} · {song.genre} · {song.duration}</p>
+                            </button>
+
+                            {/* Mood tag */}
+                            <span className="text-[9px] text-slate-600 flex items-center gap-0.5 flex-shrink-0">
+                              {isThisPreview ? <Volume2 className="w-2.5 h-2.5 text-violet-400" /> : null}
+                              {song.mood}
+                            </span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-white truncate">{song.title}</p>
-                            <p className="text-[10px] text-slate-500 truncate">{song.artist} · {song.genre} · {song.duration}</p>
-                          </div>
-                          <span className="text-[9px] text-slate-600 flex items-center gap-0.5">
-                            {song.mood}
-                          </span>
-                        </button>
-                      ))
+                        );
+                      })
                     }
                   </div>
                 </div>
