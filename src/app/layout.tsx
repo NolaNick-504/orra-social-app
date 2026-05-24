@@ -3,10 +3,6 @@ import { Geist, Geist_Mono, Dancing_Script, Great_Vibes } from "next/font/google
 import { AuthProvider } from "@/components/providers/session-provider";
 import "./globals.css";
 
-// Use Next.js default static generation — no force-dynamic.
-// force-dynamic caused SSR on every request, making TTFB slow.
-// Next.js will generate HTML at build time and revalidate as needed.
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -54,37 +50,45 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
-        {/* Minimal inline script: registers SW only.
-            NO force-reload, NO hydration timeout, NO cache-clearing reloads.
-            Those caused infinite reload loops and lost user data.
-            When a new deploy happens, the new HTML has new chunk filenames,
-            and the browser naturally loads them on the next navigation. */}
+        {/* NO SERVICE WORKER REGISTRATION.
+            The old SW was caching stale chunks and causing users to get stuck
+            on "Loading ORRA...". SW registration is completely removed.
+            If we add SW back later, it MUST be a network-first strategy
+            with aggressive timeout fallbacks. */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
-            var BUILD = 'orra_v2_mpk35fko';
-            // 1. Kill all service workers immediately
+            // 1. Kill ALL service workers immediately on every page load
+            // This runs BEFORE React hydrates, so it will clean up any old SW
             if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.getRegistrations().then(function(r) {
-                r.forEach(function(s) { s.unregister(); });
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                for (var i = 0; i < regs.length; i++) {
+                  regs[i].unregister();
+                }
               }).catch(function() {});
+              // Do NOT register any new SW
             }
-            // 2. Clear all caches immediately
+            // 2. Clear ALL cache storage
             if ('caches' in window) {
-              caches.keys().then(function(n) {
-                n.forEach(function(k) { caches.delete(k); });
+              caches.keys().then(function(names) {
+                for (var i = 0; i < names.length; i++) {
+                  caches.delete(names[i]);
+                }
               }).catch(function() {});
             }
-            // 3. If we're stuck on "Loading ORRA" for more than 5 seconds, force reload with cache bust
-            // This handles the case where the browser loaded stale JS that can't hydrate
-            // Guard: only reload once (check URL for _v param to avoid infinite loops)
-            setTimeout(function() {
-              var el = document.querySelector('p');
-              if (el && el.textContent && el.textContent.indexOf('Loading ORRA') !== -1
-                  && window.location.href.indexOf('_v=') === -1) {
-                var url = window.location.href.split('?')[0] + '?_v=' + BUILD + '&_t=' + Date.now();
-                window.location.replace(url);
+            // 3. Clear stale aura-storage if it has broken data
+            try {
+              var s = localStorage.getItem('aura-storage');
+              if (s) {
+                var p = JSON.parse(s);
+                // If currentUserId is user-me (deleted account), clear it
+                if (p && p.state && p.state.currentUserId === 'user-me') {
+                  localStorage.removeItem('aura-storage');
+                }
               }
-            }, 5000);
+            } catch(e) {
+              // Corrupted localStorage — remove it
+              try { localStorage.removeItem('aura-storage'); } catch(x) {}
+            }
           })();
         `}} />
       </head>

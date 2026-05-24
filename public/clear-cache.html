@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <title>ORRA - Clearing Cache</title>
   <style>
-    body { background: #050505; color: #e2e8f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: system-ui, sans-serif; }
+    body { background: #050505; color: #e2e8f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: system-ui; }
     .container { text-align: center; padding: 20px; }
     .spinner { width: 40px; height: 40px; border: 3px solid rgba(139,92,246,0.2); border-top: 3px solid #8b5cf6; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
     @keyframes spin { to { transform: rotate(360deg); } }
     p { font-size: 14px; margin: 8px 0; }
     .small { font-size: 11px; color: #94a3b8; }
     .btn { display: inline-block; margin-top: 16px; padding: 10px 24px; background: linear-gradient(to right, #7c3aed, #d946ef); color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
-    .status { margin-top: 12px; font-size: 11px; color: #64748b; }
+    #status { margin-top: 12px; font-size: 12px; color: #64748b; }
   </style>
 </head>
 <body>
@@ -19,47 +19,29 @@
     <div class="spinner"></div>
     <p>Clearing ORRA cache...</p>
     <p class="small">This will only take a moment</p>
-    <div id="status" class="status"></div>
+    <div id="status"></div>
     <a href="/" class="btn" id="reloadBtn" style="display:none">Open ORRA</a>
   </div>
   <script>
     (async function() {
-      var statusEl = document.getElementById('status');
-      var log = function(msg) { statusEl.textContent = msg; console.log(msg); };
-
+      var s = document.getElementById('status');
       try {
-        log('Step 1: Unregistering service workers...');
         if ('serviceWorker' in navigator) {
           var regs = await navigator.serviceWorker.getRegistrations();
           for (var i = 0; i < regs.length; i++) {
             await regs[i].unregister();
-            log('Unregistered SW: ' + regs[i].scope);
+            s.textContent = 'Removed service worker ' + (i+1) + ' of ' + regs.length;
           }
         }
-      } catch(e) { console.warn('SW cleanup error:', e); }
-
+      } catch(e) {}
       try {
-        log('Step 2: Clearing cache storage...');
         if ('caches' in window) {
           var names = await caches.keys();
           for (var i = 0; i < names.length; i++) {
             await caches.delete(names[i]);
-            log('Deleted cache: ' + names[i]);
           }
         }
-      } catch(e) { console.warn('Cache cleanup error:', e); }
-
-      try {
-        log('Step 3: Clearing localStorage...');
-        localStorage.removeItem('aura-storage');
       } catch(e) {}
-
-      try {
-        log('Step 4: Clearing sessionStorage...');
-        sessionStorage.clear();
-      } catch(e) {}
-
-      // Nuclear option: clear ALL localStorage (only aura-related keys)
       try {
         var keysToRemove = [];
         for (var i = 0; i < localStorage.length; i++) {
@@ -70,13 +52,11 @@
         }
         keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
       } catch(e) {}
-
-      log('Cache cleared! Redirecting...');
-
-      // Auto-redirect after a short delay
+      try { sessionStorage.clear(); } catch(e) {}
+      s.textContent = 'All clear! Redirecting...';
       setTimeout(function() {
         window.location.replace('/?_fresh=' + Date.now());
-      }, 800);
+      }, 600);
     })();
   </script>
 </body>

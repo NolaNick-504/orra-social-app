@@ -376,8 +376,8 @@ export default function Home() {
   // This prevents the UI from flickering to a loading screen during refetches.
   const initialCheckDone = status !== 'loading' || !!session || sessionTimedOut;
 
-  // Safety timeout: if session check takes longer than 800ms, proceed anyway.
-  // The app should NEVER show a blank screen for more than 800ms.
+  // Safety timeout: if session check takes longer than 2 seconds, proceed anyway.
+  // The app should NEVER show a blank screen for more than 2 seconds.
   // If we have a session cookie, treat as authenticated. If not, show auth page.
   useEffect(() => {
     if (status === 'loading' && !sessionTimedOut) {
@@ -386,7 +386,7 @@ export default function Home() {
           console.warn('ORRA: Session check timed out — proceeding');
           setSessionTimedOut(true);
         }
-      }, 800);
+      }, 2000);
       return () => clearTimeout(timeout);
     }
   }, [status, sessionTimedOut]);
