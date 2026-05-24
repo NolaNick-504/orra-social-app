@@ -89,7 +89,14 @@ def kill_old_server():
     kill_port_3000()
 
 def check_and_repair_db():
-    """Check SQLite integrity and repair if needed. Also checkpoint WAL."""
+    """Check SQLite integrity and repair if needed. Also checkpoint WAL.
+    
+    IMPORTANT: We NEVER delete the database file. The user's data is sacred.
+    Recovery strategy (in order):
+    1. Try SQLite .recover to salvage data from corrupted DB
+    2. Restore from persistent backup at /home/sync/
+    3. If nothing works, leave the DB in place — prisma/seed will handle it
+    """
     log('Checking database integrity and checkpointing WAL...')
     try:
         result = subprocess.run(
@@ -99,6 +106,7 @@ const fs = require('fs');
 const DB_PATH = '{DB_FILE}';
 const BACKUP_PATH = '{PERSISTENT_BACKUP}';
 
+// NEVER delete the database file. Always try to recover or restore.
 try {{
   const db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
@@ -119,39 +127,76 @@ try {{
     console.log('DB_INTEGRITY_OK');
   }} else {{
     console.error('DB_CORRUPTED');
-    db.close();
+    try {{ db.close(); }} catch(e) {{}}
     
-    if (fs.existsSync(BACKUP_PATH)) {{
-      console.log('RESTORING_FROM_BACKUP');
-      fs.copyFileSync(BACKUP_PATH, DB_PATH);
-    }} else {{
-      console.log('NO_BACKUP_REMOVING_CORRUPT');
-      fs.unlinkSync(DB_PATH);
+    let recovered = false;
+    
+    // Strategy 1: Try SQLite .recover to salvage data
+    console.log('Attempting SQLite .recover...');
+    const {{ execSync }} = require('child_process');
+    const dumpPath = DB_PATH + '.recover.db';
+    try {{
+      execSync('sqlite3 "' + DB_PATH + '" .recover | sqlite3 "' + dumpPath + '"', {{stdio: 'pipe'}});
+      const recoveredStats = fs.statSync(dumpPath);
+      if (recoveredStats.size > 0) {{
+        // Keep corrupted file as backup
+        try {{ fs.copyFileSync(DB_PATH, DB_PATH + '.corrupted.bak'); }} catch(e2) {{}}
+        fs.renameSync(dumpPath, DB_PATH);
+        console.log('DB_RECOVERED_VIA_DUMP');
+        recovered = true;
+      }} else {{
+        try {{ fs.unlinkSync(dumpPath); }} catch(e2) {{}}
+      }}
+    }} catch(e) {{
+      console.warn('SQLite .recover failed:', e.message);
+      try {{ fs.unlinkSync(dumpPath); }} catch(e2) {{}}
+    }}
+    
+    // Strategy 2: Restore from persistent backup
+    if (!recovered && fs.existsSync(BACKUP_PATH)) {{
+      const backupStats = fs.statSync(BACKUP_PATH);
+      if (backupStats.size > 0) {{
+        console.log('RESTORING_FROM_BACKUP');
+        try {{ fs.copyFileSync(DB_PATH, DB_PATH + '.corrupted.bak'); }} catch(e2) {{}}
+        fs.copyFileSync(BACKUP_PATH, DB_PATH);
+        recovered = true;
+      }}
+    }}
+    
+    // Strategy 3: If nothing worked, keep the corrupted DB in place
+    if (!recovered) {{
+      console.log('DB_CORRUPTED_NO_RECOVERY');
+      // Do NOT delete. Leave it for prisma/seed to handle.
     }}
   }}
   
   try {{ db.close(); }} catch(e) {{}}
 }} catch(e) {{
   console.error('DB_OPEN_ERROR:', e.message);
-  const fs = require('fs');
+  // Try to restore from backup — but NEVER delete the DB file
   if (fs.existsSync(BACKUP_PATH)) {{
-    console.log('RESTORING_FROM_BACKUP');
-    fs.copyFileSync(BACKUP_PATH, DB_PATH);
-  }} else if (fs.existsSync(DB_PATH)) {{
-    fs.unlinkSync(DB_PATH);
+    const backupStats = fs.statSync(BACKUP_PATH);
+    if (backupStats.size > 0) {{
+      console.log('RESTORING_FROM_BACKUP');
+      try {{ fs.copyFileSync(DB_PATH, DB_PATH + '.corrupted.bak'); }} catch(e2) {{}}
+      fs.copyFileSync(BACKUP_PATH, DB_PATH);
+    }}
+  }} else {{
+    console.log('DB_OPEN_ERROR_NO_BACKUP');
+    // Do NOT delete the DB file. Leave it for prisma/seed to handle.
   }}
 }}
 '''],
-            capture_output=True, text=True, timeout=15,
+            capture_output=True, text=True, timeout=30,
             cwd=PROJECT_DIR
         )
         output = result.stdout + result.stderr
         log(f'DB check output: {output.strip()}')
         
-        if 'DB_CORRUPTED' in output or 'RESTORING_FROM_BACKUP' in output:
-            log('Database was corrupted, restored from backup')
-            # Re-push schema after restore
-            subprocess.run(['npx', 'prisma', 'db', 'push'], 
+        if 'DB_CORRUPTED' in output or 'RESTORING_FROM_BACKUP' in output or 'DB_RECOVERED_VIA_DUMP' in output:
+            log('Database was corrupted — recovery attempted')
+            # Re-push schema after restore (safe — only adds columns)
+            subprocess.run(['npx', 'prisma', 'db', 'push', '--skip-generate'], 
                          cwd=PROJECT_DIR, capture_output=True, timeout=30)
         elif 'DB_INTEGRITY_OK' in output:
             log('Database integrity OK')

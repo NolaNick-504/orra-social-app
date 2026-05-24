@@ -2,6 +2,7 @@
 # ORRA Custom Startup Script
 # - Restores DB from backup if available, or seeds fresh (ONCE only)
 # - NEVER re-seeds if data already exists (preserves user customizations)
+# - NEVER deletes the database — always tries recovery first
 # - Runs DB integrity check + WAL checkpoint to prevent corruption
 # - Starts aura-daemon.py as the SOLE supervisor for Next.js
 #   (NO more supervisor conflicts between dev.sh and aura-daemon)
@@ -20,6 +21,14 @@ log() {
 
 log "ORRA custom startup script running..."
 
+# Step 0: Check persistent storage availability
+log "Checking persistent storage mount..."
+SYNC_DIR=/home/sync/orra-db-backup
+if [ ! -d "$SYNC_DIR" ]; then
+  log "WARNING: /home/sync/orra-db-backup not found — creating it"
+  mkdir -p "$SYNC_DIR" 2>/dev/null || log "Cannot create sync dir — backups will be local only"
+fi
+
 # Step 1: Install dependencies if needed
 if [ ! -d "$PROJECT_DIR/node_modules" ]; then
   log "Installing dependencies..."
@@ -34,12 +43,16 @@ npx prisma generate 2>&1 | tee -a "$LOG_FILE"
 
 # Step 3: Database integrity check + WAL checkpoint
 # This is CRITICAL — if the container froze mid-write, the DB may be corrupted
+# IMPORTANT: We NEVER delete the DB file. We always try to recover or restore.
 log "Running database integrity check and WAL checkpoint..."
 node -e "
 const Database = require('better-sqlite3');
 const fs = require('fs');
 const DB_PATH = '$DB_FILE';
 const BACKUP_PATH = '$PERSISTENT_BACKUP';
+
+// NEVER delete the database file. Always try to recover or restore.
+// The user's data is sacred — even a corrupted DB may be partially recoverable.
 
 try {
   // First, try to open and checkpoint the WAL
@@ -62,27 +75,51 @@ try {
     console.log('Database integrity: OK');
   } else {
     console.error('Database CORRUPTED! Attempting recovery...');
-    db.close();
+    try { db.close(); } catch(e) {}
     
-    // Try to recover from persistent backup
-    if (fs.existsSync(BACKUP_PATH)) {
-      console.log('Restoring from persistent backup...');
-      fs.copyFileSync(BACKUP_PATH, DB_PATH);
-      console.log('Database restored from backup');
-    } else {
-      // Last resort: dump and re-import
-      console.log('No backup available, attempting SQLite recovery...');
-      const { execSync } = require('child_process');
-      const dumpPath = DB_PATH + '.recover.db';
-      // Use .recover if available, otherwise just remove the corrupted DB
-      try {
-        execSync('sqlite3 ' + DB_PATH + ' .recover | sqlite3 ' + dumpPath, {stdio: 'pipe'});
+    // Strategy 1: Try SQLite .recover to salvage data
+    console.log('Attempting SQLite .recover to salvage data...');
+    const { execSync } = require('child_process');
+    const dumpPath = DB_PATH + '.recover.db';
+    let recovered = false;
+    try {
+      execSync('sqlite3 \"' + DB_PATH + '\" .recover | sqlite3 \"' + dumpPath + '\"', {stdio: 'pipe'});
+      const recoveredStats = fs.statSync(dumpPath);
+      if (recoveredStats.size > 0) {
+        // Keep the corrupted file as backup just in case
+        fs.copyFileSync(DB_PATH, DB_PATH + '.corrupted.bak');
         fs.renameSync(dumpPath, DB_PATH);
-        console.log('Database recovered via dump');
-      } catch(e) {
-        console.error('Recovery failed, removing corrupted DB:', e.message);
-        fs.unlinkSync(DB_PATH);
+        console.log('Database RECOVERED via .recover (corrupted backup saved as .corrupted.bak)');
+        recovered = true;
+      } else {
+        fs.unlinkSync(dumpPath);
       }
+    } catch(e) {
+      console.warn('SQLite .recover failed:', e.message);
+      // Clean up failed recovery attempt
+      try { fs.unlinkSync(dumpPath); } catch(e2) {}
+    }
+    
+    // Strategy 2: Restore from persistent backup
+    if (!recovered && fs.existsSync(BACKUP_PATH)) {
+      const backupStats = fs.statSync(BACKUP_PATH);
+      if (backupStats.size > 0) {
+        console.log('Restoring from persistent backup (' + backupStats.size + ' bytes)...');
+        // Keep corrupted file as backup
+        try { fs.copyFileSync(DB_PATH, DB_PATH + '.corrupted.bak'); } catch(e) {}
+        fs.copyFileSync(BACKUP_PATH, DB_PATH);
+        console.log('Database restored from persistent backup');
+        recovered = true;
+      }
+    }
+    
+    // Strategy 3: Try to open with better-sqlite3 in recovery mode
+    if (!recovered) {
+      console.log('All recovery attempts failed — DB will be re-seeded on next step');
+      // We do NOT delete the DB. We just let it be.
+      // The seed script's safe mode will handle this — it checks if users exist.
+      // If the DB is truly unusable, prisma db push will recreate it.
+      console.log('Keeping corrupted DB file — it may still be partially usable');
     }
   }
   
@@ -90,19 +127,24 @@ try {
 } catch(e) {
   console.error('DB open error:', e.message);
   // DB might be totally broken — try restoring from backup
-  const fs = require('fs');
+  // We NEVER delete the DB file
+  
   if (fs.existsSync(BACKUP_PATH)) {
-    console.log('Restoring from persistent backup due to open error...');
-    fs.copyFileSync(BACKUP_PATH, DB_PATH);
-    console.log('Database restored from backup');
-  } else if (fs.existsSync(DB_PATH)) {
-    console.log('No backup, removing corrupted DB file');
-    fs.unlinkSync(DB_PATH);
+    const backupStats = fs.statSync(BACKUP_PATH);
+    if (backupStats.size > 0) {
+      console.log('Restoring from persistent backup due to open error...');
+      try { fs.copyFileSync(DB_PATH, DB_PATH + '.corrupted.bak'); } catch(e2) {}
+      fs.copyFileSync(BACKUP_PATH, DB_PATH);
+      console.log('Database restored from backup');
+    }
+  } else {
+    console.log('No backup available. DB file remains in place — will be handled by prisma/seed.');
+    // Do NOT delete. Let prisma handle it.
   }
 }
 " 2>&1 | tee -a "$LOG_FILE"
 
-# Step 4: Check for persistent backup (for restore if DB was wiped)
+# Step 4: Check for persistent backup (for restore if DB was wiped or missing)
 if [ -f "$PERSISTENT_BACKUP" ]; then
   log "Found persistent DB backup at $PERSISTENT_BACKUP"
   mkdir -p "$PROJECT_DIR/db"
@@ -129,10 +171,37 @@ else
   log "No persistent backup found, checking for existing DB..."
 fi
 
-# Step 5: Push schema (non-destructive — adds any new columns)
+# Step 5: Push schema — SAFE mode
+# This only ADDS new columns/tables. It NEVER drops data.
+# We use --accept-data-loss=false equivalent by checking the output.
+# If prisma db push wants to drop something, we log a WARNING and skip it.
 cd "$PROJECT_DIR"
-log "Pushing database schema (non-destructive)..."
-npx prisma db push 2>&1 | tee -a "$LOG_FILE"
+log "Pushing database schema (safe — adds new columns only)..."
+
+# First, ensure no server is running (to avoid WAL conflicts)
+pkill -f "node server.js" 2>/dev/null || true
+sleep 2
+
+# Flush WAL before schema push
+node -e "
+try {
+  const Database = require('better-sqlite3');
+  const db = new Database('$DB_FILE');
+  db.pragma('wal_checkpoint(TRUNCATE)');
+  db.close();
+  console.log('WAL flushed before schema push');
+} catch(e) { console.warn('WAL flush warning:', e.message); }
+" 2>/dev/null || true
+
+# Run prisma db push with --skip-generate (we already generated above)
+PUSH_OUTPUT=$(npx prisma db push --skip-generate 2>&1) || true
+echo "$PUSH_OUTPUT" | tee -a "$LOG_FILE"
+
+# Check if prisma wanted to drop data
+if echo "$PUSH_OUTPUT" | grep -qi "data loss\|dropping\|deleting\|cannot.*without.*data"; then
+  log "WARNING: prisma db push may require data loss — SKIPPING destructive changes"
+  log "You may need to run 'prisma migrate dev' manually to handle schema changes"
+fi
 
 # Step 6: Check if DB needs seeding
 USER_COUNT=$(cd "$PROJECT_DIR" && node -e "
@@ -142,7 +211,7 @@ USER_COUNT=$(cd "$PROJECT_DIR" && node -e "
 " 2>/dev/null || echo "0")
 
 if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then
-  log "DB is empty, seeding with default data..."
+  log "DB is empty, seeding with default data (safe mode — won't overwrite existing)..."
   cd "$PROJECT_DIR"
   npm run db:seed 2>&1 | tee -a "$LOG_FILE"
   

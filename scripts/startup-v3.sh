@@ -95,20 +95,52 @@ else
   echo "  Some EXIF fixes were restored from backup"
 fi
 
-# 4. Verify database exists
+# 4. Verify database exists — restore from persistent storage first
+# IMPORTANT: We NEVER delete the database. We only restore if it's missing.
 echo ""
 echo "[5/7] Checking database..."
-if [ ! -f "$PROJECT_DIR/db/custom.db" ]; then
-  echo "  Database missing! Restoring from cloud..."
+PERSISTENT_BACKUP="/home/sync/orra-db-backup/latest.db"
+DB_FILE="$PROJECT_DIR/db/custom.db"
+
+if [ ! -f "$DB_FILE" ]; then
+  echo "  Database missing! Attempting restore..."
   mkdir -p "$PROJECT_DIR/db"
-  if [ -f "$OSS_DIR/orra-custom.db" ]; then
-    cp "$OSS_DIR/orra-custom.db" "$PROJECT_DIR/db/custom.db"
+  
+  # Strategy 1: Restore from persistent /home/sync/ backup (survives rebuilds)
+  if [ -f "$PERSISTENT_BACKUP" ]; then
+    echo "  Restoring from persistent backup..."
+    cp "$PERSISTENT_BACKUP" "$DB_FILE"
+    echo "  Database restored from persistent storage"
+  # Strategy 2: Restore from OSS backup
+  elif [ -f "$OSS_DIR/orra-custom.db" ]; then
+    echo "  Restoring from OSS backup..."
+    cp "$OSS_DIR/orra-custom.db" "$DB_FILE"
     echo "  Database restored from OSS"
   else
-    echo "  WARNING: No database backup found!"
+    echo "  WARNING: No database backup found! Will be seeded on first run."
   fi
 else
-  echo "  Database present ($(du -h "$PROJECT_DIR/db/custom.db" | cut -f1))"
+  # DB exists — check if it has users before deciding anything
+  USER_COUNT=$(cd "$PROJECT_DIR" && node -e "
+    const { PrismaClient } = require('@prisma/client');
+    const db = new PrismaClient();
+    db.user.count().then(c => { console.log(c); db.\$disconnect(); }).catch(() => { console.log('0'); db.\$disconnect(); });
+  " 2>/dev/null || echo "0")
+  
+  if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then
+    echo "  Database exists but has 0 users — restoring from backup..."
+    if [ -f "$PERSISTENT_BACKUP" ]; then
+      cp "$PERSISTENT_BACKUP" "$DB_FILE"
+      echo "  Database restored from persistent storage"
+    elif [ -f "$OSS_DIR/orra-custom.db" ]; then
+      cp "$OSS_DIR/orra-custom.db" "$DB_FILE"
+      echo "  Database restored from OSS"
+    else
+      echo "  No backup available — will seed fresh"
+    fi
+  else
+    echo "  Database present with $USER_COUNT users ($(du -h "$DB_FILE" | cut -f1))"
+  fi
 fi
 
 # 5. Install dependencies if needed
