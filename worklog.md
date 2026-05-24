@@ -32,3 +32,24 @@ Stage Summary:
 - Fixed by: Seeding database, bumping SW version to v99, adding hydration safety net, fixing stale chunk detection, adding NEXTAUTH_SECRET
 - All 8 users created: nickjoseph8087@gmail.com (Weareone504), zara@orra.app, jay@orra.app, maya@orra.app, dre@orra.app, jessica@orra.app, marcus@orra.app, lunasky@orra.app (all demo: password123)
 - App verified working end-to-end in headless browser
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Remove aggressive auto-reload/restart logic causing user frustration
+
+Work Log:
+- User reported: app keeps asking to restart, all last night's data gone, profile is wrong
+- Removed the 6-second hydration safety net that was force-reloading the browser
+- Removed the stale chunk detection that was auto-reloading on JS errors
+- Removed the ErrorBoundary auto-reload on chunk errors
+- Simplified layout.tsx inline script to ONLY register the service worker (no force-reloads)
+- Changed ErrorBoundary screen from "Reconnecting..." auto-progress to manual "Refresh ORRA" button
+- Removed window.__ORRA_HYDRATED flag from page.tsx (no longer needed)
+- App verified working in headless browser with zero JS errors
+
+Stage Summary:
+- NO more automatic page reloads, cache clears, or force-restarts
+- If there's an error, user sees a manual "Refresh ORRA" button — they control when to refresh
+- The app should never auto-reload on the user again
+- Database data from last night is unfortunately gone (no backups existed) — re-seeded with Nick's account and demo users

@@ -109,15 +109,6 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
       msg.includes('failed to fetch dynamically imported module')
     );
 
-    // Only auto-reload for actual chunk loading errors, and only once
-    if (isChunkError && newCount <= 1) {
-      console.warn('ORRA: Chunk error in ErrorBoundary, reloading once');
-      setTimeout(() => {
-        window.location.replace('/?_cb=' + Date.now());
-      }, 2000);
-      return;
-    }
-
     // Only clear localStorage if we get repeated crashes (10+ errors)
     // This is a last resort — clearing localStorage wipes the user's session
     if (newCount >= 10) {
@@ -126,8 +117,9 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
         console.warn('Auto-cleared aura-storage after 10+ repeated errors');
       } catch {}
     }
-    // After 3+ errors, show the reconnect screen but DON'T auto-reload
+    // Show the reconnect screen but DON'T auto-reload
     // The user can click the button to manually reload
+    // NO automatic reloads — they cause infinite loops and data loss
   }
 
   componentWillUnmount() {
@@ -136,38 +128,23 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 
   render() {
     if (this.state.hasError) {
-      // Show a brief "Reconnecting..." message that auto-dismisses
-      // instead of a permanent error page requiring manual reload
       return (
         <div className="min-h-screen bg-[#050505] flex items-center justify-center p-4">
           <div className="text-center max-w-md">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-4 animate-pulse">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-4">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">Reconnecting...</h2>
-            <p className="text-slate-400 text-sm mb-3">ORRA is refreshing. Hang tight!</p>
-            <div className="w-32 h-1 bg-white/10 rounded-full mx-auto overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full reconnect-progress" />
-            </div>
+            <h2 className="text-xl font-bold text-white mb-2">Something went wrong</h2>
+            <p className="text-slate-400 text-sm mb-4">ORRA hit a snag. Tap below to refresh.</p>
             <button
               onClick={() => {
-                // Force a hard reload with cache bust
-                window.location.replace('/?_nocache=' + Date.now());
+                window.location.href = '/';
               }}
-              className="mt-4 text-slate-500 text-xs hover:text-white transition-colors"
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-violet-500/30 transition-all"
             >
-              Click here if page doesn&apos;t refresh
+              Refresh ORRA
             </button>
           </div>
-          <style jsx>{`
-            .reconnect-progress {
-              animation: fillBar 3s linear forwards;
-            }
-            @keyframes fillBar {
-              from { width: 0%; }
-              to { width: 100%; }
-            }
-          `}</style>
         </div>
       );
     }
@@ -389,12 +366,6 @@ export default function Home() {
   const [sessionTimedOut, setSessionTimedOut] = useState(false);
 
   const isAuthenticated = status === 'authenticated' && session;
-
-  // Signal to the hydration safety net in layout.tsx that React has mounted.
-  // This prevents the 6-second force-reload from triggering on a working app.
-  useEffect(() => {
-    window.__ORRA_HYDRATED = true;
-  }, []);
 
   // Determine if the initial session check is done.
   // Key insight: during a session refetch, `status` briefly goes back to 'loading',
