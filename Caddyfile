@@ -12,6 +12,23 @@
                 }
         }
 
+        # Service Worker — MUST never be cached so browsers always get the latest version
+        @sw {
+                path /sw.js
+        }
+        handle @sw {
+                reverse_proxy localhost:3000 {
+                        header_up Host {host}
+                        header_up X-Forwarded-For {remote_host}
+                        header_up X-Forwarded-Proto {scheme}
+                        header_up X-Real-IP {remote_host}
+                        header_down Cache-Control "no-cache, no-store, must-revalidate"
+                        header_down Pragma "no-cache"
+                        header_down Expires "0"
+                        header_down Service-Worker-Allowed "/"
+                }
+        }
+
         # Cache-bust for ALL HTML pages — ensures browsers always get fresh HTML after deploys
         # This covers / and all SPA routes (/explore, /profile, etc.) so the browser
         # never serves a stale 404 page from cache

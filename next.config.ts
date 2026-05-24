@@ -17,6 +17,28 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Service Worker — MUST never be cached, browsers must always revalidate
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
+      },
+      {
+        // Join/test page — no-cache so testers always get the latest
+        source: '/join.html',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+        ],
+      },
+      {
+        // Clear-cache page — also no-cache
+        source: '/clear-cache.html',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+        ],
+      },
+      {
         // HTML pages — no-cache to ensure fresh HTML on every visit
         // NOTE: Do NOT use Clear-Site-Data here — it clears ALL HTTP cache
         // including static JS chunks, which causes React hydration failures.
@@ -36,6 +58,12 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
+      {
+        // Serve sw.js via API route so we can control Cache-Control headers
+        // Static files in public/ get aggressive caching we can't override
+        source: '/sw.js',
+        destination: '/api/sw',
+      },
       {
         source: '/uploads/:path*',
         destination: '/api/uploads?file=:path*',

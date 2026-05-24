@@ -6,11 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { background: #050505; color: #e2e8f0; font-family: system-ui; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-    .container { text-align: center; padding: 20px; }
+    .container { text-align: center; padding: 20px; max-width: 400px; }
     .logo { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, #7c3aed, #d946ef); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 24px; font-weight: bold; color: white; animation: pulse 2s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    #status { color: #64748b; font-size: 13px; margin-top: 12px; min-height: 20px; }
+    #status { color: #94a3b8; font-size: 13px; margin-top: 12px; min-height: 20px; line-height: 1.5; }
     .btn { display: inline-block; margin-top: 20px; padding: 12px 28px; background: linear-gradient(to right, #7c3aed, #d946ef); color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
+    .btn:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -18,14 +19,14 @@
     <div class="logo">O</div>
     <h2>Clearing your browser cache...</h2>
     <p id="status">Starting cleanup...</p>
-    <a href="/" class="btn" id="manualBtn" style="display:none">Open ORRA</a>
+    <a href="/join.html" class="btn" id="manualBtn" style="display:none">Open ORRA</a>
   </div>
   <script>
     (async function() {
       var status = document.getElementById('status');
       var manualBtn = document.getElementById('manualBtn');
       var steps = 0;
-      var total = 5;
+      var total = 6;
 
       function updateStatus(msg) {
         steps++;
@@ -33,7 +34,18 @@
       }
 
       try {
-        // 1. Unregister ALL service workers
+        // 1. Register the self-destructing SW FIRST — this replaces any old SW
+        if ('serviceWorker' in navigator) {
+          try {
+            await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+            updateStatus('New service worker installed (self-destructing)');
+          } catch(e) {
+            // SW registration may fail, that's OK
+            updateStatus('Service worker update attempted');
+          }
+        }
+
+        // 2. Unregister ALL service workers
         if ('serviceWorker' in navigator) {
           try {
             var regs = await navigator.serviceWorker.getRegistrations();
@@ -42,9 +54,9 @@
             }
           } catch(e) {}
         }
-        updateStatus('Service workers removed');
+        updateStatus('Old service workers removed');
 
-        // 2. Clear ALL Cache Storage
+        // 3. Clear ALL Cache Storage
         if ('caches' in window) {
           try {
             var names = await caches.keys();
@@ -55,19 +67,15 @@
         }
         updateStatus('Cache storage cleared');
 
-        // 3. Clear localStorage completely
-        try {
-          localStorage.clear();
-        } catch(e) {}
+        // 4. Clear localStorage completely
+        try { localStorage.clear(); } catch(e) {}
         updateStatus('Local storage cleared');
 
-        // 4. Clear sessionStorage completely
-        try {
-          sessionStorage.clear();
-        } catch(e) {}
+        // 5. Clear sessionStorage completely
+        try { sessionStorage.clear(); } catch(e) {}
         updateStatus('Session storage cleared');
 
-        // 5. Delete cookies for this origin (as many as we can)
+        // 6. Delete cookies for this origin
         try {
           var cookies = document.cookie.split(';');
           for (var i = 0; i < cookies.length; i++) {
@@ -78,12 +86,12 @@
         } catch(e) {}
         updateStatus('Cookies cleared');
 
-        // Wait a moment for everything to flush
+        // Wait for everything to flush
         status.textContent = 'All clear! Redirecting to ORRA...';
         await new Promise(function(r) { setTimeout(r, 1500); });
 
         // Redirect with cache-bust
-        window.location.replace('/?_fresh=' + Date.now());
+        window.location.replace('/join.html?_fresh=' + Date.now());
       } catch(e) {
         status.textContent = 'Something went wrong. Click the button below.';
         manualBtn.style.display = 'inline-block';
