@@ -32,7 +32,7 @@ const mockUsers = [
     handle: '@nickorraceo',
     avatar: '/images/avatars/bots/founder-avatar.jpg',
     coverImage: '/images/profile-cover.jpg',
-    bio: 'Founder & CEO of ORRA — building the next-gen social universe where creativity meets connection. Turning vision into reality, one pulse at a time. New Orleans born, worldwide impact.',
+    bio: 'Founder of ORRA — building the next-gen social universe where creativity meets connection. Turning vision into reality, one pulse at a time. New Orleans born, worldwide impact.',
     location: 'New Orleans, LA',
     website: 'orra.app',
     verified: true,

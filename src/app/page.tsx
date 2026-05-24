@@ -342,6 +342,7 @@ function AuthenticatedApp() {
       {/* Toast Notifications */}
       <Toaster
         position="bottom-center"
+        duration={2300}
         toastOptions={{
           style: {
             background: 'rgba(17, 25, 40, 0.9)',
