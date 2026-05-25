@@ -16,7 +16,7 @@ npx next build 2>&1 | tail -3
 echo "  Restarting server via PM2..."
 npx pm2 restart orra 2>/dev/null || {
   echo "  PM2 process not found, starting fresh..."
-  npx pm2 start npm --name orra -- run start
+  npx pm2 start bash --name orra -- .zscripts/dev.sh
 }
 sleep 5
 

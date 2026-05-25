@@ -73,7 +73,7 @@ export NEXTAUTH_URL="http://localhost:3000"
 export AUTH_TRUST_HOST=true
 export NODE_ENV=production
 
-npx pm2 start npm --name orra -- run start
+npx pm2 start bash --name orra -- .zscripts/dev.sh
 npx pm2 save
 sleep 5
 
