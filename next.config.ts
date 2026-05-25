@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Standalone mode: creates a minimal server bundle in .next/standalone/
+  // that only includes necessary dependencies (not the full node_modules).
+  // This speeds up cold starts on FC dramatically.
+  output: 'standalone',
   typescript: {
     ignoreBuildErrors: true,
   },

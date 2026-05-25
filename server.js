@@ -130,11 +130,15 @@ app.prepare().then(() => {
     handle(req, res, parsedUrl);
   });
 
-  // Set server-level timeouts to prevent hanging connections
-  server.timeout = 30_000;           // 30s idle timeout
-  server.requestTimeout = 30_000;    // 30s max request duration
-  server.headersTimeout = 10_000;    // 10s to receive headers
-  server.keepAliveTimeout = 5_000;   // 5s keep-alive between requests
+  // Server timeouts tuned for Alibaba Cloud FC environment:
+  // - FC proxy (Caddy) has keep_alive 30s, so our keepAliveTimeout must be > 30s
+  //   Otherwise Node closes connections that Caddy is trying to reuse → ECONNRESET errors
+  // - headersTimeout must be > keepAliveTimeout (Node.js requirement)
+  // - requestTimeout is generous because some API routes (upload, etc.) take time
+  server.timeout = 120_000;             // 2 min idle timeout
+  server.requestTimeout = 120_000;      // 2 min max request duration
+  server.headersTimeout = 65_000;       // 65s to receive headers (> keepAliveTimeout)
+  server.keepAliveTimeout = 60_000;     // 60s keep-alive (must be > Caddy's 30s)
 
   server.listen(port, () => {
     console.log(`> ORRA Server running on http://localhost:${port}`);
