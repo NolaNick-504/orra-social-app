@@ -185,3 +185,29 @@ Stage Summary:
 - Fix: Double-fork daemonization (`setsid bash -c 'loop' &`) so supervisor gets PPID=1
 - Server now runs stably as a daemon adopted by init (PID 1)
 - Commit: 28a413a pushed to main
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix 25-second freeze - app dies after 25 seconds of use
+
+Work Log:
+- Investigated why app shows "Reconnecting..." after ~25 seconds
+- Server inside container is STABLE (running 15+ minutes without crashes)
+- The issue is NOT the server crashing - it's the FC platform freezing/killing the container
+- FC scales to zero when there's no active traffic for ~25 seconds
+- KeepAliveProvider was pinging every 10 seconds - too slow for FC's aggressive timeout
+- Service Worker reconnect was too slow (5s countdown, 40 max attempts)
+- No server-side self-ping to keep the node process active
+
+Changes made:
+1. KeepAliveProvider: 5s ping interval (was 10s), immediate first ping, instant recovery on failed ping
+2. Service Worker: 3s initial countdown (was 5s), 2s retry delay (was 4s), 100 max attempts (was 40)
+3. dev.sh supervisor: self-ping every 5s keeps node process active + DB backup every 2 min
+4. Caddyfile: keep_alive 30s + auto-patch /app/Caddyfile on container startup
+
+Stage Summary:
+- Root cause: FC platform freezes containers after ~25s of no external traffic
+- Fix: Aggressive keep-alive pings (5s) from browser + self-ping from supervisor
+- Reconnect is now 2x faster (2s retry vs 4s, 100 attempts vs 40)
+- Commits: 86e1ae7, d360248 pushed to main
