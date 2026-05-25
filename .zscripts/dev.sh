@@ -1,21 +1,20 @@
 #!/bin/bash
 # =============================================================================
-# ORRA Simple Startup v4
+# ORRA Simple Startup v5
 # =============================================================================
-# Handles the #1 cold start problem: node_modules is NOT in repo.tar
-# So on every container rebuild, we need to restore it.
-#
-# Priority order:
-#   1. Symlink from /home/sync/orra-node-modules (instant, ~0s)
-#   2. Run bun install (~20-30s)
-# Then: restore DB + build, start server, background tasks
+# Cold start chain:
+#   1. Restore bun cache symlink (instant)
+#   2. Install node_modules if missing (~20-30s with bun cache)
+#   3. Restore .next build from /home/sync/ cache (~2s, only 13MB)
+#   4. Restore DB from /home/sync/ backup (~1s)
+#   5. Start server IMMEDIATELY (~3s)
+#   6. Background: rebuild .next if cache was incomplete
 # =============================================================================
 
 PROJECT_DIR=/home/z/my-project
 DB_FILE=$PROJECT_DIR/db/custom.db
 DB_BACKUP=/home/sync/orra-db-backup/latest.db
 BUILD_CACHE=/home/sync/orra-build-cache
-NODE_MODULES_CACHE=/home/sync/orra-node-modules
 LOG_FILE=$PROJECT_DIR/next-supervisor.log
 
 log() { echo "[$(date '+%H:%M:%S')] $1" | tee -a "$LOG_FILE"; }
@@ -23,7 +22,7 @@ log() { echo "[$(date '+%H:%M:%S')] $1" | tee -a "$LOG_FILE"; }
 cd "$PROJECT_DIR"
 
 # =============================================================================
-# STEP 0: Bun cache — ensure package downloads persist across rebuilds
+# STEP 0: Bun cache — packages persist across rebuilds
 # =============================================================================
 if [ ! -L /home/z/.bun/install/cache ] && [ -d /home/sync/orra-bun-cache ]; then
   rm -rf /home/z/.bun/install/cache 2>/dev/null
@@ -31,33 +30,39 @@ if [ ! -L /home/z/.bun/install/cache ] && [ -d /home/sync/orra-bun-cache ]; then
 fi
 
 # =============================================================================
-# STEP 1: node_modules — THE #1 COLD START KILLER
+# STEP 1: node_modules — NOT in repo.tar, must install on cold start
 # =============================================================================
-# On cold start, repo.tar does NOT include node_modules (too big).
-# Without this, the server crashes: "Cannot find module 'next'"
-
 if [ ! -d "$PROJECT_DIR/node_modules/next" ]; then
-  log "node_modules missing — checking /home/sync/ cache..."
+  log "node_modules missing — installing with bun..."
+  bun install 2>&1 | tail -3 | tee -a "$LOG_FILE"
+  log "Dependencies installed"
+fi
 
-  # Option A: Symlink from persistent cache (instant!)
-  if [ -d "$NODE_MODULES_CACHE/next" ]; then
-    log "Restoring node_modules via symlink (instant)..."
-    rm -rf "$PROJECT_DIR/node_modules" 2>/dev/null
-    ln -s "$NODE_MODULES_CACHE" "$PROJECT_DIR/node_modules"
-    log "node_modules restored via symlink"
+# =============================================================================
+# STEP 2: Restore .next build from /home/sync/ cache (~2s for 13MB)
+# =============================================================================
+# Only the essential files are cached (no webpack cache = 13MB vs 268MB)
+if [ ! -f "$PROJECT_DIR/.next/BUILD_ID" ] || [ ! -f "$PROJECT_DIR/.next/routes-manifest.json" ]; then
+  if [ -f "$BUILD_CACHE/.next/BUILD_ID" ] && [ -f "$BUILD_CACHE/.next/routes-manifest.json" ]; then
+    log "Restoring build from /home/sync/ cache..."
+    mkdir -p "$PROJECT_DIR/.next"
+    # Copy essential files (skip the 254MB cache/ dir)
+    cp -r "$BUILD_CACHE/.next/server" "$PROJECT_DIR/.next/" 2>/dev/null
+    cp -r "$BUILD_CACHE/.next/static" "$PROJECT_DIR/.next/" 2>/dev/null
+    cp -r "$BUILD_CACHE/.next/types" "$PROJECT_DIR/.next/" 2>/dev/null
+    cp "$BUILD_CACHE/.next/BUILD_ID" "$PROJECT_DIR/.next/" 2>/dev/null
+    cp "$BUILD_CACHE/.next/"*.json "$PROJECT_DIR/.next/" 2>/dev/null
+    cp "$BUILD_CACHE/.next/"*.js "$PROJECT_DIR/.next/" 2>/dev/null
+    cp "$BUILD_CACHE/.next/trace" "$PROJECT_DIR/.next/" 2>/dev/null
+    log "Build restored from cache"
   else
-    # Option B: Install from scratch (~20-30s with cache, ~60s without)
-    log "No cache — installing dependencies with bun..."
-    bun install 2>&1 | tail -3 | tee -a "$LOG_FILE"
-    log "Dependencies installed"
+    log "WARNING: No build cache — will build after server starts"
   fi
 fi
 
 # =============================================================================
-# STEP 2: Restore DB + Build from /home/sync/ (~1-5s)
+# STEP 3: Restore DB from /home/sync/ backup
 # =============================================================================
-
-# Restore DB if missing
 if [ ! -f "$DB_FILE" ] || [ ! -s "$DB_FILE" ]; then
   if [ -f "$DB_BACKUP" ] && [ -s "$DB_BACKUP" ]; then
     log "Restoring DB from backup..."
@@ -68,28 +73,15 @@ if [ ! -f "$DB_FILE" ] || [ ! -s "$DB_FILE" ]; then
   fi
 fi
 
-# Restore build if missing
-if [ ! -f "$PROJECT_DIR/.next/BUILD_ID" ]; then
-  if [ -f "$BUILD_CACHE/.next/BUILD_ID" ]; then
-    log "Restoring build from /home/sync/ cache..."
-    (cd "$BUILD_CACHE" && tar -cf - .next) | (cd "$PROJECT_DIR" && tar -xf -) 2>/dev/null || \
-      cp -r "$BUILD_CACHE/.next" "$PROJECT_DIR/.next" 2>/dev/null
-    log "Build restored"
-  else
-    log "WARNING: No build cache — will build after server starts"
-  fi
-fi
-
-# Prisma generate if client missing (usually already in node_modules)
+# Prisma generate if client missing
 if [ ! -d "$PROJECT_DIR/node_modules/.prisma/client" ]; then
   log "Generating Prisma client..."
   npx prisma generate 2>&1 | tail -1 | tee -a "$LOG_FILE"
 fi
 
 # =============================================================================
-# STEP 3: Start server IMMEDIATELY
+# STEP 4: Start server IMMEDIATELY
 # =============================================================================
-
 export NODE_ENV=production
 export DATABASE_URL="file:$DB_FILE"
 export NEXTAUTH_SECRET="orra-s3cr3t-k3y-p3rman3nt-2024"
@@ -97,13 +89,12 @@ export NEXTAUTH_URL="http://localhost:3000"
 export AUTH_TRUST_HOST=true
 export AUTOPOST_KEY="orra-internal-autopost-2026"
 
-# Kill any old server
 pkill -f "node server.js" 2>/dev/null || true
 sleep 0.5
 
 log "Starting server..."
 
-# Supervisor loop — keeps server alive, backs up DB periodically
+# Supervisor loop
 while true; do
   node server.js 2>>"$LOG_FILE" &
   SERVER_PID=$!
@@ -118,7 +109,7 @@ while true; do
     sleep 1
   done
 
-  # Keep server alive, backup DB every 2 minutes
+  # Keep alive + backup DB every 2 minutes
   LAST_BACKUP=$(date +%s)
   while kill -0 $SERVER_PID 2>/dev/null; do
     NOW=$(date +%s)
@@ -137,7 +128,7 @@ while true; do
 done &
 
 # =============================================================================
-# STEP 4: Background tasks (AFTER server is up)
+# STEP 5: Background tasks — AFTER server is up
 # =============================================================================
 (
   # Wait for server
@@ -146,23 +137,30 @@ done &
     sleep 1
   done
 
-  # Cache build to /home/sync/ if not already cached
-  if [ -f "$PROJECT_DIR/.next/BUILD_ID" ] && [ ! -f "$BUILD_CACHE/.next/BUILD_ID" ]; then
-    log "Caching build to /home/sync/..."
-    mkdir -p "$BUILD_CACHE"
-    (cd "$PROJECT_DIR" && tar -cf - .next) | (cd "$BUILD_CACHE" && tar -xf -) 2>/dev/null
-    log "Build cached"
-  fi
-
-  # If no build at all, build now then restart server
-  if [ ! -f "$PROJECT_DIR/.next/BUILD_ID" ]; then
-    log "Building app in background..."
+  # If build was incomplete, rebuild now
+  if [ ! -f "$PROJECT_DIR/.next/routes-manifest.json" ]; then
+    log "Build incomplete — rebuilding..."
     npx next build --webpack 2>&1 | tail -3 | tee -a "$LOG_FILE"
     log "Build done — restarting server"
     pkill -f "node server.js" 2>/dev/null || true
-    # Cache the new build
-    mkdir -p "$BUILD_CACHE"
-    (cd "$PROJECT_DIR" && tar -cf - .next) | (cd "$BUILD_CACHE" && tar -xf -) 2>/dev/null
+  fi
+
+  # Update build cache if needed (only essential files, skip cache/ dir)
+  if [ -f "$PROJECT_DIR/.next/BUILD_ID" ]; then
+    CACHED_ID=$(cat "$BUILD_CACHE/.next/BUILD_ID" 2>/dev/null || echo "")
+    CURRENT_ID=$(cat "$PROJECT_DIR/.next/BUILD_ID" 2>/dev/null || echo "")
+    if [ "$CACHED_ID" != "$CURRENT_ID" ] || [ ! -f "$BUILD_CACHE/.next/routes-manifest.json" ]; then
+      log "Updating build cache on /home/sync/..."
+      mkdir -p "$BUILD_CACHE/.next"
+      cp -r "$PROJECT_DIR/.next/server" "$BUILD_CACHE/.next/" 2>/dev/null
+      cp -r "$PROJECT_DIR/.next/static" "$BUILD_CACHE/.next/" 2>/dev/null
+      cp -r "$PROJECT_DIR/.next/types" "$BUILD_CACHE/.next/" 2>/dev/null
+      cp "$PROJECT_DIR/.next/BUILD_ID" "$BUILD_CACHE/.next/" 2>/dev/null
+      cp "$PROJECT_DIR/.next/"*.json "$BUILD_CACHE/.next/" 2>/dev/null
+      cp "$PROJECT_DIR/.next/"*.js "$BUILD_CACHE/.next/" 2>/dev/null
+      cp "$PROJECT_DIR/.next/trace" "$BUILD_CACHE/.next/" 2>/dev/null
+      log "Build cache updated"
+    fi
   fi
 
   # Prisma migrate (usually a no-op)
