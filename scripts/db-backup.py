@@ -113,6 +113,7 @@ def restore_backup(backup_path):
     # Stop the server first
     print('[db-backup] Stopping server...')
     try:
+        subprocess.run(['pkill', '-f', 'node server.js'], capture_output=True, timeout=5)
         subprocess.run(['pkill', '-f', 'next start'], capture_output=True, timeout=5)
         time.sleep(2)
     except:

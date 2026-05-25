@@ -223,32 +223,59 @@ else
   log "DB already has $USER_COUNT users — NOT seeding (preserving data)!"
 fi
 
-# Step 7: ALWAYS ensure founder password is correct
-log "Ensuring founder password is set..."
+# Step 7: Ensure founder account exists (only set password if user has no password)
+# We do NOT force-reset the password on every startup — that would override
+# any password changes the founder made.
+log "Ensuring founder account exists..."
 node -e "
   const { PrismaClient } = require('@prisma/client');
   const bcrypt = require('bcryptjs');
   const db = new PrismaClient();
   async function main() {
-    const hash = await bcrypt.hash('Weareone504', 12);
-    try {
-      await db.user.update({ where: { id: 'founder' }, data: { password: hash } });
-      console.log('Founder password set');
-    } catch {
-      try {
-        await db.user.update({ where: { email: 'nickjoseph8087@gmail.com' }, data: { password: hash } });
-        console.log('Founder password set (by email)');
-      } catch { console.log('No founder to update'); }
+    // Only set the password if the founder has NO password set (first-time setup)
+    const founder = await db.user.findFirst({ where: { OR: [{ id: 'founder' }, { email: 'nickjoseph8087@gmail.com' }] } });
+    if (!founder) {
+      console.log('No founder account found — will be created by seed');
+      return;
+    }
+    if (!founder.password || founder.password === '') {
+      const hash = await bcrypt.hash('Weareone504', 12);
+      await db.user.update({ where: { id: founder.id }, data: { password: hash } });
+      console.log('Founder password set (first time)');
+    } else {
+      console.log('Founder password already set — not overriding');
     }
   }
   main().catch(console.error).finally(() => db.\$disconnect());
 " 2>&1 | tee -a "$LOG_FILE"
 
-# Step 8: Build if .next doesn't exist
-if [ ! -d "$PROJECT_DIR/.next" ]; then
-  log "Building Next.js (first time)..."
+# Step 8: Build if .next doesn't exist OR if build is stale
+BUILD_NEEDED=false
+if [ ! -d "$PROJECT_DIR/.next" ] || [ ! -f "$PROJECT_DIR/.next/BUILD_ID" ]; then
+  BUILD_NEEDED=true
+  log "No build found — building Next.js..."
+else
+  # Check if source files are newer than the build
+  SRC_NEWER=$(find "$PROJECT_DIR/src/" -name "*.tsx" -newer "$PROJECT_DIR/.next/BUILD_ID" 2>/dev/null | head -1)
+  if [ -n "$SRC_NEWER" ]; then
+    BUILD_NEEDED=true
+    log "Source files newer than build — rebuilding..."
+  fi
+fi
+
+if [ "$BUILD_NEEDED" = true ]; then
   cd "$PROJECT_DIR"
-  npx next build --webpack 2>&1 | tee -a "$LOG_FILE"
+  # Try to restore from build cache first
+  python3 "$PROJECT_DIR/.zscripts/build-preserver.py" --restore 2>/dev/null || true
+  # Check if cache restore worked
+  if [ -f "$PROJECT_DIR/.next/BUILD_ID" ]; then
+    log "Build restored from cache!"
+  else
+    log "Building Next.js from scratch..."
+    npx next build --webpack 2>&1 | tee -a "$LOG_FILE"
+    # Cache the new build
+    python3 "$PROJECT_DIR/.zscripts/build-preserver.py" --sync 2>/dev/null || true
+  fi
 fi
 
 # Step 9: Start auto-backup daemon (backs up DB every 5 minutes)

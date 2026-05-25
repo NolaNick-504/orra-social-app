@@ -132,9 +132,9 @@ if [ "$MODE" = "quick" ]; then
   npx prisma generate 2>/dev/null
   npx next build 2>/dev/null
   # Restart the app
-  pkill -f "next start" 2>/dev/null
+  pkill -f "node server.js" 2>/dev/null; pkill -f "next start" 2>/dev/null
   sleep 2
-  nohup npx next start -p 3000 &>/dev/null &
+  nohup node server.js &>/dev/null &
   echo "  App rebuilt and restarted!"
 
   echo ""
@@ -184,9 +184,9 @@ if [ "$MODE" = "github" ]; then
   bun install 2>/dev/null || npm install 2>/dev/null
   npx prisma generate 2>/dev/null
   npx next build 2>/dev/null
-  pkill -f "next start" 2>/dev/null
+  pkill -f "node server.js" 2>/dev/null; pkill -f "next start" 2>/dev/null
   sleep 2
-  nohup npx next start -p 3000 &>/dev/null &
+  nohup node server.js &>/dev/null &
   
   echo ""
   echo "  RESTORED FROM GITHUB + OSS DB! Your code is back!"
@@ -245,9 +245,9 @@ if [ "$MODE" = "full" ]; then
   bun install 2>/dev/null || npm install 2>/dev/null
   npx prisma generate 2>/dev/null
   npx next build 2>/dev/null
-  pkill -f "next start" 2>/dev/null
+  pkill -f "node server.js" 2>/dev/null; pkill -f "next start" 2>/dev/null
   sleep 2
-  nohup npx next start -p 3000 &>/dev/null &
+  nohup node server.js &>/dev/null &
   echo "  App rebuilt and restarted"
   
   echo ""
@@ -269,7 +269,7 @@ if [ "$MODE" = "db" ]; then
   echo "Restoring database from cloud..."
   
   # Stop app
-  pkill -f "next start" 2>/dev/null
+  pkill -f "node server.js" 2>/dev/null; pkill -f "next start" 2>/dev/null
   sleep 2
 
   # Restore to CORRECT path
@@ -279,7 +279,7 @@ if [ "$MODE" = "db" ]; then
   
   # Restart
   cd "$PROJECT_DIR"
-  nohup npx next start -p 3000 &>/dev/null &
+  nohup node server.js &>/dev/null &
   echo "  App restarted"
   exit 0
 fi
@@ -306,9 +306,9 @@ if [ "$MODE" = "code" ]; then
   bun install 2>/dev/null || npm install 2>/dev/null
   npx prisma generate 2>/dev/null
   npx next build 2>/dev/null
-  pkill -f "next start" 2>/dev/null
+  pkill -f "node server.js" 2>/dev/null; pkill -f "next start" 2>/dev/null
   sleep 2
-  nohup npx next start -p 3000 &>/dev/null &
+  nohup node server.js &>/dev/null &
   echo "  App rebuilt and restarted"
   exit 0
 fi

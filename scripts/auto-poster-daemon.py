@@ -15,7 +15,7 @@ ENV = {
     **os.environ,
     'ORRA_URL': 'http://localhost:3000',
     'AUTOPOST_KEY': 'orra-internal-autopost-2026',
-    'NEXTAUTH_SECRET': 'xOl2TQ9tBWNt4yDD9zQnbZlKV8oemICL75YyVnGhIsM=',
+    'NEXTAUTH_SECRET': 'orra-s3cr3t-k3y-p3rman3nt-2024',
 }
 
 child_pid = None

@@ -34,9 +34,10 @@ ENV = {
     'PORT': '3000',
     'NODE_ENV': 'production',
     'DATABASE_URL': 'file:/home/z/my-project/db/custom.db',
-    'NEXTAUTH_SECRET': 'orra-super-secret-key-2025-production',
+    'NEXTAUTH_SECRET': 'orra-s3cr3t-k3y-p3rman3nt-2024',
     'NEXTAUTH_URL': 'http://localhost:3000',
     'AUTH_TRUST_HOST': 'true',
+    'AUTOPOST_KEY': 'orra-internal-autopost-2026',
 }
 
 def log(msg):

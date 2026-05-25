@@ -1,19 +1,36 @@
 import { NextResponse } from 'next/server';
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import path from 'path';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/db-backup — Backs up the SQLite database to a persistent location
+ * POST /api/db-backup — Backs up the SQLite database to a persistent location
+ *
+ * SECURITY: Requires authenticated admin user (founder role).
+ * Changed from GET to POST to prevent automated/unauthorized triggers.
+ * Server-side daemons (aura-daemon.py, dev.sh) handle backup without this API.
  *
  * The platform container can be rebuilt at any time, which wipes the database.
  * This endpoint copies the DB file to /home/sync/ which persists across rebuilds.
- *
- * Called automatically by the startup script and by the keep-alive provider.
  */
-export async function GET() {
+export async function POST() {
   try {
+    // Require authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, error: 'Unauthorized — login required' }, { status: 401 });
+    }
+
+    // Require admin (founder) — identified by email or ID
+    // The founder account is the one created by the seed script
+    const FOUNDER_EMAIL = 'nickjoseph8087@gmail.com';
+    if (session.user.email !== FOUNDER_EMAIL && session.user.id !== 'founder') {
+      return NextResponse.json({ ok: false, error: 'Forbidden — admin access required' }, { status: 403 });
+    }
+
     const dbPath = path.join(process.cwd(), 'db', 'custom.db');
 
     if (!existsSync(dbPath)) {
@@ -41,7 +58,6 @@ export async function GET() {
 
     // Clean up old backups (keep last 5)
     try {
-      const { readdirSync, unlinkSync } = await import('fs');
       const files = readdirSync(backupDir)
         .filter(f => f.startsWith('orra-') && f.endsWith('.db'))
         .sort()

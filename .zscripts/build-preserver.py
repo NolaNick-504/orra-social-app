@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""ORRA Build Preserver - Keeps a copy of .next/standalive in /tmp/ so it
+"""ORRA Build Preserver - Keeps a copy of .next/ in /tmp/ so it
 survives the container's /start.sh wipe (which only deletes /home/z/my-project/).
 
 Runs as a background daemon and syncs the build every 60 seconds.
 On boot, dev.sh checks for the cached build and restores it instead of rebuilding.
+
+NOTE: The project does NOT use 'output: standalone', so we cache the entire
+.next/ directory (not just .next/standalone).
 """
 import os
 import sys
@@ -12,26 +15,26 @@ import time
 
 PROJECT_DIR = '/home/z/my-project'
 CACHE_DIR = '/tmp/orra-build-cache'
-STANDALONE_DIR = os.path.join(PROJECT_DIR, '.next/standalone')
-STATIC_DIR = os.path.join(PROJECT_DIR, '.next/static')
+NEXT_DIR = os.path.join(PROJECT_DIR, '.next')
 PIDFILE = '/tmp/build-preserver.pid'
 LOGFILE = '/tmp/build-preserver.log'
 
 def get_build_signature():
-    """Get a signature of the current build (server.js mtime + chunk count)"""
-    server_js = os.path.join(STANDALONE_DIR, 'server.js')
-    if not os.path.exists(server_js):
+    """Get a signature of the current build (BUILD_ID content + chunk count)"""
+    build_id_path = os.path.join(NEXT_DIR, 'BUILD_ID')
+    if not os.path.exists(build_id_path):
         return None
     try:
-        mtime = os.path.getmtime(server_js)
-        chunks_dir = os.path.join(STANDALONE_DIR, '.next/static/chunks')
+        with open(build_id_path) as f:
+            build_id = f.read().strip()
+        chunks_dir = os.path.join(NEXT_DIR, 'static', 'chunks')
         chunk_count = len([f for f in os.listdir(chunks_dir) if f.endswith('.js')]) if os.path.exists(chunks_dir) else 0
-        return f"{mtime}:{chunk_count}"
+        return f"{build_id}:{chunk_count}"
     except:
         return None
 
 def sync_build_to_cache():
-    """Copy .next/standalone and .next/static to cache directory"""
+    """Copy .next/ to cache directory"""
     sig = get_build_signature()
     if not sig:
         return False
@@ -53,13 +56,9 @@ def sync_build_to_cache():
             shutil.rmtree(CACHE_DIR)
         os.makedirs(CACHE_DIR, exist_ok=True)
 
-        # Copy standalone build
-        if os.path.exists(STANDALONE_DIR):
-            shutil.copytree(STANDALONE_DIR, os.path.join(CACHE_DIR, 'standalone'))
-
-        # Copy static files
-        if os.path.exists(STATIC_DIR):
-            shutil.copytree(STATIC_DIR, os.path.join(CACHE_DIR, 'static'))
+        # Copy the entire .next/ directory
+        if os.path.exists(NEXT_DIR):
+            shutil.copytree(NEXT_DIR, os.path.join(CACHE_DIR, 'next'))
 
         # Write signature
         with open(sig_file, 'w') as f:
@@ -72,28 +71,24 @@ def sync_build_to_cache():
         return False
 
 def restore_build_from_cache():
-    """Restore .next/ from cache if it's newer/valid"""
+    """Restore .next/ from cache if it's valid"""
     sig_file = os.path.join(CACHE_DIR, '.build-sig')
     if not os.path.exists(sig_file):
         return False
 
-    if not os.path.exists(os.path.join(CACHE_DIR, 'standalone/server.js')):
+    cached_next_dir = os.path.join(CACHE_DIR, 'next')
+    if not os.path.exists(os.path.join(cached_next_dir, 'BUILD_ID')):
         return False
 
     print(f'[{time.strftime("%Y-%m-%d %H:%M:%S")}] Restoring build from cache...', flush=True)
 
     try:
         # Remove current .next
-        next_dir = os.path.join(PROJECT_DIR, '.next')
-        if os.path.exists(next_dir):
-            shutil.rmtree(next_dir)
-        os.makedirs(next_dir, exist_ok=True)
+        if os.path.exists(NEXT_DIR):
+            shutil.rmtree(NEXT_DIR)
 
-        # Restore standalone
-        shutil.copytree(os.path.join(CACHE_DIR, 'standalone'), os.path.join(next_dir, 'standalone'))
-
-        # Restore static
-        shutil.copytree(os.path.join(CACHE_DIR, 'static'), os.path.join(next_dir, 'static'))
+        # Restore from cache
+        shutil.copytree(cached_next_dir, NEXT_DIR)
 
         print(f'[{time.strftime("%Y-%m-%d %H:%M:%S")}] Build restored from cache', flush=True)
         return True

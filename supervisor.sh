@@ -25,9 +25,10 @@ while [ $RESTART_COUNT -lt $MAX_RESTARTS ]; do
 
     echo "[ORRA-Supervisor] Starting Next.js (attempt $RESTART_COUNT/$MAX_RESTARTS)..."
 
-    # Start Next.js
+    # Start Next.js using the custom server.js (NOT npx next start)
+    # server.js provides chunk-404 protection that prevents white screen
     cd /home/z/my-project
-    npx next start -p $PORT
+    NODE_ENV=production DATABASE_URL="file:/home/z/my-project/db/custom.db" NEXTAUTH_SECRET="orra-s3cr3t-k3y-p3rman3nt-2024" NEXTAUTH_URL="http://localhost:3000" AUTH_TRUST_HOST=true node server.js
 
     EXIT_CODE=$?
     echo "[ORRA-Supervisor] Next.js exited with code $EXIT_CODE"

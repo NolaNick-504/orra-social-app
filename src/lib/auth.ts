@@ -134,6 +134,6 @@ export const authOptions: NextAuthOptions = {
     signIn: '/', // We'll handle sign-in on the main page
     error: '/',
   },
-  secret: process.env.NEXTAUTH_SECRET || 'orra-s3cr3t-k3y-p3rman3nt-2024',
+  secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
 };

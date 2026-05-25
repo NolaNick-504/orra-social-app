@@ -1,17 +1,34 @@
 import { NextResponse } from 'next/server';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import path from 'path';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/db-restore — Restores the SQLite database from the latest backup
+ * POST /api/db-restore — Restores the SQLite database from the latest backup
  *
- * Called by the startup script when the database is empty (fresh container).
+ * SECURITY: Requires authenticated admin user (founder role).
+ * Changed from GET to POST to prevent accidental/unauthorized triggers.
+ *
  * Checks /home/sync/orra-db-backup/latest.db for a backup to restore.
  */
-export async function GET() {
+export async function POST() {
   try {
+    // Require authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ ok: false, error: 'Unauthorized — login required' }, { status: 401 });
+    }
+
+    // Require admin (founder) — identified by email or ID
+    // The founder account is the one created by the seed script
+    const FOUNDER_EMAIL = 'nickjoseph8087@gmail.com';
+    if (session.user.email !== FOUNDER_EMAIL && session.user.id !== 'founder') {
+      return NextResponse.json({ ok: false, error: 'Forbidden — admin access required' }, { status: 403 });
+    }
+
     const backupDir = '/home/sync/orra-db-backup';
     const latestPath = path.join(backupDir, 'latest.db');
 
@@ -29,7 +46,6 @@ export async function GET() {
     // Ensure db directory exists
     const dbDir = path.dirname(dbPath);
     if (!existsSync(dbDir)) {
-      const { mkdirSync } = await import('fs');
       mkdirSync(dbDir, { recursive: true });
     }
 

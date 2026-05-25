@@ -11,6 +11,7 @@ if [ "$1" == "--stop" ]; then
     python3 "$PROJECT_DIR/scripts/auto-poster-daemon.py" --stop 2>/dev/null || true
     python3 "$PROJECT_DIR/scripts/db-backup.py" --stop 2>/dev/null || true
     python3 "$PROJECT_DIR/.zscripts/aura-daemon.py" --stop 2>/dev/null || true
+    pkill -f "node server.js" 2>/dev/null || true
     pkill -f "next start" 2>/dev/null || true
     sleep 2
     echo "All ORRA services stopped."

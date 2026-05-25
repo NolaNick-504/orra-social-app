@@ -23,7 +23,6 @@ const PING_TIMEOUT = 5_000;   // 5 second timeout for each ping
 const MAX_FAST_RETRIES = 5;    // After detecting server down, retry this many times quickly
 const FAST_RETRY_DELAY = 3_000; // 3 seconds between fast retries
 const SLOW_RETRY_DELAY = 15_000; // 15 seconds between slow retries (after fast retries exhausted)
-const BACKUP_INTERVAL = 60_000; // 60 seconds — auto-backup DB to persistent storage
 
 type ServerStatus = 'healthy' | 'down' | 'recovering';
 
@@ -121,30 +120,11 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
     slowRetry();
   }, [ping, setStatus]);
 
-  // Auto-backup database every 60 seconds to persistent storage
-  // This ensures user changes (profile edits, new posts, etc.) survive container rebuilds
-  useEffect(() => {
-    const doBackup = async () => {
-      try {
-        await fetch('/api/db-backup', {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' },
-        });
-      } catch {
-        // Silently fail — backup is best-effort
-      }
-    };
-
-    // Initial backup after 30 seconds (give app time to load)
-    const initialTimeout = setTimeout(doBackup, 30_000);
-    // Then backup every 60 seconds
-    const backupInterval = setInterval(doBackup, BACKUP_INTERVAL);
-
-    return () => {
-      clearTimeout(initialTimeout);
-      clearInterval(backupInterval);
-    };
-  }, []);
+  // NOTE: Database backup is handled server-side by aura-daemon.py and dev.sh
+  // (every 5 minutes). Client-side backup was removed because:
+  // 1. The /api/db-backup endpoint now requires admin authentication (POST)
+  // 2. Server-side backup is more reliable (doesn't depend on browser being open)
+  // 3. It avoids the security risk of an unauthenticated backup endpoint
 
   // Main keep-alive loop
   useEffect(() => {

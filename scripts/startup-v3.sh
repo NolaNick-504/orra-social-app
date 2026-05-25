@@ -18,6 +18,7 @@ echo "================================================"
 # 0. Kill any leftover processes
 echo ""
 echo "[1/7] Cleaning up old processes..."
+pkill -f "node server.js" 2>/dev/null
 pkill -f "next start" 2>/dev/null
 pkill -f "next dev" 2>/dev/null
 sleep 2
@@ -176,21 +177,29 @@ else
   fi
 fi
 
-# Start the app
-echo "  Starting ORRA on port 3000..."
-nohup npx next start -p 3000 &>/dev/null &
-sleep 3
+# Start the app using the CUSTOM server.js (NOT next start)
+# server.js provides chunk 404 protection that prevents white screen
+# when stale chunk requests would otherwise return HTML instead of 404.
+echo "  Starting ORRA on port 3000 (node server.js)..."
+export NODE_ENV=production
+export DATABASE_URL="file:/home/z/my-project/db/custom.db"
+export NEXTAUTH_SECRET="orra-s3cr3t-k3y-p3rman3nt-2024"
+export NEXTAUTH_URL="http://localhost:3000"
+export AUTH_TRUST_HOST=true
+nohup node server.js &>/dev/null &
+sleep 5
 
 # Verify it's running
 if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null | grep -q "200"; then
   echo "  ORRA IS LIVE on port 3000!"
 else
-  echo "  WARNING: App may not be responding — checking process..."
-  if pgrep -f "next start" >/dev/null; then
-    echo "  Process is running, may need more time to start"
+  echo "  WARNING: App may not be responding yet — waiting 10 more seconds..."
+  sleep 10
+  if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null | grep -q "200"; then
+    echo "  ORRA IS LIVE on port 3000!"
   else
-    echo "  Process not found! Starting in dev mode..."
-    nohup npx next dev -p 3000 &>/dev/null &
+    echo "  ERROR: App failed to start. Check logs for details."
+    echo "  Do NOT use 'next dev' in production — it causes performance and stability issues."
   fi
 fi
 

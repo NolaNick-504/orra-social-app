@@ -2,23 +2,36 @@ import { PrismaClient } from '@prisma/client'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
+  prismaReady: Promise<void> | undefined
 }
 
+// ALWAYS use global singleton — even in production.
+// Without this, hot-reloads or module re-imports create extra PrismaClients
+// that each hold a SQLite connection, leading to SQLITE_BUSY errors.
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
   })
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+// Store singleton globally — always, not just in development
+globalForPrisma.prisma = db
 
-// Enable WAL mode for better concurrent read/write performance
-// Use $queryRawUnsafe since PRAGMA statements return result sets
-db.$queryRawUnsafe('PRAGMA journal_mode=WAL').catch(() => {})
-db.$queryRawUnsafe('PRAGMA busy_timeout=30000').catch(() => {})
-db.$queryRawUnsafe('PRAGMA synchronous=NORMAL').catch(() => {})
-db.$queryRawUnsafe('PRAGMA cache_size=-64000').catch(() => {})
-db.$queryRawUnsafe('PRAGMA temp_store=MEMORY').catch(() => {})
+// Await PRAGMA statements to prevent race conditions.
+// Fire-and-forget PRAGMAs can cause queries to run before WAL mode
+// or busy_timeout are set, leading to SQLITE_BUSY errors.
+export const dbReady = globalForPrisma.prismaReady ?? (async () => {
+  try {
+    await db.$queryRawUnsafe('PRAGMA journal_mode=WAL')
+    await db.$queryRawUnsafe('PRAGMA busy_timeout=30000')
+    await db.$queryRawUnsafe('PRAGMA synchronous=NORMAL')
+    await db.$queryRawUnsafe('PRAGMA cache_size=-64000')
+    await db.$queryRawUnsafe('PRAGMA temp_store=MEMORY')
+  } catch {
+    // PRAGMA errors are non-fatal — the DB still works with defaults
+  }
+})()
+globalForPrisma.prismaReady = dbReady
 
 // Default transaction options - increased timeouts for concurrent write scenarios
 export const transactionOptions = {
