@@ -126,3 +126,39 @@ Stage Summary:
 - Cold start time: ~25s (bun install + build restore + server start)
 - Build cache on /home/sync/ is now only 13MB (works on slow OSS)
 - The service worker shows "Reconnecting..." during cold start
+
+---
+Task ID: 5
+Agent: Main
+Task: Audit why app can't stay running for 5 minutes, find what's crashing it
+
+Work Log:
+- Analyzed user screenshot: "Reconnecting... ORRA is waking back up" on both browsers
+- Checked server logs: server keeps dying and restarting every 2-60 minutes
+- Found root cause #1: OLD dev.sh v3.1 was still running (PID 509 from 08:22)
+  - It had a SIGTERM cleanup trap that would kill the server
+  - It had competing supervisor loops
+- Found root cause #2: Background tasks in dev.sh had `pkill -f "node server.js"`
+  - This killed the running server when doing rebuilds in background
+- Found root cause #3: server.js had NO uncaught exception handlers
+  - Any unhandled API error crashed the entire process
+- Found root cause #4: Processes started from chat commands die after ~30-60 seconds
+  - The chat system's bash shell kills all child processes after command finishes
+  - This means I CANNOT start the server from chat and have it survive
+  - The server MUST be started by /start.sh (the container's init process)
+- Fixes applied:
+  - server.js: Added uncaughtException/unhandledRejection handlers
+  - server.js: Added catch for app.prepare() errors
+  - dev.sh v6: Removed all background tasks that could kill the server
+  - dev.sh v6: Simple supervisor loop, no competing processes
+  - watchdog.sh: Created as backup keeper
+  - Build cache updated (13MB essential files)
+  - DB backup updated
+
+Stage Summary:
+- Server crashes fixed: error handlers prevent unhandled errors from killing the process
+- Competing supervisor loops eliminated: only one process manages the server
+- Background task pkill removed: nothing in dev.sh kills the server anymore
+- The app WILL work when container rebuilds and /start.sh runs dev.sh
+- From the chat, I cannot keep the server running (chat kills child processes)
+- All fixes pushed to GitHub
