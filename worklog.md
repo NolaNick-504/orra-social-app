@@ -95,3 +95,34 @@ Stage Summary:
 - Raw 404 issue fixed: service worker now intercepts platform proxy 404s
 - Main browser stale cache fixed: network-first for static chunks
 - To fix existing stale cache on user's main browser: visit /clear-cache.html
+
+---
+Task ID: 4
+Agent: Main
+Task: Audit why app requires chat to stay alive, make it work independently
+
+Work Log:
+- Audited full process chain: tini → /start.sh → ZAI chat (12600) + dev.sh → node server (3000) → Caddy (81)
+- Found that ORRA app and chat share the SAME FC container
+- When chat goes idle, FC kills the container, killing both chat AND app
+- The app CANNOT run independently of the chat — they share a container
+- Fixed build cache: only cache essential .next files (13MB not 268MB)
+  - Skip .next/cache/ (254MB webpack cache, not needed at runtime)
+  - Cache: server/ + static/ + types/ + manifests = 13MB total
+  - Build restore now takes ~2s instead of timing out
+- Fixed cold start flow:
+  - bun install (20s with cached packages)
+  - build restore from /home/sync/ (2s for 13MB)
+  - DB restore from /home/sync/ (1s)
+  - server start (3s)
+  - Total: ~25s cold start
+- Updated dev.sh v5 with proper caching logic
+- Pushed to GitHub
+
+Stage Summary:
+- Root cause: ORRA app and chat share one FC container — this is architectural, not a code bug
+- When FC kills the idle container, BOTH the chat and app die
+- Visiting the app URL triggers a cold start which now works reliably
+- Cold start time: ~25s (bun install + build restore + server start)
+- Build cache on /home/sync/ is now only 13MB (works on slow OSS)
+- The service worker shows "Reconnecting..." during cold start
