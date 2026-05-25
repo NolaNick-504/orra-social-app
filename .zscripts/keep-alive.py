@@ -2,14 +2,15 @@
 """ORRA Keep-Alive Daemon — prevents the Alibaba Cloud FC proxy from
 freezing the container due to inactivity.
 
-The FC proxy freezes containers after ~3-5 minutes of no incoming requests.
-Client-side keep-alive (from the browser) is unreliable because:
-1. Browsers throttle setInterval in background tabs (1x/min instead of 1x/15s)
-2. If the user closes the browser, no keep-alive is sent at all
-3. Mobile browsers aggressively kill background tabs
+CRITICAL: This daemon should ping the PUBLIC URL (not localhost).
+Pings to localhost DON'T count as external traffic for FC.
+Only traffic going through the FC load balancer keeps the container alive.
 
-This daemon runs SERVER-SIDE and pings the local Next.js server every 10 seconds.
-The FC proxy sees these as incoming requests and keeps the container alive.
+Set KEEP_ALIVE_URL to the public URL, e.g.:
+  export KEEP_ALIVE_URL="https://orra.cn-hangzhou.fc.aliyuncs.com/api/health"
+
+If KEEP_ALIVE_URL is not set, falls back to localhost (which won't prevent
+FC freezing, but will at least detect server crashes).
 
 Usage:
   python3 keep-alive.py          # Start daemon
@@ -24,8 +25,11 @@ import subprocess
 
 PIDFILE = '/tmp/orra-keepalive.pid'
 LOGFILE = '/tmp/orra-keepalive.log'
-NEXT_URL = 'http://127.0.0.1:3000/api/health'
-PING_INTERVAL = 10  # seconds — must be less than FC idle timeout (~180s)
+
+# Use the public URL if set, otherwise fall back to localhost
+# The public URL is CRITICAL for preventing FC container freezing!
+PING_URL = os.environ.get('KEEP_ALIVE_URL', 'http://127.0.0.1:3000/api/health')
+PING_INTERVAL = 10  # seconds
 
 def log(msg):
     ts = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -38,12 +42,12 @@ def log(msg):
         pass
 
 def ping_server():
-    """Ping the local Next.js server via curl"""
+    """Ping the configured URL via curl"""
     try:
         result = subprocess.run(
             ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}',
-             '--max-time', '5', NEXT_URL],
-            capture_output=True, text=True, timeout=8
+             '--max-time', '8', PING_URL],
+            capture_output=True, text=True, timeout=12
         )
         status = result.stdout.strip()
         return status == '200'
@@ -73,7 +77,11 @@ def is_daemon_running():
         return False
 
 def run_daemon():
-    log('=== ORRA Keep-Alive Daemon Starting ===')
+    is_public = not PING_URL.startswith('http://127.0.0.1') and not PING_URL.startswith('http://localhost')
+    log(f'=== ORRA Keep-Alive Daemon Starting ===')
+    log(f'PING_URL: {PING_URL} ({"PUBLIC - prevents FC freeze!" if is_public else "LOCALHOST - will NOT prevent FC freeze!"})')
+    if not is_public:
+        log(f'WARNING: Set KEEP_ALIVE_URL to your PUBLIC URL to prevent FC freezing!')
     write_pid()
 
     consecutive_failures = 0
@@ -81,22 +89,15 @@ def run_daemon():
     while True:
         try:
             if ping_server():
+                if consecutive_failures > 0:
+                    log(f'Server is back online after {consecutive_failures} failures')
                 consecutive_failures = 0
             else:
                 consecutive_failures += 1
                 if consecutive_failures <= 3:
                     log(f'Ping failed ({consecutive_failures} consecutive) — server may be restarting')
-                elif consecutive_failures == 10:
+                elif consecutive_failures % 10 == 0:
                     log(f'Server has been unreachable for {consecutive_failures * PING_INTERVAL}s')
-                    # The aura-daemon should handle restarting Next.js
-                    # We just keep pinging to detect when it comes back
-
-            # If server is back after failures, log it
-            if consecutive_failures == 0 and os.path.exists('/tmp/orra-keepalive-was-down'):
-                log('Server is back online after downtime!')
-                os.remove('/tmp/orra-keepalive-was-down')
-            elif consecutive_failures > 3:
-                open('/tmp/orra-keepalive-was-down', 'w').close()
 
         except Exception as e:
             log(f'Daemon error: {e}')
@@ -118,6 +119,7 @@ if __name__ == '__main__':
         elif cmd == '--status':
             running = is_daemon_running()
             print(f'Keep-alive daemon running: {"YES" if running else "NO"}')
+            print(f'PING_URL: {PING_URL}')
             pid = read_pid()
             if pid:
                 print(f'PID: {pid}')

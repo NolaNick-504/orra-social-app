@@ -21,7 +21,7 @@ LOG_FILE=$PROJECT_DIR/orra-supervisor.log
 
 # Increment this when you push code changes that need a fresh build.
 # This forces the stale build cache to be invalidated and a new build to run.
-BUILD_VERSION=10
+BUILD_VERSION=11
 
 log() { echo "[$(date '+%H:%M:%S')] $1" | tee -a "$LOG_FILE"; }
 
@@ -144,6 +144,17 @@ if [ -w /app/Caddyfile ] 2>/dev/null; then
     log "Patched Caddy with keep_alive 60s"
   fi
 fi
+
+# Step 6b: Export ORRA_PUBLIC_URL for the supervisor daemon
+# CRITICAL: This must be set for the server-side keep-alive to work.
+# The server pings this URL every 10 seconds through the FC load balancer,
+# which counts as external traffic and prevents container freezing.
+#
+# HOW TO SET: Edit the line below with your app's public URL, e.g.:
+#   export ORRA_PUBLIC_URL="https://orra.cn-hangzhou.fc.aliyuncs.com"
+#
+# Or set it as an environment variable in the FC console.
+export ORRA_PUBLIC_URL="${ORRA_PUBLIC_URL:-}"
 
 # Step 7: Kill any existing server, then launch daemon
 pkill -f "node server.js" 2>/dev/null || true

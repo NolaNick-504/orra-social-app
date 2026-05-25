@@ -5,20 +5,28 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 /**
  * KeepAliveProvider — prevents the FC container from freezing.
  *
+ * HOW IT WORKS:
+ * Pings /api/health every 5 seconds. These pings go through the FC proxy
+ * (browser → FC load balancer → Caddy → Node), which counts as external
+ * traffic and keeps the container alive.
+ *
+ * KEY DESIGN PRINCIPLES:
+ * 1. NEVER stop the main ping interval — pings are what keep the container alive
+ * 2. NO abort timeout on pings — let the browser handle timeouts naturally
+ * 3. Require 3+ consecutive failures before showing reconnect overlay
+ * 4. Recovery does NOT do a full page reload — just invalidates React Query cache
+ *    so the app refreshes its data without losing the current UI state
+ *
  * PREVIOUS BUG (the one causing all the "Reconnecting..." screens):
  * - Old code had a 3-second AbortController timeout on pings
  * - If the server was even slightly slow, the ping would abort → counted as failure
  * - On ONE failed ping, recovery mode started
- * - Recovery mode set isRecoveringRef = true
- * - The main ping loop checked `if (isRecoveringRef.current) return;` → STOPPED ALL PINGS
- * - No pings = no external traffic = FC freezes the container = server dies
- * - DEATH SPIRAL: one slow response → stop pinging → container frozen → can't recover
+ * - Recovery mode STOPPED all pings → container froze → death spiral
  *
- * FIX:
- * 1. NO abort timeout on pings — let the browser handle timeouts naturally
- * 2. NEVER stop the main ping interval — pings are what keep the container alive
- * 3. Require 3+ consecutive failures before showing reconnect overlay
- * 4. Recovery retries are SEPARATE from the main ping loop (no interference)
+ * ALSO IMPORTANT: This client-side ping is the BACKUP to the server-side
+ * self-ping (in server.js). The server-side ping is more reliable because
+ * it runs even when the browser is closed. But this client-side ping
+ * provides immediate feedback to the user.
  */
 
 const PING_INTERVAL = 5_000;     // 5 seconds — ping often enough that FC never sees inactivity
@@ -41,8 +49,6 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Simple ping — NO abort controller, NO timeout.
-  // Let the browser handle the request lifecycle naturally.
-  // The old AbortController timeout was the #1 cause of false "server down" detections.
   const ping = useCallback(async (): Promise<boolean> => {
     try {
       const res = await fetch('/api/health', {
@@ -60,6 +66,8 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
 
   // Recovery — runs IN PARALLEL with the main ping loop.
   // The main ping loop NEVER stops, even during recovery.
+  // On recovery: just dismiss the overlay. React Query will auto-refetch
+  // stale data on the next render cycle. No full page reload needed.
   const startRecovery = useCallback(async () => {
     if (isRecoveringRef.current) return;
     isRecoveringRef.current = true;
@@ -76,8 +84,24 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
         isRecoveringRef.current = false;
         consecutiveFailsRef.current = 0;
         setStatus('healthy');
-        // Reload to get fresh app state after recovery
-        window.location.replace('/?_cb=' + Date.now());
+
+        // Instead of a full page reload, just dispatch a custom event
+        // that React Query listeners can use to invalidate their caches.
+        // This is much less disruptive than window.location.replace().
+        try {
+          window.dispatchEvent(new CustomEvent('orra-server-recovered'));
+        } catch {}
+
+        // If the page is showing error state (e.g., ErrorBoundary caught something),
+        // a gentle reload is needed. But only if there's visible error content.
+        const bodyText = document.body?.innerText || '';
+        const hasErrorUI = (
+          bodyText.includes('Something went wrong') ||
+          bodyText.includes('Page Not Found')
+        );
+        if (hasErrorUI) {
+          window.location.replace('/?_cb=' + Date.now());
+        }
         return;
       }
     }
@@ -86,7 +110,6 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
   // MAIN KEEP-ALIVE LOOP — this is the most critical part.
   // It NEVER stops. It pings every 5 seconds regardless of server status.
   // These pings go through the FC proxy → keep the container alive.
-  // Even if the server is "down", the pings themselves tell FC "this container is active".
   useEffect(() => {
     let cancelled = false;
 
@@ -98,7 +121,6 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
 
       if (ok) {
         consecutiveFailsRef.current = 0;
-        // If we were in recovery but server is now healthy, recover
         if (isRecoveringRef.current) {
           isRecoveringRef.current = false;
           setStatus('healthy');
@@ -107,10 +129,8 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         consecutiveFailsRef.current++;
-        // Only show overlay after multiple consecutive failures
         if (consecutiveFailsRef.current >= FAIL_THRESHOLD) {
           setStatus('down');
-          // Start recovery if not already running
           if (!isRecoveringRef.current) {
             startRecovery();
           }
@@ -122,7 +142,6 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
     doPing();
 
     // CRITICAL: This interval NEVER stops. Even during recovery.
-    // The pings themselves are what keep the FC container alive.
     const id = setInterval(doPing, PING_INTERVAL);
 
     return () => {
@@ -147,8 +166,7 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
             if (
               bodyText.includes('Page Not Found') ||
               bodyText.includes('Something went wrong') ||
-              bodyText.includes('404') ||
-              bodyText.includes('Reconnecting')
+              bodyText.includes('404')
             ) {
               window.location.replace('/?_cb=' + Date.now());
             }
@@ -182,7 +200,6 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
 
     const handleOffline = () => {
       console.warn('ORRA: Network went offline');
-      // Don't show reconnect overlay for offline — that's a user network issue, not a server issue
     };
 
     window.addEventListener('online', handleOnline);
@@ -235,7 +252,6 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
                 } catch {
                   // Will keep retrying via main loop
                 }
-                window.location.replace('/?_cb=' + Date.now());
               }}
               className="mt-4 px-5 py-2 rounded-xl bg-white/10 text-white/70 text-xs hover:bg-white/20 transition-colors"
             >
