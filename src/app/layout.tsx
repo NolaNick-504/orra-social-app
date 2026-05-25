@@ -111,19 +111,11 @@ export default function RootLayout({
               try { localStorage.removeItem('aura-storage'); } catch(x) {}
             }
 
-            // 4. Loading screen watchdog — if app is stuck for 15 seconds,
-            //    redirect to clear-cache.html to nuke everything and retry.
-            //    This is the LAST resort, not the first.
-            setTimeout(function() {
-              var root = document.getElementById('__next');
-              if (root) {
-                var text = root.innerText || root.textContent || '';
-                if (text.includes('Loading ORRA') && !text.includes('Sign In') && !text.includes('Home')) {
-                  console.warn('ORRA: App stuck on loading screen for 15s — redirecting to clear cache');
-                  window.location.replace('/clear-cache.html');
-                }
-              }
-            }, 15000);
+            // REMOVED: 15-second loading screen watchdog.
+            // This was redirecting to /clear-cache.html which nukes ALL data,
+            // then redirects to /join.html → / which re-triggers the same loading
+            // screen → infinite redirect loop. The KeepAliveProvider and SW
+            // reconnect page handle recovery properly now.
           })();
         `}} />
       </head>

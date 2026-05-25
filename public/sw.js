@@ -167,10 +167,15 @@ self.addEventListener('activate', (event) => {
 });
 
 // Check if a response indicates the server is down
-function isServerError(response) {
+// NOTE: 404 is NOT treated as server-down for API calls because some API routes
+// legitimately return 404 (e.g., /api/me returning "User not found").
+// For navigation requests, 404 IS treated as server-down because our app
+// doesn't have any real 404 pages — it's always the platform proxy.
+function isServerError(response, isNavigation) {
   if (!response) return true;
-  // 404, 502, 503 all mean the server/container is down
-  if (response.status === 404 || response.status === 502 || response.status === 503) return true;
+  if (response.status === 502 || response.status === 503) return true;
+  // Only treat 404 as server-down for navigation requests (HTML pages)
+  if (isNavigation && response.status === 404) return true;
   return false;
 }
 
@@ -203,7 +208,7 @@ self.addEventListener('fetch', (event) => {
 
           // Got a non-OK or non-HTML response
           // This could be: 404 from platform proxy, 502 from Caddy, JSON error, etc.
-          if (isServerError(response)) {
+          if (isServerError(response, true)) {
             // Server is down — show reconnect page
             return new Response(RECONNECT_HTML, {
               status: 200,
@@ -268,7 +273,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API calls — network first, detect platform errors
+  // API calls — network first, only intercept 502/503 (platform proxy errors)
+  // IMPORTANT: We do NOT convert 404s to 503s because some API routes
+  // legitimately return 404 (e.g., /api/me "User not found").
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request)
@@ -276,13 +283,14 @@ self.addEventListener('fetch', (event) => {
           if (response.ok) {
             return response;
           }
-          // 404 from API when server is down
-          if (isServerError(response)) {
+          // Only 502/503 indicate the server/container is down
+          if (response.status === 502 || response.status === 503) {
             return new Response(JSON.stringify({ ok: false, error: 'server_down', retry: true }), {
               status: 503,
               headers: { 'Content-Type': 'application/json' },
             });
           }
+          // All other errors (including 404, 500) pass through as-is
           return response;
         })
         .catch(() => {
