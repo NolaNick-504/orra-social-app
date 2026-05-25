@@ -211,3 +211,31 @@ Stage Summary:
 - Fix: Aggressive keep-alive pings (5s) from browser + self-ping from supervisor
 - Reconnect is now 2x faster (2s retry vs 4s, 100 attempts vs 40)
 - Commits: 86e1ae7, d360248 pushed to main
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Comprehensive stability audit - find and fix ALL timeout-causing bugs
+
+Work Log:
+- Ran 3 parallel audit agents: git history, process/memory, server-side code
+- Found 15 issues across the codebase, 7 CRITICAL/HIGH priority
+- The app "worked for months" because it didn't have: service worker, keep-alive
+  provider, complex startup scripts, uncaughtException handler, or LLM chat API
+- The recent sprint added ALL of these, and each introduced instability
+- Fixed all 7 critical issues:
+  1. server.js: Added 30s request timeout (was infinite)
+  2. server.js: Only catch recoverable errors (was catching ALL, masking crashes)
+  3. server.js: Stream files with createReadStream (was readFileSync blocking event loop)
+  4. ai/chat/route.ts: Added 30s AbortController for LLM calls (was infinite)
+  5. comments/route.ts: Added 10s AbortController for auto-comment fetch
+  6. middleware.ts: Await dbReady PRAGMAs before any route (was never awaited)
+  7. uploads/route.ts: Stream files, lower limit to 20MB (was loading 100MB into RAM)
+- Also fixed: db-backup/restore sync->async, rate limiter memory leak, self-ping 5s->15s
+- Rebuilt and pushed to GitHub (commit 9844202)
+
+Stage Summary:
+- Root cause chain: No request timeout + uncaughtException masking + readFileSync blocking
+  = server becomes unresponsive under load, FC kills container
+- All 7 critical bugs fixed, server running stably
+- Commit: 9844202 pushed to main
