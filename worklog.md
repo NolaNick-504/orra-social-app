@@ -30,3 +30,24 @@ Stage Summary:
 - All 6 original audit issues: FIXED
 - All 3 new critical/medium issues: FIXED
 - App fully functional with no white screen
+
+---
+Task ID: 1
+Agent: Main
+Task: Fix ORRA app timeout by simplifying startup chain
+
+Work Log:
+- Identified root cause: dev.sh had 6 blocking steps before server start, including `next build` (30-60s)
+- Rewrote dev.sh: server starts FIRST, everything else in background
+- Fixed build-preserver.py: caches to /home/sync/ (persists) instead of /tmp/ (wiped on rebuild)
+- Simplified start.sh: just cd + exec dev.sh
+- Cached current build (264MB) to /home/sync/orra-build-cache/.next/
+- Backed up DB to /home/sync/orra-db-backup/latest.db
+- Pushed all changes to GitHub
+- Verified app running: HTTP 200 on homepage and API
+
+Stage Summary:
+- Cold start should now take ~5s instead of 30-60+s
+- Build cache on /home/sync/ survives container rebuilds
+- Removed: aura-daemon, lock files, SIGTERM hooks, WAL checkpoint on startup
+- Server starts immediately, background tasks run after
