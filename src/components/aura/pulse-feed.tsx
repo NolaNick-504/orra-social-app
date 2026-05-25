@@ -899,11 +899,15 @@ export function PulseFeed() {
 
   // Flatten all pages from infinite query into a single post list
   const allPosts = infiniteData?.pages.flatMap(page => page.posts) ?? [];
-  // Deduplicate by post ID — prevents duplicates from React Query cache overlap
-  const seenPostIds = new Set<string>();
+  // Deduplicate by composite key — prevents duplicates from React Query cache overlap
+  // Regular posts use postId, echo entries use echo:echoId to avoid clashing with the original
+  const seenKeys = new Set<string>();
   const dedupedPosts = allPosts.filter(post => {
-    if (seenPostIds.has(post.id)) return false;
-    seenPostIds.add(post.id);
+    const isEcho = (post as any)._isEcho || (post as any).isEcho;
+    const echoId = (post as any)._echoId || (post as any).echoId;
+    const key = isEcho && echoId ? `echo:${echoId}` : post.id;
+    if (seenKeys.has(key)) return false;
+    seenKeys.add(key);
     return true;
   });
 
@@ -1236,7 +1240,7 @@ export function PulseFeed() {
         const headerIsCurrentUser = isEcho ? echoerIsCurrentUser : isUserPost;
 
         // Insert an ad card every 10-15 posts (randomized interval per ad slot)
-        const AD_INTERVALS = [10, 12, 11, 13, 10, 14, 12, 11, 15, 13];
+        const AD_INTERVALS = [8, 10, 9, 11, 8, 12, 10, 9, 13, 11, 8, 10, 9, 12];
         let adSlot = 0;
         let adThreshold = AD_INTERVALS[0];
         const showAd = (index + 1) >= adThreshold && (index + 1) === adThreshold;
@@ -1425,6 +1429,138 @@ export function PulseFeed() {
             borderColor: 'border-cyan-300',
             neonShadow: '0 0 20px rgba(6,182,212,1), 0 0 50px rgba(6,182,212,0.7), 0 0 100px rgba(6,182,212,0.4), 0 0 150px rgba(6,182,212,0.2), inset 0 0 20px rgba(6,182,212,0.2)',
             neonShadowHover: '0 0 25px rgba(6,182,212,1), 0 0 70px rgba(6,182,212,0.9), 0 0 120px rgba(6,182,212,0.5), 0 0 180px rgba(6,182,212,0.3), inset 0 0 25px rgba(6,182,212,0.25)',
+          },
+          {
+            badge: 'PROMOTED',
+            badgeColor: 'bg-violet-600',
+            brand: 'NEON FIT',
+            brandIcon: <Zap className="w-3 h-3" />,
+            image: '/images/ads/neon-fit.jpg',
+            headline: 'AI Fitness Coach',
+            subtext: 'Personalized workouts powered by AI. Adapts to your body, your schedule, your goals. No gym required.',
+            details: 'Free 14-day trial | $9.99/mo | Cancel anytime',
+            website: 'neonfit.app',
+            phone: '1-800-NEON-FIT',
+            address: 'Miami, FL',
+            hours: 'Workout 24/7',
+            rating: '4.8',
+            reviews: '45.2K',
+            cta: 'Start Free Trial',
+            ctaColor: 'bg-violet-600 hover:bg-violet-500',
+            glowColor: 'violet',
+            borderColor: 'border-violet-300',
+            neonShadow: '0 0 20px rgba(139,92,246,1), 0 0 50px rgba(139,92,246,0.7), 0 0 100px rgba(139,92,246,0.4), 0 0 150px rgba(139,92,246,0.2), inset 0 0 20px rgba(139,92,246,0.2)',
+            neonShadowHover: '0 0 25px rgba(139,92,246,1), 0 0 70px rgba(139,92,246,0.9), 0 0 120px rgba(139,92,246,0.5), 0 0 180px rgba(139,92,246,0.3), inset 0 0 25px rgba(139,92,246,0.25)',
+          },
+          {
+            badge: 'SPONSORED',
+            badgeColor: 'bg-pink-600',
+            brand: 'VELVET SKIN',
+            brandIcon: <Sparkles className="w-3 h-3" />,
+            image: '/images/ads/velvet-skin.jpg',
+            headline: 'Glow Like Never Before',
+            subtext: '24K gold-infused serum with hyaluronic acid. Visible results in 7 days or full refund. Dermatologist approved.',
+            details: 'All skin types | $49.99 | Free shipping',
+            website: 'velvetskin.co',
+            phone: '1-833-VELVET-1',
+            address: 'Nashville, TN',
+            hours: 'Shop 24/7 online',
+            rating: '4.9',
+            reviews: '22.7K',
+            cta: 'Get 30% Off',
+            ctaColor: 'bg-pink-600 hover:bg-pink-500',
+            glowColor: 'pink',
+            borderColor: 'border-pink-300',
+            neonShadow: '0 0 20px rgba(219,39,119,1), 0 0 50px rgba(219,39,119,0.7), 0 0 100px rgba(219,39,119,0.4), 0 0 150px rgba(219,39,119,0.2), inset 0 0 20px rgba(219,39,119,0.2)',
+            neonShadowHover: '0 0 25px rgba(219,39,119,1), 0 0 70px rgba(219,39,119,0.9), 0 0 120px rgba(219,39,119,0.5), 0 0 180px rgba(219,39,119,0.3), inset 0 0 25px rgba(219,39,119,0.25)',
+          },
+          {
+            badge: 'AD',
+            badgeColor: 'bg-green-600',
+            brand: 'CIPHER VPN',
+            brandIcon: <Sparkles className="w-3 h-3" />,
+            image: '/images/ads/cipher-vpn.jpg',
+            headline: 'Your Privacy, Fortified',
+            subtext: 'Military-grade encryption with zero logs. Browse, stream, and scroll without anyone watching. 85 countries.',
+            details: 'From $3.99/mo | 45-day guarantee | 10 devices',
+            website: 'ciphervpn.io',
+            phone: '1-888-CIPHER-V',
+            address: 'Zug, Switzerland',
+            hours: 'Support 24/7',
+            rating: '4.8',
+            reviews: '67.3K',
+            cta: 'Protect Now — 70% Off',
+            ctaColor: 'bg-green-600 hover:bg-green-500',
+            glowColor: 'green',
+            borderColor: 'border-green-300',
+            neonShadow: '0 0 20px rgba(22,163,74,1), 0 0 50px rgba(22,163,74,0.7), 0 0 100px rgba(22,163,74,0.4), 0 0 150px rgba(22,163,74,0.2), inset 0 0 20px rgba(22,163,74,0.2)',
+            neonShadowHover: '0 0 25px rgba(22,163,74,1), 0 0 70px rgba(22,163,74,0.9), 0 0 120px rgba(22,163,74,0.5), 0 0 180px rgba(22,163,74,0.3), inset 0 0 25px rgba(22,163,74,0.25)',
+          },
+          {
+            badge: 'PROMOTED',
+            badgeColor: 'bg-indigo-600',
+            brand: 'ECHO SPEAKERS',
+            brandIcon: <Waves className="w-3 h-3" />,
+            image: '/images/ads/echo-speakers.jpg',
+            headline: 'Feel Every Frequency',
+            subtext: '360-degree spatial audio that fills any room. Handcrafted walnut wood, 40-hour battery. Sound you can touch.',
+            details: 'Echo Pro $399 | Echo Mini $199 | Free engraving',
+            website: 'echospeakers.com',
+            phone: '1-800-ECHO-SND',
+            address: 'Brooklyn, NY',
+            hours: 'Mon-Sat 10AM-7PM ET',
+            rating: '4.9',
+            reviews: '14.8K',
+            cta: 'Hear the Difference',
+            ctaColor: 'bg-indigo-600 hover:bg-indigo-500',
+            glowColor: 'indigo',
+            borderColor: 'border-indigo-300',
+            neonShadow: '0 0 20px rgba(79,70,229,1), 0 0 50px rgba(79,70,229,0.7), 0 0 100px rgba(79,70,229,0.4), 0 0 150px rgba(79,70,229,0.2), inset 0 0 20px rgba(79,70,229,0.2)',
+            neonShadowHover: '0 0 25px rgba(79,70,229,1), 0 0 70px rgba(79,70,229,0.9), 0 0 120px rgba(79,70,229,0.5), 0 0 180px rgba(79,70,229,0.3), inset 0 0 25px rgba(79,70,229,0.25)',
+          },
+          {
+            badge: 'AD',
+            badgeColor: 'bg-sky-600',
+            brand: 'FLOW STATE',
+            brandIcon: <Zap className="w-3 h-3" />,
+            image: '/images/ads/flow-state.jpg',
+            headline: 'Unlock Deep Focus',
+            subtext: 'Nootropic-infused focus drink with L-theanine and lion\'s mane. Zero crash, zero jitters. Just pure flow state.',
+            details: '4-pack $12.99 | Subscribe & save 20% | Sugar-free',
+            website: 'flowstate.co',
+            phone: '1-833-FLOW-ST',
+            address: 'Austin, TX',
+            hours: 'Order 24/7',
+            rating: '4.7',
+            reviews: '19.4K',
+            cta: 'Try Flow State',
+            ctaColor: 'bg-sky-600 hover:bg-sky-500',
+            glowColor: 'sky',
+            borderColor: 'border-sky-300',
+            neonShadow: '0 0 20px rgba(14,165,233,1), 0 0 50px rgba(14,165,233,0.7), 0 0 100px rgba(14,165,233,0.4), 0 0 150px rgba(14,165,233,0.2), inset 0 0 20px rgba(14,165,233,0.2)',
+            neonShadowHover: '0 0 25px rgba(14,165,233,1), 0 0 70px rgba(14,165,233,0.9), 0 0 120px rgba(14,165,233,0.5), 0 0 180px rgba(14,165,233,0.3), inset 0 0 25px rgba(14,165,233,0.25)',
+          },
+          {
+            badge: 'SPONSORED',
+            badgeColor: 'bg-lime-600',
+            brand: 'MYTHIC SNACKS',
+            brandIcon: <Star className="w-3 h-3" />,
+            image: '/images/ads/mythic-snacks.jpg',
+            headline: 'Snacks Worth Bragging About',
+            subtext: 'Hand-seasoned kettle chips in legendary flavors: Dragon Fire, Phoenix Ranch, Kraken Salt. Small batch, huge taste.',
+            details: '6-flavor variety pack $24.99 | Free shipping | Vegan options',
+            website: 'mythicsnacks.co',
+            phone: '1-888-MYTH-ICK',
+            address: 'Portland, OR',
+            hours: 'Order 24/7 online',
+            rating: '4.8',
+            reviews: '8.9K',
+            cta: 'Grab the Variety Pack',
+            ctaColor: 'bg-lime-600 hover:bg-lime-500',
+            glowColor: 'lime',
+            borderColor: 'border-lime-300',
+            neonShadow: '0 0 20px rgba(101,163,13,1), 0 0 50px rgba(101,163,13,0.7), 0 0 100px rgba(101,163,13,0.4), 0 0 150px rgba(101,163,13,0.2), inset 0 0 20px rgba(101,163,13,0.2)',
+            neonShadowHover: '0 0 25px rgba(101,163,13,1), 0 0 70px rgba(101,163,13,0.9), 0 0 120px rgba(101,163,13,0.5), 0 0 180px rgba(101,163,13,0.3), inset 0 0 25px rgba(101,163,13,0.25)',
           },
         ];
 

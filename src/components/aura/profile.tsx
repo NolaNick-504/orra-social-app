@@ -4,7 +4,7 @@ import { useAuraStore } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { usePosts, useUserPosts, useHubs } from '@/lib/api-hooks';
 import { resolveImageUrl, getInitials } from '@/lib/utils';
-import { MapPin, Link as LinkIcon, Calendar, Grid3X3, Clapperboard, Trophy, Bookmark, Heart, Share2, Edit3, Zap, Users, X, MessageCircle, Waves, Sparkles, ArrowLeft, Crown, Star, Rocket, Music, QrCode, ScanLine } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, Grid3X3, Clapperboard, Trophy, Bookmark, Heart, Share2, Zap, Users, X, MessageCircle, Waves, Sparkles, ArrowLeft, Crown, Star, Rocket, Music, QrCode, ScanLine } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -489,19 +489,12 @@ export function Profile() {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
         <div className={`absolute inset-0 ${profileIsFounder ? 'bg-gradient-to-t from-[#050505] via-[#050505]/20 to-amber-500/5' : 'bg-gradient-to-t from-[#050505] via-[#050505]/30 to-transparent'}`} />
-        {isViewingOther ? (
+        {isViewingOther && (
           <button
             onClick={() => { setViewingUser(null); setView('home'); }}
             className="absolute top-3 left-3 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-sm text-white text-xs font-medium hover:bg-black/60 transition-all flex items-center gap-1.5"
           >
             <ArrowLeft className="w-3 h-3" /> Back
-          </button>
-        ) : (
-          <button
-            onClick={toggleEditProfile}
-            className="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur-sm text-white text-xs font-medium hover:bg-black/60 transition-all flex items-center gap-1.5"
-          >
-            <Edit3 className="w-3 h-3" /> Edit Cover
           </button>
         )}
       </div>

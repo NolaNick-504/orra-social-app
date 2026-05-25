@@ -76,6 +76,30 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { name, handle, bio, location, website, avatar, coverImage, profileSetupComplete, profileSongUrl, profileSongTitle, profileSongArtist } = body;
 
+    // 🔒 FOUNDER PROFILE PROTECTION: The founder profile can never be changed
+    // Certain core fields (name, handle, bio, avatar, coverImage) are locked
+    if (userId === 'founder') {
+      const allowedFields: Record<string, any> = {};
+      // Only allow updating these safe fields:
+      if (profileSetupComplete !== undefined) allowedFields.profileSetupComplete = profileSetupComplete;
+      if (location !== undefined) allowedFields.location = location;
+      if (website !== undefined) allowedFields.website = website;
+      // All other fields (name, handle, bio, avatar, coverImage, songs) are locked
+      const updatedUser = await writeQueue.run(async () => {
+        return db.user.update({
+          where: { id: userId },
+          data: allowedFields,
+          select: {
+            id: true, name: true, handle: true, avatar: true, coverImage: true,
+            bio: true, location: true, website: true,
+            profileSongUrl: true, profileSongTitle: true, profileSongArtist: true,
+            auraTokens: true, auraLevel: true,
+          },
+        });
+      });
+      return NextResponse.json({ success: true, data: updatedUser });
+    }
+
     // If handle is being changed, check uniqueness (read - can be done outside queue)
     if (handle) {
       const existingUser = await db.user.findUnique({ where: { handle } });
