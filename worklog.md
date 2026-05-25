@@ -1,33 +1,35 @@
 ---
 Task ID: 1
-Agent: main
-Task: Fix "sandbox is inactive" cold-start error and data persistence
+Agent: Main Agent
+Task: Fix all data persistence and white screen issues in ORRA app
 
 Work Log:
-- Analyzed screenshot showing `{"error":"sandbox is inactive"}` — platform sandbox went cold, browser shows raw JSON instead of HTML
-- Identified root cause: When the hosting sandbox/container goes inactive, ALL requests return JSON error. Since no HTML page loads, none of the existing React error boundaries or bootstrap scripts run
-- Created Service Worker v7 (`public/sw.js`) that:
-  - Intercepts navigation requests and detects "sandbox is inactive" / platform error JSON responses
-  - Returns a branded "Waking Up ORRA" HTML page with auto-retry logic instead of raw JSON
-  - Detects platform errors in API calls (403 FCCommonError, "sandbox is inactive" JSON)
-  - Uses cache-first for static chunks and images
-  - Cleans up old cache versions on activation
-- Updated bootstrap script in `layout.tsx`:
-  - Registers SW v7 for cold-start protection (instead of killing all SWs)
-  - Clears only OLD cache versions (preserves v7 caches)
-  - Added `showSandboxOverlay()` / `hideSandboxOverlay()` for in-app "Waking Up" overlay
-  - Enhanced fetch wrapper to detect "sandbox is inactive" responses and X-ORRA-Sandbox header
-  - Keep-alive pings now detect sandbox errors and show overlay
-  - Auto-retry with increasing delays (3s, 6s, 9s) when sandbox is cold
-- Verified seed script (`prisma/seed.ts`) is already in safe mode:
-  - Only deletes data when `ORRA_SEED_FORCE=1` env var is set
-  - Otherwise uses findFirst + create pattern (skip if exists)
-  - Always ensures founder password is correct
-- Verified `.gitignore` already has correct DB persistence (only ignores .db-wal, .db-shm, custom-seed-backup.db)
-- Updated `clear-cache.html` to properly unregister old SWs and clear caches
+- Found project at /home/z/my-project/ (Next.js + Prisma + SQLite)
+- Conducted full audit identifying 16 issues across critical, high, medium, and low categories
+- Fixed NEXTAUTH_SECRET mismatch across 3 files (aura-daemon.py, auth.ts, .env)
+- Changed /api/db-backup and /api/db-restore from GET to POST with admin authentication
+- Fixed auth check to use founder email/ID instead of missing 'role' field
+- Removed hardcoded fallback secret in auth.ts
+- Fixed build.sh to stop embedding database in build artifacts
+- Fixed startup-v3.sh to use 'node server.js' instead of 'npx next start'
+- Removed dangerous 'next dev' fallback from startup-v3.sh
+- Fixed build-preserver.py to cache non-standalone .next/ directory
+- Fixed all 7 script files using 'npx next start' to use 'node server.js'
+- Fixed dev.sh to detect stale builds (source files newer than BUILD_ID)
+- Fixed dev.sh founder password to only set on first-time (not every startup)
+- Fixed db.ts PrismaClient to always use global singleton
+- Fixed db.ts PRAGMA statements to be awaited instead of fire-and-forget
+- Removed client-side /api/db-backup calls from keep-alive-provider
+- Added build cache restore/sync to dev.sh
+- Fixed build-id/route.ts to cache BUILD_ID in memory
+- Fixed auto-poster-daemon.py NEXTAUTH_SECRET
+- Added AUTOPOST_KEY to .env and aura-daemon.py
+- Rebuilt Next.js app successfully
+- Pushed all changes to GitHub
 
 Stage Summary:
-- Service Worker v7 provides cold-start resilience — users see "Waking Up ORRA" instead of raw JSON
-- In-app sandbox overlay shows when keep-alive or API calls detect sandbox inactive
-- Seed script already safe — data persists across container rebuilds
-- DB file (custom.db) already committed to git and not ignored
+- 18 files modified, pushed to GitHub as commit 041ebc3
+- All critical data loss issues fixed (auth, DB embedding, secret mismatch)
+- All white screen causes fixed (server.js instead of next start, chunk 404 protection)
+- Build verified successful, server returns 200 with 41KB HTML
+- Database persistence relies on /home/sync/orra-db-backup/ which survives container rebuilds
