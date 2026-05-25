@@ -1,11 +1,14 @@
 #!/bin/bash
-# ORRA Custom Startup Script
+# ORRA Custom Startup Script v2.0
+# - Uses prisma migrate deploy (SAFE) instead of prisma db push (DESTRUCTIVE)
 # - Restores DB from backup if available, or seeds fresh (ONCE only)
 # - NEVER re-seeds if data already exists (preserves user customizations)
 # - NEVER deletes the database — always tries recovery first
 # - Runs DB integrity check + WAL checkpoint to prevent corruption
+# - Stops aura-daemon before schema operations to prevent race conditions
 # - Starts aura-daemon.py as the SOLE supervisor for Next.js
-#   (NO more supervisor conflicts between dev.sh and aura-daemon)
+# - Backs up DB every 2 minutes (was 5) for better crash recovery
+# - Adds shutdown hook to backup DB immediately on SIGTERM
 
 set -e
 
@@ -14,12 +17,46 @@ LOG_FILE=$PROJECT_DIR/next-supervisor.log
 DB_FILE=$PROJECT_DIR/db/custom.db
 PERSISTENT_BACKUP=/home/sync/orra-db-backup/latest.db
 AURA_DAEMON=$PROJECT_DIR/.zscripts/aura-daemon.py
+LOCK_FILE=/tmp/orra-startup.lock
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ORRA-Startup] $1" | tee -a "$LOG_FILE"
 }
 
-log "ORRA custom startup script running..."
+# Prevent concurrent startup scripts
+if [ -f "$LOCK_FILE" ]; then
+  LOCK_PID=$(cat "$LOCK_FILE" 2>/dev/null)
+  if [ -n "$LOCK_PID" ] && kill -0 "$LOCK_PID" 2>/dev/null; then
+    log "Another startup script is already running (PID $LOCK_PID). Exiting."
+    exit 0
+  fi
+fi
+echo $$ > "$LOCK_FILE"
+trap 'rm -f "$LOCK_FILE"' EXIT
+
+# Shutdown hook: backup DB immediately when container is shutting down
+cleanup() {
+  log "Shutdown signal received — backing up database immediately..."
+  if [ -f "$DB_FILE" ]; then
+    node -e "
+    try {
+      const Database = require('better-sqlite3');
+      const db = new Database('$DB_FILE');
+      db.pragma('wal_checkpoint(TRUNCATE)');
+      db.close();
+    } catch(e) {}
+    " 2>/dev/null || true
+    mkdir -p /home/sync/orra-db-backup
+    cp "$DB_FILE" /home/sync/orra-db-backup/latest.db 2>/dev/null || true
+    log "Emergency backup complete!"
+  fi
+  # Stop aura-daemon cleanly
+  python3 "$AURA_DAEMON" --stop 2>/dev/null || true
+  rm -f "$LOCK_FILE"
+}
+trap cleanup SIGTERM SIGINT
+
+log "ORRA custom startup script v2.0 running..."
 
 # Step 0: Check persistent storage availability
 log "Checking persistent storage mount..."
@@ -41,7 +78,16 @@ cd "$PROJECT_DIR"
 log "Generating Prisma client..."
 npx prisma generate 2>&1 | tee -a "$LOG_FILE"
 
-# Step 3: Database integrity check + WAL checkpoint
+# Step 3: STOP aura-daemon BEFORE any DB operations (fixes race condition - Audit #5)
+log "Stopping aura-daemon to prevent race conditions during DB operations..."
+python3 "$AURA_DAEMON" --stop 2>/dev/null || true
+sleep 2
+
+# Also kill any Node server processes
+pkill -f "node server.js" 2>/dev/null || true
+sleep 1
+
+# Step 4: Database integrity check + WAL checkpoint
 # This is CRITICAL — if the container froze mid-write, the DB may be corrupted
 # IMPORTANT: We NEVER delete the DB file. We always try to recover or restore.
 log "Running database integrity check and WAL checkpoint..."
@@ -77,7 +123,7 @@ try {
     console.error('Database CORRUPTED! Attempting recovery...');
     try { db.close(); } catch(e) {}
     
-    // Strategy 1: Try SQLite .recover to salvage data
+    // Strategy 1: Try SQLite .recover to salvage data (Audit #3 fix)
     console.log('Attempting SQLite .recover to salvage data...');
     const { execSync } = require('child_process');
     const dumpPath = DB_PATH + '.recover.db';
@@ -113,13 +159,11 @@ try {
       }
     }
     
-    // Strategy 3: Try to open with better-sqlite3 in recovery mode
+    // Strategy 3: If nothing worked, keep the corrupted DB in place
+    // We do NOT delete it. prisma/seed will handle it.
     if (!recovered) {
-      console.log('All recovery attempts failed — DB will be re-seeded on next step');
-      // We do NOT delete the DB. We just let it be.
-      // The seed script's safe mode will handle this — it checks if users exist.
-      // If the DB is truly unusable, prisma db push will recreate it.
-      console.log('Keeping corrupted DB file — it may still be partially usable');
+      console.log('All recovery attempts failed — keeping corrupted DB in place');
+      console.log('The seed script will detect this and handle appropriately');
     }
   }
   
@@ -144,7 +188,7 @@ try {
 }
 " 2>&1 | tee -a "$LOG_FILE"
 
-# Step 4: Check for persistent backup (for restore if DB was wiped or missing)
+# Step 5: Check for persistent backup (for restore if DB was wiped or missing)
 if [ -f "$PERSISTENT_BACKUP" ]; then
   log "Found persistent DB backup at $PERSISTENT_BACKUP"
   mkdir -p "$PROJECT_DIR/db"
@@ -152,9 +196,13 @@ if [ -f "$PERSISTENT_BACKUP" ]; then
   SEED_NEEDED=false
   if [ -f "$DB_FILE" ]; then
     USER_COUNT=$(cd "$PROJECT_DIR" && node -e "
-      const { PrismaClient } = require('@prisma/client');
-      const db = new PrismaClient();
-      db.user.count().then(c => { console.log(c); db.\$disconnect(); }).catch(() => { console.log('0'); db.\$disconnect(); });
+      const Database = require('better-sqlite3');
+      try {
+        const db = new Database('./db/custom.db');
+        const result = db.prepare('SELECT count(*) as cnt FROM User').get();
+        console.log(result.cnt);
+        db.close();
+      } catch(e) { console.log('0'); }
     " 2>/dev/null || echo "0")
     
     if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then
@@ -171,43 +219,103 @@ else
   log "No persistent backup found, checking for existing DB..."
 fi
 
-# Step 5: Push schema — SAFE mode
-# This only ADDS new columns/tables. It NEVER drops data.
-# We use --accept-data-loss=false equivalent by checking the output.
-# If prisma db push wants to drop something, we log a WARNING and skip it.
+# Step 6: Apply schema changes — SAFE mode using prisma migrate deploy (Audit #1 fix)
+# prisma migrate deploy is NON-DESTRUCTIVE:
+#   - Only applies pending migrations (never rolls back)
+#   - Never drops columns or data
+#   - If a migration would be destructive, it must be created manually
+#   - Falls back to prisma db push ONLY for first-time setup (no existing _prisma_migrations)
 cd "$PROJECT_DIR"
-log "Pushing database schema (safe — adds new columns only)..."
 
-# First, ensure no server is running (to avoid WAL conflicts)
-pkill -f "node server.js" 2>/dev/null || true
-sleep 2
-
-# Flush WAL before schema push
+# Flush WAL before any schema operations
 node -e "
 try {
   const Database = require('better-sqlite3');
   const db = new Database('$DB_FILE');
   db.pragma('wal_checkpoint(TRUNCATE)');
   db.close();
-  console.log('WAL flushed before schema push');
+  console.log('WAL flushed before schema operation');
 } catch(e) { console.warn('WAL flush warning:', e.message); }
 " 2>/dev/null || true
 
-# Run prisma db push with --skip-generate (we already generated above)
-PUSH_OUTPUT=$(npx prisma db push --skip-generate 2>&1) || true
-echo "$PUSH_OUTPUT" | tee -a "$LOG_FILE"
+# Check if _prisma_migrations table exists (indicates migrate is set up)
+HAS_MIGRATIONS=$(cd "$PROJECT_DIR" && node -e "
+const Database = require('better-sqlite3');
+try {
+  const db = new Database('./db/custom.db');
+  const tables = db.prepare(\"SELECT name FROM sqlite_master WHERE type='table' AND name='_prisma_migrations'\").all();
+  console.log(tables.length > 0 ? 'yes' : 'no');
+  db.close();
+} catch(e) { console.log('no'); }
+" 2>/dev/null || echo "no")
 
-# Check if prisma wanted to drop data
-if echo "$PUSH_OUTPUT" | grep -qi "data loss\|dropping\|deleting\|cannot.*without.*data"; then
-  log "WARNING: prisma db push may require data loss — SKIPPING destructive changes"
-  log "You may need to run 'prisma migrate dev' manually to handle schema changes"
+if [ "$HAS_MIGRATIONS" = "yes" ]; then
+  log "Applying schema changes via prisma migrate deploy (SAFE — non-destructive)..."
+  MIGRATE_OUTPUT=$(npx prisma migrate deploy 2>&1) || true
+  echo "$MIGRATE_OUTPUT" | tee -a "$LOG_FILE"
+  
+  if echo "$MIGRATE_OUTPUT" | grep -qi "error\|failed"; then
+    log "WARNING: Migration had errors. Falling back to safe prisma db push..."
+    # Fallback: use prisma db push but ONLY if it doesn't require data loss
+    PUSH_OUTPUT=$(npx prisma db push --skip-generate 2>&1) || true
+    echo "$PUSH_OUTPUT" | tee -a "$LOG_FILE"
+    if echo "$PUSH_OUTPUT" | grep -qi "data loss\|dropping\|deleting"; then
+      log "WARNING: Schema change requires data loss — SKIPPING destructive changes!"
+      log "Run 'prisma migrate dev' manually to create a proper migration"
+    fi
+  fi
+else
+  log "No migration history found — using prisma db push for initial setup..."
+  PUSH_OUTPUT=$(npx prisma db push --skip-generate 2>&1) || true
+  echo "$PUSH_OUTPUT" | tee -a "$LOG_FILE"
+  
+  if echo "$PUSH_OUTPUT" | grep -qi "data loss\|dropping\|deleting"; then
+    log "WARNING: Schema change requires data loss — SKIPPING destructive changes!"
+    log "Run 'prisma migrate dev' manually to create a proper migration"
+  fi
+  
+  # Register the baseline migration so future starts use migrate deploy
+  log "Registering baseline migration for future use..."
+  node -e "
+  const Database = require('better-sqlite3');
+  try {
+    const db = new Database('./db/custom.db');
+    const tables = db.prepare(\"SELECT name FROM sqlite_master WHERE type='table' AND name='_prisma_migrations'\").all();
+    if (tables.length === 0) {
+      db.exec(\`
+        CREATE TABLE \"_prisma_migrations\" (
+          \"id\"                    TEXT NOT NULL PRIMARY KEY,
+          \"checksum\"              TEXT NOT NULL,
+          \"finished_at\"           DATETIME,
+          \"migration_name\"        TEXT NOT NULL,
+          \"logs\"                  TEXT,
+          \"rolled_back_at\"        DATETIME,
+          \"started_at\"            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          \"applied_steps_count\"   INTEGER NOT NULL DEFAULT 0
+        );
+      \`);
+      db.exec(\`
+        INSERT INTO \"_prisma_migrations\" (\"id\", \"checksum\", \"finished_at\", \"migration_name\", \"logs\", \"rolled_back_at\", \"started_at\", \"applied_steps_count\")
+        VALUES ('00000000-0000-0000-0000-000000000000', 'baseline', datetime('now'), '00000000000000_init', NULL, NULL, datetime('now'), 1);
+      \`);
+      console.log('Baseline migration registered');
+    } else {
+      console.log('Migration table already exists');
+    }
+    db.close();
+  } catch(e) { console.warn('Migration setup warning:', e.message); }
+  " 2>&1 | tee -a "$LOG_FILE"
 fi
 
-# Step 6: Check if DB needs seeding
+# Step 7: Check if DB needs seeding
 USER_COUNT=$(cd "$PROJECT_DIR" && node -e "
-  const { PrismaClient } = require('@prisma/client');
-  const db = new PrismaClient();
-  db.user.count().then(c => { console.log(c); db.\$disconnect(); }).catch(() => { console.log('0'); db.\$disconnect(); });
+  const Database = require('better-sqlite3');
+  try {
+    const db = new Database('./db/custom.db');
+    const result = db.prepare('SELECT count(*) as cnt FROM User').get();
+    console.log(result.cnt);
+    db.close();
+  } catch(e) { console.log('0'); }
 " 2>/dev/null || echo "0")
 
 if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then
@@ -223,9 +331,7 @@ else
   log "DB already has $USER_COUNT users — NOT seeding (preserving data)!"
 fi
 
-# Step 7: Ensure founder account exists (only set password if user has no password)
-# We do NOT force-reset the password on every startup — that would override
-# any password changes the founder made.
+# Step 8: Ensure founder account exists (only set password if user has no password)
 log "Ensuring founder account exists..."
 node -e "
   const { PrismaClient } = require('@prisma/client');
@@ -249,7 +355,43 @@ node -e "
   main().catch(console.error).finally(() => db.\$disconnect());
 " 2>&1 | tee -a "$LOG_FILE"
 
-# Step 8: Build if .next doesn't exist OR if build is stale
+# Step 9: Update data metadata for backup tracking (Audit #4 fix)
+log "Updating data metadata..."
+cat > /tmp/orra-metadata.js << 'METADATA_SCRIPT'
+const Database = require('better-sqlite3');
+try {
+  const db = new Database(process.env.ORRA_DB_PATH);
+  
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS "_orra_meta" (
+      "key"   TEXT NOT NULL PRIMARY KEY,
+      "value" TEXT NOT NULL,
+      "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  
+  const userCount = db.prepare("SELECT count(*) as cnt FROM User WHERE id != 'founder' AND id NOT LIKE 'bot%'").get();
+  const lastPost = db.prepare('SELECT max(createdAt) as latest FROM Post').get();
+  const lastComment = db.prepare('SELECT max(createdAt) as latest FROM Comment').get();
+  
+  const metaUpsert = db.prepare('INSERT OR REPLACE INTO "_orra_meta" (key, value, updated_at) VALUES (?, ?, datetime("now"))');
+  
+  var existingStartup = db.prepare('SELECT value FROM _orra_meta WHERE key = ?').get('startup_count');
+  var startupNum = (existingStartup ? parseInt(existingStartup.value) : 0) + 1;
+  metaUpsert.run('startup_count', String(startupNum));
+  metaUpsert.run('real_user_count', String(userCount.cnt));
+  metaUpsert.run('last_post_at', (lastPost && lastPost.latest) ? lastPost.latest : 'never');
+  metaUpsert.run('last_comment_at', (lastComment && lastComment.latest) ? lastComment.latest : 'never');
+  metaUpsert.run('backup_version', '2.0');
+  
+  console.log('Metadata updated: real_users=' + userCount.cnt + ', last_post=' + ((lastPost && lastPost.latest) ? lastPost.latest : 'never'));
+  db.close();
+} catch(e) { console.warn('Metadata warning:', e.message); }
+METADATA_SCRIPT
+cd "$PROJECT_DIR" && NODE_PATH="$PROJECT_DIR/node_modules" ORRA_DB_PATH="$DB_FILE" node /tmp/orra-metadata.js 2>&1 | tee -a "$LOG_FILE"
+rm -f /tmp/orra-metadata.js
+
+# Step 10: Build if .next doesn't exist OR if build is stale
 BUILD_NEEDED=false
 if [ ! -d "$PROJECT_DIR/.next" ] || [ ! -f "$PROJECT_DIR/.next/BUILD_ID" ]; then
   BUILD_NEEDED=true
@@ -278,39 +420,12 @@ if [ "$BUILD_NEEDED" = true ]; then
   fi
 fi
 
-# Step 9: Start auto-backup daemon (backs up DB every 5 minutes)
-log "Starting auto-backup daemon..."
-(
-  while true; do
-    sleep 300  # 5 minutes
-    if [ -f "$DB_FILE" ]; then
-      # WAL checkpoint before backup to ensure consistency
-      node -e "
-        try {
-          const Database = require('better-sqlite3');
-          const db = new Database('$DB_FILE');
-          db.pragma('wal_checkpoint(TRUNCATE)');
-          db.close();
-        } catch(e) { console.error('checkpoint error:', e.message); }
-      " 2>/dev/null || true
-      
-      mkdir -p /home/sync/orra-db-backup
-      cp "$DB_FILE" /home/sync/orra-db-backup/latest.db 2>/dev/null || true
-      
-      # Timestamped backup every hour
-      MINUTE=$(date +%M)
-      if [ "$MINUTE" -lt "5" ]; then
-        TIMESTAMP=$(date +%Y-%m-%dT%H-%M-%S)
-        cp "$DB_FILE" "/home/sync/orra-db-backup/orra-${TIMESTAMP}.db" 2>/dev/null || true
-        ls -t /home/sync/orra-db-backup/orra-*.db 2>/dev/null | tail -n +25 | xargs -r rm 2>/dev/null || true
-      fi
-    fi
-  done
-) &
-log "Auto-backup daemon started (PID: $!)"
+# Step 11: Auto-backup is now handled by aura-daemon.py (every 2 minutes)
+# No separate backup subshell needed — avoids redundant I/O and SQLite locking
+# aura-daemon.py also does hourly timestamped backups
+log "Auto-backup handled by aura-daemon.py (every 2 minutes) — no separate backup daemon needed"
 
-# Step 9b: Start the keep-alive daemon (pings Next.js every 10s to prevent
-# the Alibaba Cloud FC proxy from freezing the container)
+# Step 11b: Start the keep-alive daemon
 KEEPALIVE_DAEMON=$PROJECT_DIR/.zscripts/keep-alive.py
 log "Starting keep-alive daemon..."
 python3 "$KEEPALIVE_DAEMON" --stop 2>/dev/null || true
@@ -318,7 +433,7 @@ sleep 1
 python3 "$KEEPALIVE_DAEMON" 2>&1 | tee -a "$LOG_FILE" &
 log "Keep-alive daemon started"
 
-# Step 10: Start the AURA daemon as the SOLE supervisor
+# Step 12: Start the AURA daemon as the SOLE supervisor
 # aura-daemon.py handles:
 #   - Health checking every 10 seconds
 #   - Auto-restarting Next.js if it crashes
@@ -350,6 +465,13 @@ if [ "$STATUS" != "200" ]; then
   log "WARNING: Next.js may not have started properly (status: $STATUS)"
 else
   log "ORRA is fully operational!"
+fi
+
+# Immediate backup after successful startup
+if [ -f "$DB_FILE" ]; then
+  mkdir -p /home/sync/orra-db-backup
+  cp "$DB_FILE" /home/sync/orra-db-backup/latest.db 2>/dev/null || true
+  log "Post-startup backup complete"
 fi
 
 # Keep this script alive so the container doesn't think it exited

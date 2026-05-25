@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AURA Server Daemon - Bulletproof Next.js production server watchdog.
+"""AURA Server Daemon v2.0 - Bulletproof Next.js production server watchdog.
 
 THE SOLE supervisor for ORRA's Next.js server. No other script should
 start or manage Next.js — this daemon handles everything:
@@ -9,6 +9,8 @@ start or manage Next.js — this daemon handles everything:
 - Auto-rebuilding if the build is missing
 - DB integrity check + WAL checkpoint on restart
 - Killing stale processes on port 3000
+- Uses prisma migrate deploy instead of prisma db push (safe)
+- Backs up DB every 2 minutes for better crash recovery
 
 Usage:
   python3 aura-daemon.py         # Start the daemon
@@ -196,15 +198,57 @@ try {{
         
         if 'DB_CORRUPTED' in output or 'RESTORING_FROM_BACKUP' in output or 'DB_RECOVERED_VIA_DUMP' in output:
             log('Database was corrupted — recovery attempted')
-            # Re-push schema after restore (safe — only adds columns)
-            subprocess.run(['npx', 'prisma', 'db', 'push', '--skip-generate'], 
-                         cwd=PROJECT_DIR, capture_output=True, timeout=30)
+            # Use migrate deploy (safe) instead of db push (destructive)
+            apply_schema_safely()
         elif 'DB_INTEGRITY_OK' in output:
             log('Database integrity OK')
         return True
     except Exception as e:
         log(f'DB check error: {e}')
         return False
+
+def apply_schema_safely():
+    """Apply schema changes safely using prisma migrate deploy.
+    Only falls back to prisma db push for initial setup.
+    NEVER uses --accept-data-loss."""
+    try:
+        # Check if _prisma_migrations table exists
+        result = subprocess.run(
+            ['node', '-e', '''
+const Database = require('better-sqlite3');
+try {
+  const db = new Database('./db/custom.db');
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='_prisma_migrations'").all();
+  console.log(tables.length > 0 ? 'yes' : 'no');
+  db.close();
+} catch(e) { console.log('no'); }
+'''],
+            capture_output=True, text=True, timeout=10,
+            cwd=PROJECT_DIR
+        )
+        has_migrations = 'yes' in result.stdout
+        
+        if has_migrations:
+            log('Applying schema via prisma migrate deploy (safe)...')
+            result = subprocess.run(
+                ['npx', 'prisma', 'migrate', 'deploy'],
+                cwd=PROJECT_DIR, capture_output=True, text=True, timeout=60
+            )
+            log(f'Migrate output: {result.stdout.strip()}')
+            if result.returncode != 0:
+                log(f'Migrate errors: {result.stderr.strip()}')
+        else:
+            log('No migration history — using prisma db push (initial setup only)...')
+            result = subprocess.run(
+                ['npx', 'prisma', 'db', 'push', '--skip-generate'],
+                cwd=PROJECT_DIR, capture_output=True, text=True, timeout=60
+            )
+            output = result.stdout + result.stderr
+            log(f'DB push output: {output.strip()}')
+            if 'data loss' in output.lower() or 'dropping' in output.lower():
+                log('WARNING: Schema change requires data loss — SKIPPING!')
+    except Exception as e:
+        log(f'Schema apply error: {e}')
 
 def build_if_needed():
     """Build the production bundle if BUILD_ID doesn't exist"""
@@ -251,7 +295,7 @@ def is_daemon_running():
 
 def start_server_process():
     """Start the Next.js production server and return the process"""
-    log('Starting production server (node server.js -p 3000)...')
+    log('Starting production server (node server.js)...')
     proc = subprocess.Popen(
         ['node', 'server.js'],
         cwd=PROJECT_DIR,
@@ -285,7 +329,7 @@ console.log('DB backed up');
 
 def run_daemon():
     """Main daemon loop - keeps the server alive forever"""
-    log('=== AURA Daemon Starting ===')
+    log('=== AURA Daemon v2.0 Starting ===')
     write_daemon_pid()
     
     # Kill old server first
@@ -307,17 +351,35 @@ def run_daemon():
     last_start_time = 0
     health_check_interval = 10  # seconds
     last_backup_time = 0
-    backup_interval = 300  # 5 minutes
+    backup_interval = 120  # 2 minutes (was 5 min for better crash recovery)
     
     while True:
         try:
             now = time.time()
             
-            # Periodic DB backup
+            # Periodic DB backup (every 2 minutes)
             if now - last_backup_time > backup_interval:
                 if os.path.exists(DB_FILE):
                     backup_db()
                     last_backup_time = now
+                    
+                    # Hourly timestamped backup
+                    minute = time.strftime('%M')
+                    if int(minute) < 2:  # First check of each hour
+                        try:
+                            timestamp = time.strftime('%Y-%m-%dT%H-%M-%S')
+                            ts_path = os.path.join('/home/sync/orra-db-backup', f'orra-{timestamp}.db')
+                            os.makedirs('/home/sync/orra-db-backup', exist_ok=True)
+                            import shutil
+                            shutil.copy2(DB_FILE, ts_path)
+                            # Keep last 24 hourly backups
+                            import glob
+                            backups = sorted(glob.glob('/home/sync/orra-db-backup/orra-*.db'), reverse=True)
+                            for old in backups[24:]:
+                                try: os.unlink(old)
+                                except: pass
+                        except:
+                            pass
             
             # Check if server is responding
             if not is_port_active():
@@ -376,7 +438,6 @@ def run_daemon():
                     backup_db()
                 elif server_proc is None:
                     # Port is active but we don't track the process — that's fine
-                    # Maybe started by a previous daemon instance
                     pass
             
             # Health check interval
@@ -384,6 +445,8 @@ def run_daemon():
             
         except KeyboardInterrupt:
             log('Daemon stopped by user')
+            # Emergency backup before exit
+            backup_db()
             break
         except Exception as e:
             log(f'Daemon error: {e}')

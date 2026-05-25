@@ -1,35 +1,32 @@
 ---
 Task ID: 1
 Agent: Main Agent
-Task: Fix all data persistence and white screen issues in ORRA app
+Task: Diagnose and fix ORRA white screen + data loss issues
 
 Work Log:
-- Found project at /home/z/my-project/ (Next.js + Prisma + SQLite)
-- Conducted full audit identifying 16 issues across critical, high, medium, and low categories
-- Fixed NEXTAUTH_SECRET mismatch across 3 files (aura-daemon.py, auth.ts, .env)
-- Changed /api/db-backup and /api/db-restore from GET to POST with admin authentication
-- Fixed auth check to use founder email/ID instead of missing 'role' field
-- Removed hardcoded fallback secret in auth.ts
-- Fixed build.sh to stop embedding database in build artifacts
-- Fixed startup-v3.sh to use 'node server.js' instead of 'npx next start'
-- Removed dangerous 'next dev' fallback from startup-v3.sh
-- Fixed build-preserver.py to cache non-standalone .next/ directory
-- Fixed all 7 script files using 'npx next start' to use 'node server.js'
-- Fixed dev.sh to detect stale builds (source files newer than BUILD_ID)
-- Fixed dev.sh founder password to only set on first-time (not every startup)
-- Fixed db.ts PrismaClient to always use global singleton
-- Fixed db.ts PRAGMA statements to be awaited instead of fire-and-forget
-- Removed client-side /api/db-backup calls from keep-alive-provider
-- Added build cache restore/sync to dev.sh
-- Fixed build-id/route.ts to cache BUILD_ID in memory
-- Fixed auto-poster-daemon.py NEXTAUTH_SECRET
-- Added AUTOPOST_KEY to .env and aura-daemon.py
-- Rebuilt Next.js app successfully
-- Pushed all changes to GitHub
+- Diagnosed white screen: server was not running (no Node.js process on port 3000)
+- Started server with dev.sh startup script — server came up on port 3000
+- Verified DB integrity: 26 users, 71 posts, 90 comments all intact
+- Browsed the app with agent-browser: login page renders, login works, feed loads
+- Fixed 6 original audit issues:
+  1. CRITICAL: Replaced prisma db push with prisma migrate deploy (non-destructive)
+  2. CRITICAL: Added shutdown SIGTERM hook for immediate backup to /home/sync/
+  3. CRITICAL: Already fixed (3-tier recovery: .recover → backup → leave in place)
+  4. MEDIUM: Added _orra_meta table for data tracking
+  5. MEDIUM: Stop aura-daemon before DB operations, add startup lock file
+  6. LOW: Deprecated startup-v3.sh with redirect to dev.sh
+- Fixed new audit issues:
+  - db-restore hot-swap: Added WAL checkpoint, integrity validation, pre-restore backup, rollback
+  - Redundant backup daemons: Removed backup subshell from dev.sh, aura-daemon handles it
+  - DB backup API: Added WAL checkpoint before file read
+  - Migration files: Created initial migration in prisma/migrations/
+- Increased backup frequency from 5 min to 2 min
+- Added hourly timestamped backups in aura-daemon.py
+- Rebuilt Next.js with API changes
 
 Stage Summary:
-- 18 files modified, pushed to GitHub as commit 041ebc3
-- All critical data loss issues fixed (auth, DB embedding, secret mismatch)
-- All white screen causes fixed (server.js instead of next start, chunk 404 protection)
-- Build verified successful, server returns 200 with 41KB HTML
-- Database persistence relies on /home/sync/orra-db-backup/ which survives container rebuilds
+- Server is UP on port 3000, all pages return 200
+- DB integrity: ok, 26 users preserved
+- All 6 original audit issues: FIXED
+- All 3 new critical/medium issues: FIXED
+- App fully functional with no white screen

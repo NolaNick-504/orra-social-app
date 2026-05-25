@@ -15,6 +15,8 @@ export const dynamic = 'force-dynamic';
  *
  * The platform container can be rebuilt at any time, which wipes the database.
  * This endpoint copies the DB file to /home/sync/ which persists across rebuilds.
+ *
+ * IMPORTANT: Runs WAL checkpoint before reading to ensure backup consistency.
  */
 export async function POST() {
   try {
@@ -25,7 +27,6 @@ export async function POST() {
     }
 
     // Require admin (founder) — identified by email or ID
-    // The founder account is the one created by the seed script
     const FOUNDER_EMAIL = 'nickjoseph8087@gmail.com';
     if (session.user.email !== FOUNDER_EMAIL && session.user.id !== 'founder') {
       return NextResponse.json({ ok: false, error: 'Forbidden — admin access required' }, { status: 403 });
@@ -35,6 +36,16 @@ export async function POST() {
 
     if (!existsSync(dbPath)) {
       return NextResponse.json({ ok: false, error: 'Database file not found' }, { status: 404 });
+    }
+
+    // WAL checkpoint before reading to ensure consistency
+    try {
+      const Database = require('better-sqlite3');
+      const db = new Database(dbPath);
+      db.pragma('wal_checkpoint(TRUNCATE)');
+      db.close();
+    } catch (e: any) {
+      console.warn('WAL checkpoint before backup failed (non-fatal):', e.message);
     }
 
     const dbData = readFileSync(dbPath);

@@ -1,215 +1,30 @@
 #!/bin/bash
 # ============================================
-# ORRA STARTUP & RECOVERY v3.0
+# DEPRECATED — DO NOT USE THIS SCRIPT
 # ============================================
-# Run this if the server restarts or anything goes wrong.
-# It will: backup current state -> restore from cloud -> rebuild -> restart
+# This script is outdated and has been replaced by:
+#   .zscripts/dev.sh (main startup)
+#   .zscripts/aura-daemon.py (server supervisor)
+#
+# Issues with this script:
+#   - References non-existent upload/orra-backup/ paths
+#   - Uses 'bun install' which may not be available
+#   - Uses 'npx next build' without --webpack flag
+#   - Does NOT use aura-daemon for supervision
+#   - Does NOT backup DB to /home/sync/ persistent storage
+#   - Does NOT use prisma migrate deploy (safe schema changes)
+#
+# For startup, run:
+#   bash /home/z/my-project/.zscripts/dev.sh
+#
+# For status, run:
+#   python3 /home/z/my-project/.zscripts/aura-daemon.py --status
 # ============================================
 
-PROJECT_DIR="/home/z/my-project"
-OSS_DIR="$PROJECT_DIR/upload/orra-backup"
-cd "$PROJECT_DIR"
-
-echo "================================================"
-echo "  ORRA STARTUP & RECOVERY v3.0"
-echo "  $(date)"
-echo "================================================"
-
-# 0. Kill any leftover processes
+echo "⚠️  DEPRECATED: This script is no longer maintained."
+echo "   Please use: bash /home/z/my-project/.zscripts/dev.sh"
 echo ""
-echo "[1/7] Cleaning up old processes..."
-pkill -f "node server.js" 2>/dev/null
-pkill -f "next start" 2>/dev/null
-pkill -f "next dev" 2>/dev/null
-sleep 2
-
-# 1. Quick backup of current state (if anything is worth saving)
+echo "   Redirecting to the current startup script..."
 echo ""
-echo "[2/7] Quick backup of current state..."
-if [ -f "$PROJECT_DIR/src/app/page.tsx" ]; then
-  bash "$OSS_DIR/backup.sh" "startup-recovery" 2>/dev/null
-  echo "  Current state backed up"
-else
-  echo "  No project files found — skipping backup"
-fi
 
-# 2. Check if project exists and has source files
-echo ""
-echo "[3/7] Checking project state..."
-if [ ! -f "$PROJECT_DIR/src/app/page.tsx" ]; then
-  echo "  Project files missing! Restoring from cloud..."
-  
-  # Try GitHub first, then OSS bundle, then quick file copy
-  if command -v git &>/dev/null; then
-    echo "  Attempting GitHub restore..."
-    bash "$OSS_DIR/restore.sh" github 2>/dev/null
-    if [ $? -ne 0 ]; then
-      echo "  GitHub failed, trying quick restore..."
-      bash "$OSS_DIR/restore.sh" quick 2>/dev/null
-    fi
-  else
-    bash "$OSS_DIR/restore.sh" quick 2>/dev/null
-  fi
-else
-  echo "  Project files present — no restore needed"
-fi
-
-# 3. Verify EXIF orientation fix is in place
-echo ""
-echo "[4/7] Verifying EXIF orientation fix..."
-EXIF_OK=true
-for route in posts stories users/profile; do
-  FILE="$PROJECT_DIR/src/app/api/$route/route.ts"
-  if [ -f "$FILE" ]; then
-    if grep -q "\.rotate()" "$FILE"; then
-      echo "  $route/route.ts: .rotate() PRESENT"
-    else
-      echo "  $route/route.ts: .rotate() MISSING — restoring from backup!"
-      # Restore from OSS backup
-      case $route in
-        posts) cp "$OSS_DIR/src-backup/src/app/api/posts/route.ts" "$FILE" ;;
-        stories) cp "$OSS_DIR/src-backup/src/app/api/stories/route.ts" "$FILE" ;;
-        users/profile)
-          mkdir -p "$PROJECT_DIR/src/app/api/users/profile"
-          cp "$OSS_DIR/src-backup/src/app/api/users/profile/route.ts" "$FILE"
-          ;;
-      esac
-      EXIF_OK=false
-    fi
-  fi
-done
-
-# Check CSS fallback
-if [ -f "$PROJECT_DIR/src/app/globals.css" ]; then
-  if grep -q "image-orientation" "$PROJECT_DIR/src/app/globals.css"; then
-    echo "  globals.css: image-orientation PRESENT"
-  else
-    echo "  globals.css: image-orientation MISSING — restoring from backup!"
-    cp "$OSS_DIR/src-backup/src/app/globals.css" "$PROJECT_DIR/src/app/globals.css"
-    EXIF_OK=false
-  fi
-fi
-
-if [ "$EXIF_OK" = true ]; then
-  echo "  ALL EXIF FIXES VERIFIED!"
-else
-  echo "  Some EXIF fixes were restored from backup"
-fi
-
-# 4. Verify database exists — restore from persistent storage first
-# IMPORTANT: We NEVER delete the database. We only restore if it's missing.
-echo ""
-echo "[5/7] Checking database..."
-PERSISTENT_BACKUP="/home/sync/orra-db-backup/latest.db"
-DB_FILE="$PROJECT_DIR/db/custom.db"
-
-if [ ! -f "$DB_FILE" ]; then
-  echo "  Database missing! Attempting restore..."
-  mkdir -p "$PROJECT_DIR/db"
-  
-  # Strategy 1: Restore from persistent /home/sync/ backup (survives rebuilds)
-  if [ -f "$PERSISTENT_BACKUP" ]; then
-    echo "  Restoring from persistent backup..."
-    cp "$PERSISTENT_BACKUP" "$DB_FILE"
-    echo "  Database restored from persistent storage"
-  # Strategy 2: Restore from OSS backup
-  elif [ -f "$OSS_DIR/orra-custom.db" ]; then
-    echo "  Restoring from OSS backup..."
-    cp "$OSS_DIR/orra-custom.db" "$DB_FILE"
-    echo "  Database restored from OSS"
-  else
-    echo "  WARNING: No database backup found! Will be seeded on first run."
-  fi
-else
-  # DB exists — check if it has users before deciding anything
-  USER_COUNT=$(cd "$PROJECT_DIR" && node -e "
-    const { PrismaClient } = require('@prisma/client');
-    const db = new PrismaClient();
-    db.user.count().then(c => { console.log(c); db.\$disconnect(); }).catch(() => { console.log('0'); db.\$disconnect(); });
-  " 2>/dev/null || echo "0")
-  
-  if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then
-    echo "  Database exists but has 0 users — restoring from backup..."
-    if [ -f "$PERSISTENT_BACKUP" ]; then
-      cp "$PERSISTENT_BACKUP" "$DB_FILE"
-      echo "  Database restored from persistent storage"
-    elif [ -f "$OSS_DIR/orra-custom.db" ]; then
-      cp "$OSS_DIR/orra-custom.db" "$DB_FILE"
-      echo "  Database restored from OSS"
-    else
-      echo "  No backup available — will seed fresh"
-    fi
-  else
-    echo "  Database present with $USER_COUNT users ($(du -h "$DB_FILE" | cut -f1))"
-  fi
-fi
-
-# 5. Install dependencies if needed
-echo ""
-echo "[6/7] Checking dependencies..."
-if [ ! -d "node_modules" ]; then
-  echo "  Installing dependencies..."
-  bun install 2>/dev/null || npm install 2>/dev/null
-else
-  echo "  Dependencies present"
-fi
-
-# 6. Build and start
-echo ""
-echo "[7/7] Building and starting ORRA..."
-
-# Generate Prisma client
-npx prisma generate 2>/dev/null
-
-# Build if needed
-if [ ! -d ".next" ] || [ ! -f ".next/BUILD_ID" ]; then
-  echo "  Building app..."
-  npx next build 2>/dev/null
-else
-  echo "  Build present, checking if stale..."
-  # Quick check: if source files are newer than build, rebuild
-  SRC_NEWER=$(find src/ -name "*.tsx" -newer .next/BUILD_ID 2>/dev/null | head -1)
-  if [ -n "$SRC_NEWER" ]; then
-    echo "  Source files newer than build — rebuilding..."
-    npx next build 2>/dev/null
-  else
-    echo "  Build is current"
-  fi
-fi
-
-# Start the app using the CUSTOM server.js (NOT next start)
-# server.js provides chunk 404 protection that prevents white screen
-# when stale chunk requests would otherwise return HTML instead of 404.
-echo "  Starting ORRA on port 3000 (node server.js)..."
-export NODE_ENV=production
-export DATABASE_URL="file:/home/z/my-project/db/custom.db"
-export NEXTAUTH_SECRET="orra-s3cr3t-k3y-p3rman3nt-2024"
-export NEXTAUTH_URL="http://localhost:3000"
-export AUTH_TRUST_HOST=true
-nohup node server.js &>/dev/null &
-sleep 5
-
-# Verify it's running
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null | grep -q "200"; then
-  echo "  ORRA IS LIVE on port 3000!"
-else
-  echo "  WARNING: App may not be responding yet — waiting 10 more seconds..."
-  sleep 10
-  if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null | grep -q "200"; then
-    echo "  ORRA IS LIVE on port 3000!"
-  else
-    echo "  ERROR: App failed to start. Check logs for details."
-    echo "  Do NOT use 'next dev' in production — it causes performance and stability issues."
-  fi
-fi
-
-echo ""
-echo "================================================"
-echo "  ORRA STARTUP COMPLETE!"
-echo "================================================"
-echo "  App:       http://localhost:3000"
-echo "  Database:  $PROJECT_DIR/db/custom.db"
-echo "  Backups:   $OSS_DIR/"
-echo "  Restore:   bash $OSS_DIR/restore.sh"
-echo "  Backup:    bash $OSS_DIR/backup.sh"
-echo "================================================"
+exec bash /home/z/my-project/.zscripts/dev.sh
