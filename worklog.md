@@ -239,3 +239,27 @@ Stage Summary:
   = server becomes unresponsive under load, FC kills container
 - All 7 critical bugs fixed, server running stably
 - Commit: 9844202 pushed to main
+---
+Task ID: 1
+Agent: Main
+Task: Fix ORRA app timeout/death spiral bug causing "Reconnecting..." and "Waking Up ORRA" screens
+
+Work Log:
+- Analyzed user's screenshots: "Reconnecting..." with "ORRA is waking back up" and "Waking Up ORRA" screens
+- Deep-audited all runtime-affecting code files (keep-alive-provider.tsx, server.js, dev.sh, Caddyfile, sw.js, etc.)
+- Found the ROOT CAUSE: KeepAliveProvider had a death spiral bug:
+  1. 3-second AbortController timeout on health pings → false "server down" detection
+  2. On ONE failed ping, recovery mode started and STOPPED all pings (isRecoveringRef check)
+  3. No pings = no external traffic = FC freezes container = server dies
+- Found secondary cause: server.js keepAliveTimeout was 5s but Caddy had 30s keep_alive → connection mismatches
+- Found dev.sh had localhost self-ping loop that does nothing (FC doesn't count localhost as external traffic)
+- Found output:'standalone' broke the custom server.js (reverted)
+- Fixed dev.sh syntax error from nested quoting (moved daemon to separate script)
+
+Stage Summary:
+- Fixed keep-alive-provider.tsx: Removed AbortController timeout, pings NEVER stop during recovery, require 3+ consecutive failures before showing overlay, 5s ping interval
+- Fixed server.js: keepAliveTimeout 5s→60s, headersTimeout 10s→65s, requestTimeout 30s→120s (matching FC/Caddy)
+- Fixed dev.sh: Removed useless localhost self-ping loop, moved daemon to supervisor-daemon.sh, 1s restart delay (was 5s)
+- Reverted output:'standalone' (incompatible with custom server.js)
+- Updated Caddyfile: keep_alive 30s→60s
+- Pushed to GitHub, rebuilt, server running and stable
