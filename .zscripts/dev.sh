@@ -1,19 +1,26 @@
 #!/bin/bash
 # =============================================================================
-# ORRA Simple Startup v6
+# ORRA Simple Startup v7 — Double-Fork Daemon
 # =============================================================================
-# Clean, minimal startup. No background tasks that kill the server.
-# - Install deps if missing
-# - Restore build + DB from /home/sync/ 
-# - Start server with supervisor loop
-# - Backup DB every 2 minutes (in the supervisor loop, not a separate task)
+# CRITICAL FIX: The FC container kills all child processes when the parent
+# shell exits. The old supervisor loop ran in the same process group as
+# start.sh's subshell, so when that shell was cleaned up, the server died.
+#
+# FIX: Use double-fork daemonization so both the supervisor AND the server
+# get adopted by PID 1 (tini), making them immune to process group cleanup.
+# This is the same technique used by agent-browser (PID 5026, PPID=1).
+#
+# Flow:
+# 1. Setup (install deps, restore build/DB) — runs in the original shell
+# 2. Launch supervisor daemon — double-fork so PPID becomes 1 (tini)
+# 3. Exit immediately — the daemon survives because it's reparented to init
 # =============================================================================
 
 PROJECT_DIR=/home/z/my-project
 DB_FILE=$PROJECT_DIR/db/custom.db
 DB_BACKUP=/home/sync/orra-db-backup/latest.db
 BUILD_CACHE=/home/sync/orra-build-cache
-LOG_FILE=$PROJECT_DIR/next-supervisor.log
+LOG_FILE=$PROJECT_DIR/orra-supervisor.log
 
 log() { echo "[$(date '+%H:%M:%S')] $1" | tee -a "$LOG_FILE"; }
 
@@ -85,53 +92,70 @@ if [ ! -d "$PROJECT_DIR/node_modules/.prisma/client" ]; then
 fi
 
 # =============================================================================
-# STEP 5: Start server with supervisor
+# STEP 5: Launch supervisor daemon (double-fork for PPID=1 survival)
 # =============================================================================
-export NODE_ENV=production
-export DATABASE_URL="file:$DB_FILE"
-export NEXTAUTH_SECRET="orra-s3cr3t-k3y-p3rman3nt-2024"
-export NEXTAUTH_URL="http://localhost:3000"
-export AUTH_TRUST_HOST=true
-export AUTOPOST_KEY="orra-internal-autopost-2026"
-
 # Kill any old server
 pkill -f "node server.js" 2>/dev/null || true
 sleep 0.5
 
-log "Starting server..."
+log "Launching supervisor daemon (double-fork)..."
 
-# Simple supervisor loop — nothing else runs that could kill the server
-while true; do
-  node server.js 2>>"$LOG_FILE" &
-  SERVER_PID=$!
-  log "Server started (PID: $SERVER_PID)"
+# Write the supervisor script inline — it runs as a daemon with PPID=1
+(
+  # First fork: this subshell creates a new session
+  # The parent (dev.sh) can exit — this process survives
+  setsid bash -c '
+    cd /home/z/my-project
+    export NODE_ENV=production
+    export DATABASE_URL="file:/home/z/my-project/db/custom.db"
+    export NEXTAUTH_SECRET="orra-s3cr3t-k3rman3nt-2024"
+    export NEXTAUTH_URL="http://localhost:3000"
+    export AUTH_TRUST_HOST=true
+    export AUTOPOST_KEY="orra-internal-autopost-2026"
+    LOG_FILE=/home/z/my-project/orra-supervisor.log
+    DB_FILE=/home/z/my-project/db/custom.db
 
-  # Wait for server to be ready
-  for i in $(seq 1 15); do
-    if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null | grep -q "200\|302"; then
-      log "Server UP (${i}s)"
-      break
-    fi
-    sleep 1
-  done
+    # Second fork: exec replaces this bash with node
+    # But we need a supervisor, so we use a while loop instead
+    echo "[$(date +%H:%M:%S)] Supervisor daemon started (PPID=$(ps -o ppid= -p $$))" >> "$LOG_FILE"
 
-  # Keep alive + backup DB every 2 minutes
-  LAST_BACKUP=$(date +%s)
-  while kill -0 $SERVER_PID 2>/dev/null; do
-    NOW=$(date +%s)
-    if [ $((NOW - LAST_BACKUP)) -gt 120 ]; then
-      if [ -f "$DB_FILE" ]; then
-        mkdir -p /home/sync/orra-db-backup
-        cp "$DB_FILE" /home/sync/orra-db-backup/latest.db 2>/dev/null || true
-      fi
-      LAST_BACKUP=$NOW
-    fi
-    sleep 10
-  done
+    while true; do
+      # Start server
+      node server.js >> "$LOG_FILE" 2>&1 &
+      SERVER_PID=$!
+      echo "[$(date +%H:%M:%S)] Server started (PID: $SERVER_PID)" >> "$LOG_FILE"
 
-  # Server died — log the exit code and restart
-  wait $SERVER_PID 2>/dev/null
-  EXIT_CODE=$?
-  log "Server exited (code: $EXIT_CODE) — restarting in 3s..."
-  sleep 3
-done
+      # Wait for server to be ready
+      for i in $(seq 1 15); do
+        if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null | grep -q "200\|302"; then
+          echo "[$(date +%H:%M:%S)] Server UP (${i}s)" >> "$LOG_FILE"
+          break
+        fi
+        sleep 1
+      done
+
+      # Backup DB every 2 minutes while server is alive
+      LAST_BACKUP=$(date +%s)
+      while kill -0 $SERVER_PID 2>/dev/null; do
+        NOW=$(date +%s)
+        if [ $((NOW - LAST_BACKUP)) -gt 120 ]; then
+          if [ -f "$DB_FILE" ]; then
+            mkdir -p /home/sync/orra-db-backup 2>/dev/null
+            cp "$DB_FILE" /home/sync/orra-db-backup/latest.db 2>/dev/null || true
+          fi
+          LAST_BACKUP=$NOW
+        fi
+        sleep 10
+      done
+
+      # Server died — restart
+      wait $SERVER_PID 2>/dev/null
+      EXIT_CODE=$?
+      echo "[$(date +%H:%M:%S)] Server exited (code: $EXIT_CODE) — restarting in 5s..." >> "$LOG_FILE"
+      sleep 5
+    done
+  ' &
+) &
+
+log "Supervisor daemon launched. dev.sh exiting."
+# Exit immediately — the daemon survives because it's reparented to PID 1
