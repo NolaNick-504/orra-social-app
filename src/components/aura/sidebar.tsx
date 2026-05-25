@@ -120,7 +120,14 @@ export function Sidebar() {
             return (
               <button
                 key={item.view}
-                onClick={() => setView(item.view)}
+                onClick={() => {
+                  if (item.view === 'home' && currentView === 'home') {
+                    window.scrollTo(0, 0);
+                    window.dispatchEvent(new CustomEvent('orra-scroll-to-top'));
+                  } else {
+                    setView(item.view);
+                  }
+                }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative ${
                   isActive
                     ? 'bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 text-white border border-violet-500/30'
@@ -204,7 +211,14 @@ export function Sidebar() {
         <div className="flex items-center justify-around px-1 py-1">
           {/* Home */}
           <button
-            onClick={() => setView('home')}
+            onClick={() => {
+              if (currentView === 'home') {
+                window.scrollTo(0, 0);
+                window.dispatchEvent(new CustomEvent('orra-scroll-to-top'));
+              } else {
+                setView('home');
+              }
+            }}
             className={`relative flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all ${
               currentView === 'home' ? 'text-violet-400' : 'text-slate-500'
             }`}
@@ -302,7 +316,15 @@ export function Sidebar() {
                 return (
                   <button
                     key={item.view}
-                    onClick={() => { setView(item.view); setMobileMenuOpen(false); }}
+                    onClick={() => {
+                      if (item.view === 'home' && currentView === 'home') {
+                        window.scrollTo(0, 0);
+                        window.dispatchEvent(new CustomEvent('orra-scroll-to-top'));
+                      } else {
+                        setView(item.view);
+                      }
+                      setMobileMenuOpen(false);
+                    }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                       isActive
                         ? 'bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 text-white border border-violet-500/30'

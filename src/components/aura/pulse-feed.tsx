@@ -864,6 +864,18 @@ export function PulseFeed() {
   const toggleRepostApi = useToggleRepost();
   const queryClient = useQueryClient();
   const [showDeleteMenu, setShowDeleteMenu] = useState<string | null>(null);
+
+  // Listen for 'orra-scroll-to-top' custom event (dispatched by Home nav button)
+  // When already on the home view, Home click scrolls to top and refreshes the feed
+  useEffect(() => {
+    const handleScrollToTop = () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    };
+    window.addEventListener('orra-scroll-to-top', handleScrollToTop);
+    return () => window.removeEventListener('orra-scroll-to-top', handleScrollToTop);
+  }, [queryClient]);
+
   const [likeAnimation, setLikeAnimation] = useState<string | null>(null);
   const [likeAnimationReaction, setLikeAnimationReaction] = useState<ReactionKey>('like');
   const [echoAnimation, setEchoAnimation] = useState<string | null>(null);
@@ -887,9 +899,16 @@ export function PulseFeed() {
 
   // Flatten all pages from infinite query into a single post list
   const allPosts = infiniteData?.pages.flatMap(page => page.posts) ?? [];
+  // Deduplicate by post ID — prevents duplicates from React Query cache overlap
+  const seenPostIds = new Set<string>();
+  const dedupedPosts = allPosts.filter(post => {
+    if (seenPostIds.has(post.id)) return false;
+    seenPostIds.add(post.id);
+    return true;
+  });
 
   // Map API posts to the format the component expects
-  const apiPosts = allPosts.map((post) => {
+  const apiPosts = dedupedPosts.map((post) => {
     const images: string[] = (() => {
       try {
         const parsed = JSON.parse(post.images);
@@ -1318,6 +1337,94 @@ export function PulseFeed() {
             borderColor: 'border-blue-300',
             neonShadow: '0 0 20px rgba(59,130,246,1), 0 0 50px rgba(59,130,246,0.7), 0 0 100px rgba(59,130,246,0.4), 0 0 150px rgba(59,130,246,0.2), inset 0 0 20px rgba(59,130,246,0.2)',
             neonShadowHover: '0 0 25px rgba(59,130,246,1), 0 0 70px rgba(59,130,246,0.9), 0 0 120px rgba(59,130,246,0.5), 0 0 180px rgba(59,130,246,0.3), inset 0 0 25px rgba(59,130,246,0.25)',
+          },
+          {
+            badge: 'SPONSORED',
+            badgeColor: 'bg-rose-600',
+            brand: 'BLOOM SKINCARE',
+            brandIcon: <Sparkles className="w-3 h-3" />,
+            image: '/images/ads/bloom-skincare.jpg',
+            headline: 'Glow Different',
+            subtext: 'Clean beauty that actually works. Vitamin C serum that brightens in 7 days or your money back.',
+            details: 'All skin types | Starting at $34 | Dermatologist approved',
+            website: 'bloomskincare.co',
+            phone: '1-800-BLOOM-GLOW',
+            address: 'Nashville, TN',
+            hours: 'Shop 24/7 online',
+            rating: '4.9',
+            reviews: '18.3K',
+            cta: 'Get 20% Off',
+            ctaColor: 'bg-rose-600 hover:bg-rose-500',
+            glowColor: 'rose',
+            borderColor: 'border-rose-300',
+            neonShadow: '0 0 20px rgba(244,63,94,1), 0 0 50px rgba(244,63,94,0.7), 0 0 100px rgba(244,63,94,0.4), 0 0 150px rgba(244,63,94,0.2), inset 0 0 20px rgba(244,63,94,0.2)',
+            neonShadowHover: '0 0 25px rgba(244,63,94,1), 0 0 70px rgba(244,63,94,0.9), 0 0 120px rgba(244,63,94,0.5), 0 0 180px rgba(244,63,94,0.3), inset 0 0 25px rgba(244,63,94,0.25)',
+          },
+          {
+            badge: 'AD',
+            badgeColor: 'bg-emerald-600',
+            brand: 'OASIS WATER',
+            brandIcon: <Waves className="w-3 h-3" />,
+            image: '/images/ads/oasis-water.jpg',
+            headline: 'Hydrate Elevated',
+            subtext: 'Electrolyte-infused alkaline water with trace minerals. The hydration your body has been craving.',
+            details: '6-pack $12.99 | Subscribe & save 15% | BPA-free',
+            website: 'oasiswater.com',
+            phone: '1-888-OASIS-H2O',
+            address: 'Boulder, CO',
+            hours: 'Delivery in 2 hours',
+            rating: '4.8',
+            reviews: '31.5K',
+            cta: 'Try Free Sample',
+            ctaColor: 'bg-emerald-600 hover:bg-emerald-500',
+            glowColor: 'emerald',
+            borderColor: 'border-emerald-300',
+            neonShadow: '0 0 20px rgba(16,185,129,1), 0 0 50px rgba(16,185,129,0.7), 0 0 100px rgba(16,185,129,0.4), 0 0 150px rgba(16,185,129,0.2), inset 0 0 20px rgba(16,185,129,0.2)',
+            neonShadowHover: '0 0 25px rgba(16,185,129,1), 0 0 70px rgba(16,185,129,0.9), 0 0 120px rgba(16,185,129,0.5), 0 0 180px rgba(16,185,129,0.3), inset 0 0 25px rgba(16,185,129,0.25)',
+          },
+          {
+            badge: 'PROMOTED',
+            badgeColor: 'bg-amber-600',
+            brand: 'GROUNDS COFFEE',
+            brandIcon: <Zap className="w-3 h-3" />,
+            image: '/images/ads/grounds-coffee.jpg',
+            headline: 'Small Batch, Big Flavor',
+            subtext: 'Single-origin beans roasted the same day we ship. Your morning cup deserves better than grocery store dust.',
+            details: '8oz bags from $16 | Free grinding | Subscriptions available',
+            website: 'groundscoffee.co',
+            phone: '1-800-GROUNDS',
+            address: 'Denver, CO',
+            hours: 'Roasted to order',
+            rating: '4.9',
+            reviews: '9.8K',
+            cta: 'Start Your Subscription',
+            ctaColor: 'bg-amber-600 hover:bg-amber-500',
+            glowColor: 'amber',
+            borderColor: 'border-amber-300',
+            neonShadow: '0 0 20px rgba(217,119,6,1), 0 0 50px rgba(217,119,6,0.7), 0 0 100px rgba(217,119,6,0.4), 0 0 150px rgba(217,119,6,0.2), inset 0 0 20px rgba(217,119,6,0.2)',
+            neonShadowHover: '0 0 25px rgba(217,119,6,1), 0 0 70px rgba(217,119,6,0.9), 0 0 120px rgba(217,119,6,0.5), 0 0 180px rgba(217,119,6,0.3), inset 0 0 25px rgba(217,119,6,0.25)',
+          },
+          {
+            badge: 'SPONSORED',
+            badgeColor: 'bg-cyan-600',
+            brand: 'DRIFT STUDIOS',
+            brandIcon: <Star className="w-3 h-3" />,
+            image: '/images/ads/drift-studios.jpg',
+            headline: 'Your Sound, Your Space',
+            subtext: 'Soundproof studio pods for home creators. Record, stream, and create without waking the whole house.',
+            details: '3 sizes available | Starting at $1,299 | Free installation',
+            website: 'driftstudios.io',
+            phone: '1-833-DRIFT-POD',
+            address: 'Brooklyn, NY',
+            hours: 'Mon-Sat 10AM-8PM ET',
+            rating: '4.7',
+            reviews: '4.1K',
+            cta: 'Book a Demo',
+            ctaColor: 'bg-cyan-600 hover:bg-cyan-500',
+            glowColor: 'cyan',
+            borderColor: 'border-cyan-300',
+            neonShadow: '0 0 20px rgba(6,182,212,1), 0 0 50px rgba(6,182,212,0.7), 0 0 100px rgba(6,182,212,0.4), 0 0 150px rgba(6,182,212,0.2), inset 0 0 20px rgba(6,182,212,0.2)',
+            neonShadowHover: '0 0 25px rgba(6,182,212,1), 0 0 70px rgba(6,182,212,0.9), 0 0 120px rgba(6,182,212,0.5), 0 0 180px rgba(6,182,212,0.3), inset 0 0 25px rgba(6,182,212,0.25)',
           },
         ];
 
