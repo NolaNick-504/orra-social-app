@@ -1,12 +1,12 @@
 #!/bin/bash
 # =============================================================================
-# ORRA Startup v9 — No Self-Ping, Fast Restart
+# ORRA Startup v9 — Clean Daemon Launch
 # =============================================================================
-# Key insight: FC measures EXTERNAL traffic (through the proxy) to decide
-# whether to freeze the container. Localhost self-pings do NOTHING.
-# The client-side KeepAliveProvider handles keeping the container alive.
+# FC measures EXTERNAL traffic (through the proxy) to decide whether to freeze
+# the container. Localhost self-pings don't count. The client-side
+# KeepAliveProvider handles keeping the container alive with pings from the browser.
 #
-# This script just: installs deps → restores build → starts server → restarts if crashed
+# This script: installs deps → restores build → starts server via daemon
 # =============================================================================
 
 PROJECT_DIR=/home/z/my-project
@@ -32,7 +32,7 @@ if [ ! -d "$PROJECT_DIR/node_modules/next" ]; then
   log "Dependencies installed"
 fi
 
-# Step 3: Restore .next build from cache (no webpack cache, just essential files)
+# Step 3: Restore .next build from cache
 if [ ! -f "$PROJECT_DIR/.next/BUILD_ID" ] || [ ! -f "$PROJECT_DIR/.next/routes-manifest.json" ]; then
   if [ -f "$BUILD_CACHE/.next/BUILD_ID" ] && [ -f "$BUILD_CACHE/.next/routes-manifest.json" ]; then
     log "Restoring build from cache..."
@@ -75,12 +75,12 @@ if [ ! -d "$PROJECT_DIR/node_modules/.prisma/client" ]; then
   npx prisma generate 2>&1 | tail -1 | tee -a "$LOG_FILE"
 fi
 
-# Step 5: Patch Caddy config with keep-alive if not already there
+# Step 5: Patch Caddy config with keep-alive
 if [ -w /app/Caddyfile ] 2>/dev/null; then
   if ! grep -q "keep_alive" /app/Caddyfile 2>/dev/null; then
-    sed -i '/^:81 {/a\\tkeep_alive 30s' /app/Caddyfile 2>/dev/null
+    sed -i '/^:81 {/a\\tkeep_alive 60s' /app/Caddyfile 2>/dev/null
     caddy reload --config /app/Caddyfile --adapter caddyfile 2>/dev/null || true
-    log "Patched Caddy with keep_alive 30s"
+    log "Patched Caddy with keep_alive 60s"
   fi
 fi
 
@@ -90,70 +90,10 @@ sleep 0.5
 
 log "Launching supervisor daemon..."
 
-# Double-fork: creates new session, process gets adopted by PID 1 (tini)
-# This means the server survives process group cleanup
+# Double-fork daemonization: creates new session, process gets adopted by PID 1
+# This means the server survives process group cleanup by tini
 (
-  setsid bash -c '
-    cd /home/z/my-project
-    export NODE_ENV=production
-    export DATABASE_URL="file:/home/z/my-project/db/custom.db"
-    export NEXTAUTH_SECRET="orra-s3cr3t-k3rman3nt-2024"
-    export NEXTAUTH_URL="http://localhost:3000"
-    export AUTH_TRUST_HOST=true
-    export AUTOPOST_KEY="orra-internal-autopost-2026"
-    LOG_FILE=/home/z/my-project/orra-supervisor.log
-    DB_FILE=/home/z/my-project/db/custom.db
-
-    echo "[$(date +%H:%M:%S)] Supervisor daemon started (PPID=$(ps -o ppid= -p $$))" >> "$LOG_FILE"
-
-    LAST_BACKUP=$(date +%s)
-
-    while true; do
-      # Start server in BACKGROUND so we can monitor it
-      node server.js >> "$LOG_FILE" 2>&1 &
-      SERVER_PID=$!
-      echo "[$(date +%H:%M:%S)] Server started (PID: $SERVER_PID)" >> "$LOG_FILE"
-
-      # Wait for server to be ready (up to 20 seconds)
-      for i in $(seq 1 20); do
-        if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health 2>/dev/null | grep -q "200"; then
-          echo "[$(date +%H:%M:%S)] Server UP (${i}s)" >> "$LOG_FILE"
-          break
-        fi
-        sleep 1
-      done
-
-      # Monitor server process — just wait for it to die
-      # NO self-ping loop! Self-pings via localhost don't count as external
-      # traffic on FC. The client-side KeepAliveProvider handles keep-alive.
-      # We just need to detect when the server crashes and restart it.
-      while kill -0 $SERVER_PID 2>/dev/null; do
-        # Only do periodic DB backup while server is alive
-        NOW=$(date +%s)
-        if [ $((NOW - LAST_BACKUP)) -gt 120 ]; then
-          if [ -f "$DB_FILE" ]; then
-            mkdir -p /home/sync/orra-db-backup 2>/dev/null
-            cp "$DB_FILE" /home/sync/orra-db-backup/latest.db 2>/dev/null || true
-          fi
-          LAST_BACKUP=$NOW
-        fi
-        sleep 10
-      done
-
-      # Server died — restart it quickly (don't wait 5s, just 1s)
-      wait $SERVER_PID 2>/dev/null
-      EXIT_CODE=$?
-      echo "[$(date +%H:%M:%S)] Server exited (code: $EXIT_CODE) - restarting in 1s..." >> "$LOG_FILE"
-
-      # Backup DB on crash (before restart, in case DB is corrupted)
-      if [ -f "$DB_FILE" ]; then
-        mkdir -p /home/sync/orra-db-backup 2>/dev/null
-        cp "$DB_FILE" /home/sync/orra-db-backup/latest.db 2>/dev/null || true
-      fi
-
-      sleep 1
-    done
-  ' &
+  setsid bash /home/z/my-project/.zscripts/supervisor-daemon.sh &
 ) &
 
 log "Supervisor daemon launched. dev.sh exiting."
