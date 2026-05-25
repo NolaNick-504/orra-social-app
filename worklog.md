@@ -51,3 +51,25 @@ Stage Summary:
 - Build cache on /home/sync/ survives container rebuilds
 - Removed: aura-daemon, lock files, SIGTERM hooks, WAL checkpoint on startup
 - Server starts immediately, background tasks run after
+
+---
+Task ID: 2
+Agent: Main
+Task: Fix ORRA app not staying running without the chat session
+
+Work Log:
+- Found ROOT CAUSE: repo.tar (132MB) does NOT include node_modules (1.1GB)
+- On cold start, /start.sh restores project from repo.tar but node_modules is missing
+- Server crashes: "Cannot find module 'next'" — this is the white screen / 404 cause
+- Updated dev.sh to run `bun install` when node_modules is missing (~20-30s)
+- Symlinked bun cache to /home/sync/orra-bun-cache so packages persist across rebuilds
+- Build cache on /home/sync/orra-build-cache (259MB) survives container rebuilds
+- DB backup on /home/sync/orra-db-backup (4MB) survives container rebuilds
+- Pushed to GitHub
+
+Stage Summary:
+- Cold start now works: bun install → restore DB/build → start server
+- First cold start: ~25-35s (bun install + server start)
+- Subsequent cold starts: faster because bun cache is on /home/sync/
+- The app WILL go down when FC kills the idle container (platform behavior)
+- Visiting the app URL triggers a new cold start which now works
