@@ -18,11 +18,11 @@ import { useEffect, useRef, useCallback, useState } from 'react';
  * 5. Handles browser tab visibility changes (resume pings when tab becomes visible)
  */
 
-const PING_INTERVAL = 10_000; // 10 seconds — must be less than platform idle timeout (~3-5 min)
-const PING_TIMEOUT = 5_000;   // 5 second timeout for each ping
-const MAX_FAST_RETRIES = 5;    // After detecting server down, retry this many times quickly
-const FAST_RETRY_DELAY = 3_000; // 3 seconds between fast retries
-const SLOW_RETRY_DELAY = 15_000; // 15 seconds between slow retries (after fast retries exhausted)
+const PING_INTERVAL = 5_000;  // 5 seconds — FC platform freezes containers after ~25s of no traffic
+const PING_TIMEOUT = 3_000;   // 3 second timeout for each ping
+const MAX_FAST_RETRIES = 10;   // After detecting server down, retry this many times quickly
+const FAST_RETRY_DELAY = 2_000; // 2 seconds between fast retries
+const SLOW_RETRY_DELAY = 8_000; // 8 seconds between slow retries (after fast retries exhausted)
 
 type ServerStatus = 'healthy' | 'down' | 'recovering';
 
@@ -128,35 +128,33 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
 
   // Main keep-alive loop
   useEffect(() => {
+    let cancelled = false;
+
     const doPing = async () => {
-      if (isRecoveringRef.current) return; // Don't ping during recovery
+      if (cancelled || isRecoveringRef.current) return; // Don't ping during recovery
 
       const ok = await ping();
+      if (cancelled) return;
       if (ok) {
         lastHealthyRef.current = Date.now();
         setStatus('healthy');
       } else {
-        const timeSinceHealthy = Date.now() - lastHealthyRef.current;
-        // Only start recovery if we've been down for more than 5 seconds
-        // (to avoid false positives from one bad ping)
-        if (timeSinceHealthy > 5000 || retryCountRef.current > 0) {
-          recoverServer();
-        } else {
-          // Mark as down but don't recover yet — might be transient
-          lastHealthyRef.current = 0; // Force next ping to trigger recovery
-          setStatus('down');
-        }
+        // Start recovery immediately on first failed ping
+        // (FC platform freezes containers fast — no time to wait)
+        recoverServer();
       }
     };
 
-    // Initial ping
+    // Initial ping IMMEDIATELY (don't wait for first interval)
     doPing();
 
-    // Set up interval
-    intervalRef.current = setInterval(doPing, PING_INTERVAL);
+    // Set up interval — 5 second pings to prevent FC from freezing the container
+    const id = setInterval(doPing, PING_INTERVAL);
+    intervalRef.current = id;
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      cancelled = true;
+      clearInterval(id);
     };
   }, [ping, recoverServer, setStatus]);
 

@@ -43,7 +43,7 @@ const RECONNECT_HTML = `<!DOCTYPE html>
   <script>
     (function() {
       var attempt = 0;
-      var maxAttempts = 40;
+      var maxAttempts = 100;
       var countdownEl = document.getElementById('countdown');
       var progressEl = document.getElementById('progressFill');
       var attemptsEl = document.getElementById('attempts');
@@ -54,7 +54,7 @@ const RECONNECT_HTML = `<!DOCTYPE html>
         attemptsEl.textContent = 'Attempt ' + attempt + ' of ' + maxAttempts;
         progressEl.style.width = Math.min((attempt / maxAttempts) * 100, 95) + '%';
 
-        var countdown = 5;
+        var countdown = 3;
 
         function tick() {
           countdownEl.textContent = 'Retrying in ' + countdown + 's...';
@@ -77,7 +77,7 @@ const RECONNECT_HTML = `<!DOCTYPE html>
                 window.location.replace(targetUrl);
               } else if (res.status === 403 || res.status === 502 || res.status === 503 || res.status === 404) {
                 // Platform proxy error or server down — keep retrying
-                countdown = 4;
+                countdown = 2;
                 tick();
               } else {
                 // Unexpected — try reading the body
@@ -85,7 +85,7 @@ const RECONNECT_HTML = `<!DOCTYPE html>
                   try {
                     var json = JSON.parse(text);
                     if (json.error && (json.error.includes('inactive') || json.error.includes('sandbox'))) {
-                      countdown = 4;
+                      countdown = 2;
                       tick();
                     } else {
                       window.location.replace(targetUrl);
@@ -95,7 +95,7 @@ const RECONNECT_HTML = `<!DOCTYPE html>
                     if (text.includes('<!DOCTYPE') || text.includes('<html')) {
                       window.location.replace(targetUrl);
                     } else {
-                      countdown = 4;
+                      countdown = 2;
                       tick();
                     }
                   }
@@ -105,7 +105,7 @@ const RECONNECT_HTML = `<!DOCTYPE html>
             .catch(function() {
               // Network error — server not up yet
               if (attempt < maxAttempts) {
-                countdown = 4;
+                countdown = 2;
                 tick();
               } else {
                 countdownEl.textContent = 'Taking longer than expected. Tap Try now to retry.';

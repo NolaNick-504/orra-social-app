@@ -1,4 +1,7 @@
 :81 {
+        # Keep connections alive to prevent FC from freezing container
+        keep_alive 30s
+
         @transform_port_query {
                 query XTransformPort=*
         }

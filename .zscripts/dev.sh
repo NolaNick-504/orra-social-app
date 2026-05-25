@@ -134,10 +134,17 @@ log "Launching supervisor daemon (double-fork)..."
         sleep 1
       done
 
-      # Backup DB every 2 minutes while server is alive
+      # Keep-alive + DB backup while server is alive
+      # Self-ping every 5s keeps the node process active and generates
+      # traffic that helps prevent FC from freezing the container
       LAST_BACKUP=$(date +%s)
       while kill -0 $SERVER_PID 2>/dev/null; do
         NOW=$(date +%s)
+
+        # Self-ping every 5 seconds (internal traffic keeps process active)
+        curl -s -o /dev/null http://localhost:3000/api/health 2>/dev/null || true
+
+        # Backup DB every 2 minutes
         if [ $((NOW - LAST_BACKUP)) -gt 120 ]; then
           if [ -f "$DB_FILE" ]; then
             mkdir -p /home/sync/orra-db-backup 2>/dev/null
@@ -145,7 +152,7 @@ log "Launching supervisor daemon (double-fork)..."
           fi
           LAST_BACKUP=$NOW
         fi
-        sleep 10
+        sleep 5
       done
 
       # Server died — restart
