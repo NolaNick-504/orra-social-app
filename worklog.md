@@ -73,3 +73,25 @@ Stage Summary:
 - Subsequent cold starts: faster because bun cache is on /home/sync/
 - The app WILL go down when FC kills the idle container (platform behavior)
 - Visiting the app URL triggers a new cold start which now works
+
+---
+Task ID: 3
+Agent: Main
+Task: Fix ORRA app showing raw 404 on phone and not loading in main browser
+
+Work Log:
+- Analyzed user screenshots via VLM
+- Screenshot 1: App loading (Loading ORRA...) - works in private window
+- Screenshot 2: "Reconnecting... ORRA is waking back up" after ~1 min browsing
+- Screenshot 3: Raw "404 page not found" after clicking "Try now"
+- Found root cause: When FC kills container, "Try now" navigated to URL → platform proxy returned raw 404 (bypassed service worker)
+- Also found: Main browser has stale cached chunks from old build (cache-first strategy)
+- Fixed service worker v8: catches 404/502 from Caddy AND platform proxy, shows reconnect page instead
+- "Try now" button now uses fetch() first to check if server is up before navigating
+- Changed static chunk caching from cache-first to network-first (fixes stale cache)
+- Rebuilt app, updated build cache on /home/sync/, pushed to GitHub
+
+Stage Summary:
+- Raw 404 issue fixed: service worker now intercepts platform proxy 404s
+- Main browser stale cache fixed: network-first for static chunks
+- To fix existing stale cache on user's main browser: visit /clear-cache.html
