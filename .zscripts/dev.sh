@@ -12,8 +12,9 @@
 #
 # Flow:
 # 1. Setup (install deps, restore build/DB) — runs in the original shell
-# 2. Launch supervisor daemon — double-fork so PPID becomes 1 (tini)
-# 3. Exit immediately — the daemon survives because it's reparented to init
+# 2. Patch Caddy config with keep-alive
+# 3. Launch supervisor daemon — double-fork so PPID becomes 1 (tini)
+# 4. Exit immediately — the daemon survives because it's reparented to init
 # =============================================================================
 
 PROJECT_DIR=/home/z/my-project
@@ -68,7 +69,7 @@ if [ ! -f "$PROJECT_DIR/.next/BUILD_ID" ] || [ ! -f "$PROJECT_DIR/.next/routes-m
     cp -r "$PROJECT_DIR/.next/types" "$BUILD_CACHE/.next/" 2>/dev/null
     cp "$PROJECT_DIR/.next/BUILD_ID" "$BUILD_CACHE/.next/" 2>/dev/null
     cp "$PROJECT_DIR/.next/"*.json "$BUILD_CACHE/.next/" 2>/dev/null
-    cp "$PROJECT_DIR/.next/"*.js "$BUILD_CACHE/.next/" 2>/dev/null
+    cp "$PROJECT_DIR/.next/"*.js" "$BUILD_CACHE/.next/" 2>/dev/null
     cp "$PROJECT_DIR/.next/trace" "$BUILD_CACHE/.next/" 2>/dev/null
     log "Build complete and cached"
   fi
@@ -92,7 +93,18 @@ if [ ! -d "$PROJECT_DIR/node_modules/.prisma/client" ]; then
 fi
 
 # =============================================================================
-# STEP 5: Launch supervisor daemon (double-fork for PPID=1 survival)
+# STEP 5: Patch Caddy config with keep-alive (prevents connection drops)
+# =============================================================================
+if [ -w /app/Caddyfile ] 2>/dev/null; then
+  if ! grep -q "keep_alive" /app/Caddyfile 2>/dev/null; then
+    sed -i '/^:81 {/a\\tkeep_alive 30s' /app/Caddyfile 2>/dev/null
+    caddy reload --config /app/Caddyfile --adapter caddyfile 2>/dev/null || true
+    log "Patched Caddy with keep_alive 30s"
+  fi
+fi
+
+# =============================================================================
+# STEP 6: Launch supervisor daemon (double-fork for PPID=1 survival)
 # =============================================================================
 # Kill any old server
 pkill -f "node server.js" 2>/dev/null || true
@@ -115,8 +127,6 @@ log "Launching supervisor daemon (double-fork)..."
     LOG_FILE=/home/z/my-project/orra-supervisor.log
     DB_FILE=/home/z/my-project/db/custom.db
 
-    # Second fork: exec replaces this bash with node
-    # But we need a supervisor, so we use a while loop instead
     echo "[$(date +%H:%M:%S)] Supervisor daemon started (PPID=$(ps -o ppid= -p $$))" >> "$LOG_FILE"
 
     while true; do
