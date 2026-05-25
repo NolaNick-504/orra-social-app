@@ -262,7 +262,20 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
               </p>
             )}
             <button
-              onClick={() => {
+              onClick={async () => {
+                // Stay in service worker scope — use fetch to check if server is up
+                // before navigating. This prevents the raw "404 page not found" from
+                // the platform proxy.
+                try {
+                  const res = await fetch('/?_cb=' + Date.now(), { cache: 'no-store' });
+                  if (res.ok) {
+                    window.location.replace('/?_cb=' + Date.now());
+                  }
+                  // If not OK, the service worker will handle it and show reconnect page
+                } catch {
+                  // Network error — service worker will show reconnect page on navigation
+                }
+                // Fallback: navigate anyway (service worker will intercept)
                 window.location.replace('/?_cb=' + Date.now());
               }}
               className="mt-4 px-5 py-2 rounded-xl bg-white/10 text-white/70 text-xs hover:bg-white/20 transition-colors"
