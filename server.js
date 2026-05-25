@@ -11,6 +11,15 @@ const handle = app.getRequestHandler();
 // Build the project root path
 const PROJECT_ROOT = '/home/z/my-project';
 
+// CRITICAL: Prevent unhandled errors from crashing the process
+process.on('uncaughtException', (err) => {
+  console.error('[ORRA] Uncaught exception (NOT crashing):', err.message);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[ORRA] Unhandled rejection (NOT crashing):', reason);
+});
+
 app.prepare().then(() => {
   createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
@@ -18,19 +27,14 @@ app.prepare().then(() => {
 
     // CRITICAL FIX: Non-existent chunk/CSS requests fall through to the catch-all
     // route and return HTML with status 200. The browser then tries to parse the
-    // HTML as JavaScript, causing a crash cascade. This is the #1 cause of the
-    // "Something went wrong" error after idle timeouts.
-    //
-    // Fix: For /_next/static/chunks/*.js and /_next/static/css/*.css requests,
-    // check if the file exists. If it does, serve it normally. If not, return 404.
+    // HTML as JavaScript, causing a crash cascade.
     const chunkMatch = pathname && pathname.match(/^\/_next\/static\/(chunks|css)\/(.+\.(js|css|map))$/);
     if (chunkMatch) {
-      const subDir = chunkMatch[1]; // 'chunks' or 'css'
-      const filename = chunkMatch[2]; // e.g., 'webpack-abc123.js'
+      const subDir = chunkMatch[1];
+      const filename = chunkMatch[2];
       const filePath = path.join(PROJECT_ROOT, '.next', 'static', subDir, filename);
 
       if (existsSync(filePath)) {
-        // File exists — serve it directly with proper content-type and immutable cache
         try {
           const data = readFileSync(filePath);
           const ext = path.extname(filename).toLowerCase();
@@ -52,8 +56,6 @@ app.prepare().then(() => {
           // File read error — fall through to Next.js
         }
       } else {
-        // File does NOT exist — return proper 404 instead of letting the
-        // catch-all route return HTML (which crashes the browser's JS parser)
         res.writeHead(404, {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache, must-revalidate',
@@ -84,4 +86,7 @@ app.prepare().then(() => {
   }).listen(port, () => {
     console.log(`> ORRA Server running on http://localhost:${port}`);
   });
+}).catch((err) => {
+  console.error('[ORRA] Failed to prepare Next.js:', err.message);
+  // Don't crash — the supervisor will restart us
 });
