@@ -23,3 +23,35 @@ Stage Summary:
 - Ran fresh `next build` on the container
 - Started server via supervisor-daemon.sh
 - Verified all endpoints: / (200), /sw.js (v8 SW, 200), /api/health (200), JS chunks (200)
+
+---
+Task ID: content-ui-update
+Agent: Main Agent
+Task: Major content and UI update for ORRA social app
+
+Work Log:
+- Removed "Edit Cover" button from profile page (profile.tsx)
+- Fixed feed dedup to use composite key (echo:echoId vs postId) for proper deduplication
+- Generated 26 individual bot cover images matching each personality using AI
+- Generated 6 new commercial ads (Neon Fit, Velvet Skin, Cipher VPN, Echo Speakers, Flow State, Mythic Snacks)
+- Generated 9 live stream category cover images + updated main live banner
+- Updated live stream creators to use real bot avatars instead of generic placeholder avatars
+- Updated live stream thumbnails to use category-specific covers (/images/live/)
+- Added 25 heartfelt/emotional posts from all bots (modern/today's type content)
+- Updated all 25 bot profile songs with unique songs from extended library (16 songs total)
+- Ensured all bot cover images in DB point to individual covers (/images/covers/botXX.jpg)
+- Added founder profile protection in API (PUT /api/users/profile blocks core field changes for founder)
+- Updated AD_INTERVALS to support 14 ads with more frequent spacing
+- Ran content update script to push all changes to database
+- Pushed all changes to GitHub
+- Rebuilt and restarted server
+
+Stage Summary:
+- 26 unique cover images generated per bot personality
+- 6 new ads added (14 total now)
+- 25 new emotional posts added
+- All bots have unique profile songs
+- Founder profile is now protected from changes via API
+- Edit Cover button removed from profile
+- Feed dedup improved with composite keys
+- Server is live and serving updated content
