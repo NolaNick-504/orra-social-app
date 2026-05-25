@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
-"""AURA Server Daemon v2.0 - Bulletproof Next.js production server watchdog.
+"""AURA Server Daemon v3.0 - Fast-startup server watchdog.
 
-THE SOLE supervisor for ORRA's Next.js server. No other script should
-start or manage Next.js — this daemon handles everything:
+THE SOLE supervisor for ORRA's Next.js server.
 
-- Health checking every 10 seconds
-- Auto-restarting Next.js if it crashes
-- Auto-rebuilding if the build is missing
-- DB integrity check + WAL checkpoint on restart
-- Killing stale processes on port 3000
-- Uses prisma migrate deploy instead of prisma db push (safe)
-- Backs up DB every 2 minutes for better crash recovery
+v3.0 CHANGES (fast startup):
+- Starts the server FIRST, then does health checks in background
+- Reduces restart delay from 5s to 2s
+- DB checks happen AFTER server is up, not before
+- This prevents FC proxy timeouts on container rebuilds
 
 Usage:
   python3 aura-daemon.py         # Start the daemon
@@ -22,7 +19,8 @@ import os
 import time
 import sys
 import signal
-import json
+import shutil
+import glob
 
 PROJECT_DIR = '/home/z/my-project'
 PIDFILE = '/tmp/aura-daemon.pid'
@@ -76,7 +74,7 @@ def kill_port_3000():
             except:
                 pass
         if pids:
-            time.sleep(3)
+            time.sleep(2)
     except:
         pass
 
@@ -91,16 +89,32 @@ def kill_old_server():
         pass
     kill_port_3000()
 
+def restore_db_if_needed():
+    """Quick DB restore from persistent backup if DB is missing or empty.
+    Does NOT do integrity check — that's done in background after server starts."""
+    if not os.path.exists(DB_FILE) or os.path.getsize(DB_FILE) == 0:
+        log('DB missing/empty — quick restore from backup...')
+        if os.path.exists(PERSISTENT_BACKUP) and os.path.getsize(PERSISTENT_BACKUP) > 0:
+            os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
+            shutil.copy2(PERSISTENT_BACKUP, DB_FILE)
+            log('DB restored from backup')
+            return True
+        return False
+    return True
+
+def checkpoint_wal():
+    """Quick WAL checkpoint — under 0.1s"""
+    try:
+        subprocess.run(
+            ['node', '-e', f'const Database = require("better-sqlite3"); const db = new Database("{DB_FILE}"); db.pragma("wal_checkpoint(TRUNCATE)"); db.close();'],
+            cwd=PROJECT_DIR, capture_output=True, timeout=5
+        )
+    except:
+        pass
+
 def check_and_repair_db():
-    """Check SQLite integrity and repair if needed. Also checkpoint WAL.
-    
-    IMPORTANT: We NEVER delete the database file. The user's data is sacred.
-    Recovery strategy (in order):
-    1. Try SQLite .recover to salvage data from corrupted DB
-    2. Restore from persistent backup at /home/sync/
-    3. If nothing works, leave the DB in place — prisma/seed will handle it
-    """
-    log('Checking database integrity and checkpointing WAL...')
+    """Full DB integrity check — done in background after server is up."""
+    log('Checking database integrity...')
     try:
         result = subprocess.run(
             ['node', '-e', f'''
@@ -108,85 +122,45 @@ const Database = require('better-sqlite3');
 const fs = require('fs');
 const DB_PATH = '{DB_FILE}';
 const BACKUP_PATH = '{PERSISTENT_BACKUP}';
-
-// NEVER delete the database file. Always try to recover or restore.
 try {{
   const db = new Database(DB_PATH);
-  db.pragma('journal_mode = WAL');
-  
-  // Force WAL checkpoint
-  try {{
-    db.pragma('wal_checkpoint(TRUNCATE)');
-    console.log('WAL checkpoint done');
-  }} catch(e) {{
-    console.warn('WAL checkpoint warning:', e.message);
-  }}
-  
-  // Check integrity
+  db.pragma('wal_checkpoint(TRUNCATE)');
   const integrity = db.pragma('integrity_check');
   const status = integrity[0]?.integrity_check;
-  
   if (status === 'ok') {{
     console.log('DB_INTEGRITY_OK');
   }} else {{
     console.error('DB_CORRUPTED');
     try {{ db.close(); }} catch(e) {{}}
-    
     let recovered = false;
-    
-    // Strategy 1: Try SQLite .recover to salvage data
-    console.log('Attempting SQLite .recover...');
     const {{ execSync }} = require('child_process');
     const dumpPath = DB_PATH + '.recover.db';
     try {{
       execSync('sqlite3 "' + DB_PATH + '" .recover | sqlite3 "' + dumpPath + '"', {{stdio: 'pipe'}});
-      const recoveredStats = fs.statSync(dumpPath);
-      if (recoveredStats.size > 0) {{
-        // Keep corrupted file as backup
+      if (fs.statSync(dumpPath).size > 0) {{
         try {{ fs.copyFileSync(DB_PATH, DB_PATH + '.corrupted.bak'); }} catch(e2) {{}}
         fs.renameSync(dumpPath, DB_PATH);
         console.log('DB_RECOVERED_VIA_DUMP');
         recovered = true;
-      }} else {{
-        try {{ fs.unlinkSync(dumpPath); }} catch(e2) {{}}
-      }}
+      }} else {{ try {{ fs.unlinkSync(dumpPath); }} catch(e2) {{}} }}
     }} catch(e) {{
-      console.warn('SQLite .recover failed:', e.message);
       try {{ fs.unlinkSync(dumpPath); }} catch(e2) {{}}
     }}
-    
-    // Strategy 2: Restore from persistent backup
-    if (!recovered && fs.existsSync(BACKUP_PATH)) {{
-      const backupStats = fs.statSync(BACKUP_PATH);
-      if (backupStats.size > 0) {{
-        console.log('RESTORING_FROM_BACKUP');
-        try {{ fs.copyFileSync(DB_PATH, DB_PATH + '.corrupted.bak'); }} catch(e2) {{}}
-        fs.copyFileSync(BACKUP_PATH, DB_PATH);
-        recovered = true;
-      }}
+    if (!recovered && fs.existsSync(BACKUP_PATH) && fs.statSync(BACKUP_PATH).size > 0) {{
+      try {{ fs.copyFileSync(DB_PATH, DB_PATH + '.corrupted.bak'); }} catch(e2) {{}}
+      fs.copyFileSync(BACKUP_PATH, DB_PATH);
+      console.log('RESTORING_FROM_BACKUP');
+      recovered = true;
     }}
-    
-    // Strategy 3: If nothing worked, keep the corrupted DB in place
-    if (!recovered) {{
-      console.log('DB_CORRUPTED_NO_RECOVERY');
-      // Do NOT delete. Leave it for prisma/seed to handle.
-    }}
+    if (!recovered) {{ console.log('DB_CORRUPTED_NO_RECOVERY'); }}
   }}
-  
   try {{ db.close(); }} catch(e) {{}}
 }} catch(e) {{
   console.error('DB_OPEN_ERROR:', e.message);
-  // Try to restore from backup — but NEVER delete the DB file
-  if (fs.existsSync(BACKUP_PATH)) {{
-    const backupStats = fs.statSync(BACKUP_PATH);
-    if (backupStats.size > 0) {{
-      console.log('RESTORING_FROM_BACKUP');
-      try {{ fs.copyFileSync(DB_PATH, DB_PATH + '.corrupted.bak'); }} catch(e2) {{}}
-      fs.copyFileSync(BACKUP_PATH, DB_PATH);
-    }}
-  }} else {{
-    console.log('DB_OPEN_ERROR_NO_BACKUP');
-    // Do NOT delete the DB file. Leave it for prisma/seed to handle.
+  if (fs.existsSync(BACKUP_PATH) && fs.statSync(BACKUP_PATH).size > 0) {{
+    try {{ fs.copyFileSync(DB_PATH, DB_PATH + '.corrupted.bak'); }} catch(e2) {{}}
+    fs.copyFileSync(BACKUP_PATH, DB_PATH);
+    console.log('RESTORING_FROM_BACKUP');
   }}
 }}
 '''],
@@ -194,78 +168,43 @@ try {{
             cwd=PROJECT_DIR
         )
         output = result.stdout + result.stderr
-        log(f'DB check output: {output.strip()}')
+        log(f'DB check: {output.strip()}')
         
-        if 'DB_CORRUPTED' in output or 'RESTORING_FROM_BACKUP' in output or 'DB_RECOVERED_VIA_DUMP' in output:
-            log('Database was corrupted — recovery attempted')
-            # Use migrate deploy (safe) instead of db push (destructive)
-            apply_schema_safely()
-        elif 'DB_INTEGRITY_OK' in output:
-            log('Database integrity OK')
-        return True
+        if 'DB_CORRUPTED' in output or 'RESTORING' in output or 'DB_RECOVERED' in output:
+            log('DB was corrupted — recovery attempted')
     except Exception as e:
         log(f'DB check error: {e}')
-        return False
-
-def apply_schema_safely():
-    """Apply schema changes safely using prisma migrate deploy.
-    Only falls back to prisma db push for initial setup.
-    NEVER uses --accept-data-loss."""
-    try:
-        # Check if _prisma_migrations table exists
-        result = subprocess.run(
-            ['node', '-e', '''
-const Database = require('better-sqlite3');
-try {
-  const db = new Database('./db/custom.db');
-  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='_prisma_migrations'").all();
-  console.log(tables.length > 0 ? 'yes' : 'no');
-  db.close();
-} catch(e) { console.log('no'); }
-'''],
-            capture_output=True, text=True, timeout=10,
-            cwd=PROJECT_DIR
-        )
-        has_migrations = 'yes' in result.stdout
-        
-        if has_migrations:
-            log('Applying schema via prisma migrate deploy (safe)...')
-            result = subprocess.run(
-                ['npx', 'prisma', 'migrate', 'deploy'],
-                cwd=PROJECT_DIR, capture_output=True, text=True, timeout=60
-            )
-            log(f'Migrate output: {result.stdout.strip()}')
-            if result.returncode != 0:
-                log(f'Migrate errors: {result.stderr.strip()}')
-        else:
-            log('No migration history — using prisma db push (initial setup only)...')
-            result = subprocess.run(
-                ['npx', 'prisma', 'db', 'push', '--skip-generate'],
-                cwd=PROJECT_DIR, capture_output=True, text=True, timeout=60
-            )
-            output = result.stdout + result.stderr
-            log(f'DB push output: {output.strip()}')
-            if 'data loss' in output.lower() or 'dropping' in output.lower():
-                log('WARNING: Schema change requires data loss — SKIPPING!')
-    except Exception as e:
-        log(f'Schema apply error: {e}')
 
 def build_if_needed():
     """Build the production bundle if BUILD_ID doesn't exist"""
     build_id_path = os.path.join(PROJECT_DIR, '.next', 'BUILD_ID')
     if not os.path.exists(build_id_path):
-        log('No production build found. Building...')
+        log('No build found — building...')
         try:
+            # Try cache restore first
+            subprocess.run(
+                ['python3', os.path.join(PROJECT_DIR, '.zscripts/build-preserver.py'), '--restore'],
+                cwd=PROJECT_DIR, capture_output=True, timeout=10
+            )
+            if os.path.exists(build_id_path):
+                log('Build restored from cache!')
+                return True
+            
+            # Full build
             result = subprocess.run(
                 ['npx', 'next', 'build', '--webpack'],
-                cwd=PROJECT_DIR,
-                capture_output=True, text=True, timeout=300
+                cwd=PROJECT_DIR, capture_output=True, text=True, timeout=300
             )
             if result.returncode == 0:
                 log('Build complete!')
+                # Cache the build
+                subprocess.run(
+                    ['python3', os.path.join(PROJECT_DIR, '.zscripts/build-preserver.py'), '--sync'],
+                    cwd=PROJECT_DIR, capture_output=True, timeout=10
+                )
                 return True
             else:
-                log(f'Build FAILED: {result.stderr[-500:]}')
+                log(f'Build FAILED: {result.stderr[-300:]}')
                 return False
         except subprocess.TimeoutExpired:
             log('Build timed out!')
@@ -294,8 +233,8 @@ def is_daemon_running():
         return False
 
 def start_server_process():
-    """Start the Next.js production server and return the process"""
-    log('Starting production server (node server.js)...')
+    """Start the Next.js production server FAST"""
+    log('Starting production server...')
     proc = subprocess.Popen(
         ['node', 'server.js'],
         cwd=PROJECT_DIR,
@@ -305,11 +244,11 @@ def start_server_process():
     )
     with open(SERVER_PIDFILE, 'w') as f:
         f.write(str(proc.pid))
-    log(f'Server process started (PID: {proc.pid})')
+    log(f'Server started (PID: {proc.pid})')
     return proc
 
 def backup_db():
-    """Quick backup of the database to persistent storage"""
+    """Quick backup to persistent storage"""
     try:
         subprocess.run([
             'node', '-e', f'''
@@ -321,7 +260,6 @@ try {{
   db.close();
 }} catch(e) {{}}
 fs.copyFileSync('{DB_FILE}', '{PERSISTENT_BACKUP}');
-console.log('DB backed up');
 '''
         ], cwd=PROJECT_DIR, capture_output=True, timeout=10)
     except:
@@ -329,35 +267,50 @@ console.log('DB backed up');
 
 def run_daemon():
     """Main daemon loop - keeps the server alive forever"""
-    log('=== AURA Daemon v2.0 Starting ===')
+    log('=== AURA Daemon v3.0 Starting ===')
     write_daemon_pid()
     
     # Kill old server first
     kill_old_server()
-    time.sleep(2)
+    time.sleep(1)
     
-    # Check and repair database
-    check_and_repair_db()
+    # FAST: Restore DB and start server immediately
+    restore_db_if_needed()
+    checkpoint_wal()
     
-    # Make sure we have a build
+    # Ensure build exists (this may take time on first run)
     if not build_if_needed():
-        log('FATAL: Build failed. Will retry in 60 seconds...')
-        time.sleep(60)
+        log('FATAL: Build failed — retrying in 30s...')
+        time.sleep(30)
         if not build_if_needed():
-            log('FATAL: Build failed twice. Will retry every 60s in main loop.')
+            log('FATAL: Build failed twice — will retry in main loop')
     
-    server_proc = None
+    # START SERVER IMMEDIATELY — before any other checks
+    server_proc = start_server_process()
+    
+    # Wait for server to respond (up to 10 seconds)
+    for i in range(5):
+        time.sleep(2)
+        if is_port_active():
+            log('Server is UP and responding!')
+            break
+    else:
+        log('Server may not be responding yet — continuing anyway')
+    
+    # NOW do background checks (server is already serving traffic)
+    check_and_repair_db()
+    backup_db()
+    
+    server_proc = None  # Don't track directly — let the health check handle it
     crash_count = 0
-    last_start_time = 0
-    health_check_interval = 10  # seconds
-    last_backup_time = 0
-    backup_interval = 120  # 2 minutes (was 5 min for better crash recovery)
+    last_backup_time = time.time()
+    backup_interval = 120  # 2 minutes
     
     while True:
         try:
             now = time.time()
             
-            # Periodic DB backup (every 2 minutes)
+            # Periodic DB backup
             if now - last_backup_time > backup_interval:
                 if os.path.exists(DB_FILE):
                     backup_db()
@@ -365,15 +318,12 @@ def run_daemon():
                     
                     # Hourly timestamped backup
                     minute = time.strftime('%M')
-                    if int(minute) < 2:  # First check of each hour
+                    if int(minute) < 2:
                         try:
                             timestamp = time.strftime('%Y-%m-%dT%H-%M-%S')
                             ts_path = os.path.join('/home/sync/orra-db-backup', f'orra-{timestamp}.db')
                             os.makedirs('/home/sync/orra-db-backup', exist_ok=True)
-                            import shutil
                             shutil.copy2(DB_FILE, ts_path)
-                            # Keep last 24 hourly backups
-                            import glob
                             backups = sorted(glob.glob('/home/sync/orra-db-backup/orra-*.db'), reverse=True)
                             for old in backups[24:]:
                                 try: os.unlink(old)
@@ -383,69 +333,49 @@ def run_daemon():
             
             # Check if server is responding
             if not is_port_active():
-                log('Server is not responding!')
-                
-                # Kill any stuck processes
+                log('Server not responding — restarting...')
+                crash_count += 1
                 kill_port_3000()
                 time.sleep(2)
                 
-                # Check DB integrity before restarting
-                check_and_repair_db()
+                # Quick DB restore if needed
+                restore_db_if_needed()
+                checkpoint_wal()
                 
                 # Ensure build exists
                 if not build_if_needed():
-                    crash_count += 1
                     wait = min(crash_count * 30, 300)
-                    log(f'Build failed, waiting {wait}s before retry...')
+                    log(f'Build failed, waiting {wait}s...')
                     time.sleep(wait)
                     continue
                 
-                # Start the server
+                # Restart server
                 server_proc = start_server_process()
-                last_start_time = time.time()
                 
-                # Wait for server to become ready (up to 30 seconds)
-                ready = False
-                for i in range(15):
+                # Wait for ready (up to 10s)
+                for i in range(5):
                     time.sleep(2)
                     if is_port_active():
-                        log('Server is ready and responding!')
-                        ready = True
+                        log('Server restarted successfully!')
                         crash_count = 0
                         break
-                
-                if not ready:
-                    log('Server failed to start within 30s')
-                    crash_count += 1
-                    if server_proc and server_proc.poll() is not None:
-                        log(f'Server process exited with code: {server_proc.returncode}')
                 
                 # Back off if crashing repeatedly
                 if crash_count > 3:
                     wait = min(crash_count * 30, 300)
-                    log(f'Too many crashes, waiting {wait}s before next attempt...')
+                    log(f'Too many crashes, waiting {wait}s...')
                     time.sleep(wait)
                     crash_count = max(0, crash_count - 1)
-            
             else:
-                # Server is healthy — check if tracked process is still alive
-                if server_proc and server_proc.poll() is not None:
-                    exit_code = server_proc.returncode
-                    log(f'Server process exited with code {exit_code}')
-                    crash_count += 1
-                    server_proc = None
-                    # Backup DB before potential restart
-                    backup_db()
-                elif server_proc is None:
-                    # Port is active but we don't track the process — that's fine
-                    pass
+                # Server is healthy
+                if crash_count > 0:
+                    crash_count = max(0, crash_count - 1)
             
             # Health check interval
-            time.sleep(health_check_interval)
+            time.sleep(10)
             
         except KeyboardInterrupt:
             log('Daemon stopped by user')
-            # Emergency backup before exit
             backup_db()
             break
         except Exception as e:
@@ -483,7 +413,7 @@ if __name__ == '__main__':
                 os.kill(pid, signal.SIGTERM)
                 time.sleep(3)
             kill_old_server()
-            time.sleep(2)
+            time.sleep(1)
             print('Restarting daemon...')
         else:
             print(f'Unknown command: {cmd}')
