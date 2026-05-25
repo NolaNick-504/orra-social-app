@@ -18,7 +18,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
  * 5. Handles browser tab visibility changes (resume pings when tab becomes visible)
  */
 
-const PING_INTERVAL = 5_000;  // 5 seconds — FC platform freezes containers after ~25s of no traffic
+const PING_INTERVAL = 8_000;  // 8 seconds — keep FC container alive without overwhelming server
 const PING_TIMEOUT = 3_000;   // 3 second timeout for each ping
 const MAX_FAST_RETRIES = 10;   // After detecting server down, retry this many times quickly
 const FAST_RETRY_DELAY = 2_000; // 2 seconds between fast retries

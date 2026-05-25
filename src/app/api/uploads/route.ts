@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, stat } from 'fs/promises';
-import { existsSync } from 'fs';
+import { stat, createReadStream } from 'fs';
+import { existsSync, statSync } from 'fs';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
@@ -72,28 +72,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
 
-    const fileStat = await stat(resolvedPath);
+    const fileStat = statSync(resolvedPath);
 
-    // Don't serve files larger than 100MB
-    if (fileStat.size > 100 * 1024 * 1024) {
+    // Don't serve files larger than 20MB — stream instead of loading into RAM
+    if (fileStat.size > 20 * 1024 * 1024) {
       return NextResponse.json({ error: 'File too large' }, { status: 400 });
     }
 
-    const data = await readFile(resolvedPath);
     const ext = path.extname(resolvedPath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
-    return new NextResponse(data, {
+    // Stream the file instead of loading it all into memory
+    const stream = createReadStream(resolvedPath);
+    return new NextResponse(stream as any, {
       headers: {
         'Content-Type': contentType,
-        'Content-Length': String(data.length),
-        // Aggressive no-cache for Samsung Internet and other aggressive caching browsers
-        // This ensures avatar/cover images are always re-validated
+        'Content-Length': String(fileStat.size),
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         'Pragma': 'no-cache',
         'Expires': '0',
         'X-Content-Type-Options': 'nosniff',
-        // Allow the _v cache-bust param without affecting the response
         'Vary': 'Accept-Encoding',
       },
     });

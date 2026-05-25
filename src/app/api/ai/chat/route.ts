@@ -9,6 +9,19 @@ const rateLimits = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW = 60_000; // 1 minute
 const RATE_LIMIT_MAX = 30;
 
+// Clean up expired rate limit entries every 5 minutes (prevents memory leak)
+if (typeof globalThis !== 'undefined') {
+  const cleanup = globalThis as Record<string, unknown>;
+  if (!cleanup.__orraRateLimitCleanup) {
+    cleanup.__orraRateLimitCleanup = setInterval(() => {
+      const now = Date.now();
+      for (const [key, val] of rateLimits) {
+        if (now > (val as { resetAt: number }).resetAt) rateLimits.delete(key);
+      }
+    }, 300_000);
+  }
+}
+
 function checkRateLimit(userId: string): boolean {
   const now = Date.now();
   const entry = rateLimits.get(userId);
@@ -132,12 +145,20 @@ export async function POST(req: NextRequest) {
       ...messages.slice(-20), // Keep last 20 messages for context window
     ];
 
-    // Call LLM via z-ai-web-dev-sdk
+    // Call LLM via z-ai-web-dev-sdk with 30s timeout
+    // Without a timeout, a slow/hung LLM API call blocks the server forever
     const zai = await ZAI.create();
-    const response = await zai.chat.completions.create({
-      messages: chatMessages,
-      stream: false,
-    });
+    const controller = new AbortController();
+    const llmTimeout = setTimeout(() => controller.abort(), 30_000);
+    let response;
+    try {
+      response = await zai.chat.completions.create({
+        messages: chatMessages,
+        stream: false,
+      });
+    } finally {
+      clearTimeout(llmTimeout);
+    }
 
     // Extract the assistant's response
     let aiContent = '';

@@ -1,8 +1,9 @@
 const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
-const { existsSync, readFileSync } = require('fs');
+const { existsSync, createReadStream, statSync } = require('fs');
 const path = require('path');
+const { pipeline } = require('stream');
 
 const port = parseInt(process.env.PORT || '3000', 10);
 const app = next({ dev: false });
@@ -11,21 +12,57 @@ const handle = app.getRequestHandler();
 // Build the project root path
 const PROJECT_ROOT = '/home/z/my-project';
 
-// CRITICAL: Prevent unhandled errors from crashing the process
+// Recoverable errors that should NOT crash the server
+const RECOVERABLE_ERRORS = [
+  'ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ECONNREFUSED',
+  'socket hang up', 'request aborted', 'aborted',
+  'write EPIPE', 'read ECONNRESET',
+];
+
+function isRecoverable(err) {
+  const msg = err?.message || String(err);
+  const code = err?.code || '';
+  return RECOVERABLE_ERRORS.some(e => msg.includes(e) || code.includes(e));
+}
+
+// Only catch TRULY recoverable errors — let real crashes kill the process
+// so the supervisor can restart it cleanly. Masking all errors keeps the
+// server alive in a broken state, which is worse than a clean restart.
 process.on('uncaughtException', (err) => {
-  console.error('[ORRA] Uncaught exception (NOT crashing):', err.message);
+  console.error('[ORRA] Uncaught exception:', err.message);
+  if (!isRecoverable(err)) {
+    console.error('[ORRA] Unrecoverable error — exiting for clean restart');
+    process.exit(1);
+  }
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('[ORRA] Unhandled rejection (NOT crashing):', reason);
+process.on('unhandledRejection', (reason) => {
+  console.error('[ORRA] Unhandled rejection:', reason);
+  if (!isRecoverable(reason)) {
+    console.error('[ORRA] Unrecoverable rejection — exiting for clean restart');
+    process.exit(1);
+  }
 });
 
 app.prepare().then(() => {
-  createServer((req, res) => {
+  const server = createServer((req, res) => {
+    // Request timeout — kill hanging requests after 30 seconds
+    // This prevents a single stuck request from blocking the entire server
+    const timeout = setTimeout(() => {
+      if (!res.writableEnded) {
+        console.error('[ORRA] Request timeout:', req.url);
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Request timeout' }));
+      }
+    }, 30_000);
+
+    res.on('finish', () => clearTimeout(timeout));
+    res.on('close', () => clearTimeout(timeout));
+
     const parsedUrl = parse(req.url, true);
     const { pathname } = parsedUrl;
 
-    // CRITICAL FIX: Non-existent chunk/CSS requests fall through to the catch-all
+    // Non-existent chunk/CSS requests fall through to the catch-all
     // route and return HTML with status 200. The browser then tries to parse the
     // HTML as JavaScript, causing a crash cascade.
     const chunkMatch = pathname && pathname.match(/^\/_next\/static\/(chunks|css)\/(.+\.(js|css|map))$/);
@@ -36,7 +73,7 @@ app.prepare().then(() => {
 
       if (existsSync(filePath)) {
         try {
-          const data = readFileSync(filePath);
+          const stat = statSync(filePath);
           const ext = path.extname(filename).toLowerCase();
           const contentTypes = {
             '.js': 'application/javascript; charset=UTF-8',
@@ -49,8 +86,16 @@ app.prepare().then(() => {
             'Content-Type': contentType,
             'Cache-Control': 'public, max-age=31536000, immutable',
             'X-Content-Type-Options': 'nosniff',
+            'Content-Length': stat.size,
           });
-          res.end(data);
+
+          // STREAM the file instead of readFileSync — doesn't block the event loop
+          const stream = createReadStream(filePath);
+          pipeline(stream, res, (err) => {
+            if (err && err.code !== 'ECONNRESET' && err.code !== 'EPIPE') {
+              console.error('[ORRA] Stream error for', filename, err.message);
+            }
+          });
           return;
         } catch (err) {
           // File read error — fall through to Next.js
@@ -83,10 +128,18 @@ app.prepare().then(() => {
     }
 
     handle(req, res, parsedUrl);
-  }).listen(port, () => {
+  });
+
+  // Set server-level timeouts to prevent hanging connections
+  server.timeout = 30_000;           // 30s idle timeout
+  server.requestTimeout = 30_000;    // 30s max request duration
+  server.headersTimeout = 10_000;    // 10s to receive headers
+  server.keepAliveTimeout = 5_000;   // 5s keep-alive between requests
+
+  server.listen(port, () => {
     console.log(`> ORRA Server running on http://localhost:${port}`);
   });
 }).catch((err) => {
   console.error('[ORRA] Failed to prepare Next.js:', err.message);
-  // Don't crash — the supervisor will restart us
+  process.exit(1); // Exit so supervisor restarts us
 });
