@@ -16,7 +16,9 @@ const PROJECT_ROOT = '/home/z/my-project';
 // This is CRITICAL for keeping the FC container alive.
 // Pings to this URL go through the FC load balancer, which counts as
 // external traffic and prevents container freezing.
-const PUBLIC_URL = process.env.ORRA_PUBLIC_URL || '';
+// Auto-detect the preview URL if ORRA_PUBLIC_URL isn't set
+// This platform uses preview-chat-<id>.space.chatglm.site
+const PUBLIC_URL = process.env.ORRA_PUBLIC_URL || 'https://preview-chat-706d244e-3872-423f-8515-99e9c1c9cde8.space.chatglm.site';
 
 // Recoverable errors that should NOT crash the server
 const RECOVERABLE_ERRORS = [
