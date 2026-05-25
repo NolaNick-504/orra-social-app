@@ -263,3 +263,24 @@ Stage Summary:
 - Reverted output:'standalone' (incompatible with custom server.js)
 - Updated Caddyfile: keep_alive 30s→60s
 - Pushed to GitHub, rebuilt, server running and stable
+---
+Task ID: 2
+Agent: Main
+Task: Fix ORRA app stuck on "Loading ORRA..." screen - app worse after first fix attempt
+
+Work Log:
+- User reported app now stuck on "Loading ORRA..." with "Echo • Pulse • Vibe" - WORSE than before
+- Investigated: server was running fine, all API endpoints responding 200, JS chunks existed and served correctly
+- Discovered the REAL root cause in layout.tsx inline bootstrap script:
+  1. CACHE VERSION MISMATCH: Inline script deleted caches not containing 'v7', but SW uses 'v8' → chunk cache deleted every page load
+  2. DUPLICATE KEEP-ALIVE: Inline script had its OWN /api/build-id ping every 10s, competing with KeepAliveProvider's /api/health ping every 5s
+  3. GLOBAL FETCH MONKEY-PATCH: window.fetch was overridden to show "Waking Up ORRA" overlay on ANY error, intercepting KeepAliveProvider's fetch too
+- These 3 systems fought each other: fetch monkey-patch showed overlay → KeepAliveProvider detected error → stopped pinging → container froze
+- Removed all competing systems from layout.tsx, keeping only: SW registration, cache cleanup (v1-v7 only, preserving v8+), localStorage cleanup, 15s watchdog
+- KeepAliveProvider is now the SOLE system handling keep-alive and recovery
+- Rebuilt, pushed, server stable for 60+ seconds
+
+Stage Summary:
+- Fixed layout.tsx: removed 248 lines of competing error systems, replaced with 32 lines of clean bootstrap
+- The app was getting worse because each previous fix added MORE error handling that conflicted with existing systems
+- Key lesson: multiple overlapping recovery systems = death spiral. One system (KeepAliveProvider) is enough.
