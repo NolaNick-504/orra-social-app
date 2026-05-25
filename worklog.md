@@ -162,3 +162,26 @@ Stage Summary:
 - The app WILL work when container rebuilds and /start.sh runs dev.sh
 - From the chat, I cannot keep the server running (chat kills child processes)
 - All fixes pushed to GitHub
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix ORRA app stuck at "Reconnecting..." - server process keeps dying
+
+Work Log:
+- Analyzed screenshot: App stuck at "Reconnecting..." screen with "Attempt 1 of 40"
+- Diagnosed root cause: ORRA server process was dead despite supervisor loop in dev.sh
+- Investigated: The FC container's start.sh runs dev.sh in a background subshell `(sudo -u z bash dev.sh) &`
+- Found that when the parent shell exits or is cleaned up, ALL child processes in the same process group are killed
+- This means the node server AND the supervisor loop both died when the subshell was cleaned up
+- Tested: Starting server with `disown`, `nohup`, and `setsid` all failed because the process was still in the same process group
+- Found the solution: Double-fork daemonization technique - creates a new session via `setsid` in a subshell, so the process gets adopted by PID 1 (tini)
+- Verified: agent-browser (PID 5026) uses the same technique and has PPID=1, surviving all process cleanups
+- Rewrote dev.sh v7 with double-fork daemon approach
+- Tested: Server with PPID=1 survived 30+ seconds (previous attempts died within 10-15 seconds)
+- Pushed fix to GitHub
+
+Stage Summary:
+- Root cause: FC container kills child processes when parent shell exits
+- Fix: Double-fork daemonization (`setsid bash -c 'loop' &`) so supervisor gets PPID=1
+- Server now runs stably as a daemon adopted by init (PID 1)
+- Commit: 28a413a pushed to main
