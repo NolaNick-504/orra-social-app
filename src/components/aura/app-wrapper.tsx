@@ -200,14 +200,23 @@ function StoreHydrator({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Reset store when user signs out
+  // DEBOUNCE: Only reset if unauthenticated for at least 1 second.
+  // NextAuth's update() call briefly sets status to 'unauthenticated' during
+  // session refresh, which was causing the app to flash to the login page
+  // when saving profile edits. This debounce prevents that false sign-out.
   useEffect(() => {
     if (status === 'unauthenticated') {
-      const store = useAuraStore.getState();
-      if (store.isHydrated) {
-        store.resetStore();
-        hasFetched.current = false;
-        hydrationAttempted.current = false;
-      }
+      const timeout = setTimeout(() => {
+        // Double-check: if still unauthenticated after 1s, it's a real sign-out
+        const currentStatus = useAuraStore.getState().isHydrated;
+        if (currentStatus) {
+          const store = useAuraStore.getState();
+          store.resetStore();
+          hasFetched.current = false;
+          hydrationAttempted.current = false;
+        }
+      }, 1000);
+      return () => clearTimeout(timeout);
     }
   }, [status]);
 

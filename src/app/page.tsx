@@ -442,6 +442,15 @@ export default function Home() {
 
   const isAuthenticated = status === 'authenticated' && session;
 
+  // Track if the user was EVER authenticated this session.
+  // This prevents NextAuth's update() call from briefly setting status
+  // to 'unauthenticated' (during session refresh), which would flash the login page.
+  // Once authenticated, we stay showing the app unless the user explicitly signs out.
+  const [wasAuthenticated, setWasAuthenticated] = useState(false);
+  useEffect(() => {
+    if (isAuthenticated) setWasAuthenticated(true);
+  }, [isAuthenticated]);
+
   // Determine if the initial session check is done.
   // Key insight: during a session refetch, `status` briefly goes back to 'loading',
   // but `session` retains its previous value. So we check both:
@@ -482,7 +491,9 @@ export default function Home() {
   }
 
   // If session timed out but cookie exists, treat as authenticated
-  const shouldShowApp = isAuthenticated || sessionTimedOut;
+  // Also: if user was ever authenticated this session, keep showing the app
+  // (prevents NextAuth update() from briefly flashing the login page)
+  const shouldShowApp = isAuthenticated || sessionTimedOut || wasAuthenticated;
 
   if (!shouldShowApp) {
     return (

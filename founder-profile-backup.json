@@ -1,7 +1,9 @@
 {
-  "timestamp": "2026-05-26T17:41:01.822Z",
+  "timestamp": "2026-05-26T17:51:40.081Z",
   "data": {
+    "id": "founder",
     "name": "Nick Joseph",
+    "email": "nickjoseph8087@gmail.com",
     "handle": "@nickorraceo",
     "avatar": "/api/uploads?file=avatar-founder-7ace5481.jpg",
     "coverImage": "/images/covers/founder.jpg",
@@ -11,9 +13,19 @@
     "profileSongUrl": "/music/orra/orra.mp3",
     "profileSongTitle": "ORRA",
     "profileSongArtist": "ORRA",
+    "verified": true,
+    "online": true,
     "auraTokens": 100000,
     "auraLevel": 50,
     "auraXP": 750,
-    "badges": "[\"Early Adopter\",\"ORRA OG\",\"Founder\",\"Visionary\",\"ORRA Architect\"]"
+    "dailyStreak": 0,
+    "badges": "[\"Early Adopter\",\"ORRA OG\",\"Founder\",\"Visionary\",\"ORRA Architect\"]",
+    "profileSetupComplete": true,
+    "createdAt": "2026-05-26T17:51:34.188Z",
+    "_count": {
+      "posts": 3,
+      "follows": 25,
+      "followers": 25
+    }
   }
 }

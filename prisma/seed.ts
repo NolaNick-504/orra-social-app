@@ -45,6 +45,18 @@ const ORRA_SONGS = [
   { url: '/music/orra/welcome-to-my-page.mp3', title: 'Welcome to My Page', artist: 'ORRA' },
   { url: '/music/orra/orra.mp3', title: 'ORRA', artist: 'ORRA' },
   { url: '/music/orra/back-of-the-tracks.mp3', title: 'Back of the Tracks', artist: 'ORRA' },
+  // Suno songs (served via /api/serve-file)
+  { url: '/api/serve-file?path=music/orra/placeholder-cloud-nine.mp3', title: 'Cloud Nine ID', artist: 'ORRA' },
+  { url: '/api/serve-file?path=music/orra/placeholder-thumbs-orbit.mp3', title: 'Thumbs In Orbit', artist: 'ORRA' },
+  { url: '/api/serve-file?path=music/orra/placeholder-glow-up-v1.mp3', title: 'Glow Up Season V1', artist: 'ORRA' },
+  { url: '/api/serve-file?path=music/orra/placeholder-glow-up-v2.mp3', title: 'Glow Up Season V2', artist: 'ORRA' },
+  { url: '/api/serve-file?path=music/orra/placeholder-squad-love.mp3', title: 'Squad Love', artist: 'ORRA' },
+  { url: '/api/serve-file?path=music/orra/placeholder-flirt-era.mp3', title: 'Flirt Era', artist: 'ORRA' },
+  { url: '/api/serve-file?path=music/orra/placeholder-no-cap.mp3', title: 'No Cap Motivation', artist: 'ORRA' },
+  { url: '/api/serve-file?path=music/orra/placeholder-hot-girl.mp3', title: 'Hot Girl Walk Energy', artist: 'ORRA' },
+  { url: '/api/serve-file?path=music/orra/placeholder-gremlin.mp3', title: 'Gremlin Mode On', artist: 'ORRA' },
+  { url: '/api/serve-file?path=music/orra/placeholder-top-eight.mp3', title: 'Top Eight Crown', artist: 'ORRA' },
+  { url: '/api/serve-file?path=music/orra/placeholder-unbothered.mp3', title: 'Unbothered Queen', artist: 'ORRA' },
 ];
 
 // ============================================================
@@ -71,7 +83,7 @@ const mockUsers = [
     auraLevel: 50,
     auraXP: 750,
     badges: ['Early Adopter', 'ORRA OG', 'Founder', 'Visionary', 'ORRA Architect'],
-    profileSong: ORRA_SONGS[3], // "ORRA"
+    profileSong: ORRA_SONGS[3], // "ORRA" — founder anthem
   },
 
   // ========================================
@@ -93,7 +105,7 @@ const mockUsers = [
     auraLevel: 4,
     auraXP: 180,
     badges: ['Early Adopter', 'Plant Parent'],
-    profileSong: ORRA_SONGS[4],
+    profileSong: ORRA_SONGS[5], // "Cloud Nine ID"
   },
   {
     id: 'bot02',
@@ -111,7 +123,7 @@ const mockUsers = [
     auraLevel: 2,
     auraXP: 90,
     badges: [],
-    profileSong: ORRA_SONGS[2],
+    profileSong: ORRA_SONGS[11], // "No Cap Motivation"
   },
   {
     id: 'bot03',
@@ -129,7 +141,7 @@ const mockUsers = [
     auraLevel: 6,
     auraXP: 310,
     badges: ['Trendsetter', 'Early Adopter'],
-    profileSong: ORRA_SONGS[1],
+    profileSong: ORRA_SONGS[12], // "Hot Girl Walk Energy"
   },
   {
     id: 'bot04',
@@ -147,7 +159,7 @@ const mockUsers = [
     auraLevel: 8,
     auraXP: 420,
     badges: ['Top Creator', 'Dance King'],
-    profileSong: ORRA_SONGS[0],
+    profileSong: ORRA_SONGS[7], // "Glow Up Season V1"
   },
   {
     id: 'bot05',
@@ -165,7 +177,7 @@ const mockUsers = [
     auraLevel: 3,
     auraXP: 140,
     badges: ['Foodie Elite'],
-    profileSong: ORRA_SONGS[4],
+    profileSong: ORRA_SONGS[6], // "Thumbs In Orbit"
   },
   {
     id: 'bot06',
@@ -183,7 +195,7 @@ const mockUsers = [
     auraLevel: 7,
     auraXP: 380,
     badges: ['Style Icon', 'ORRA OG'],
-    profileSong: ORRA_SONGS[1],
+    profileSong: ORRA_SONGS[15], // "Unbothered Queen"
   },
   {
     id: 'bot07',
@@ -201,7 +213,7 @@ const mockUsers = [
     auraLevel: 1,
     auraXP: 55,
     badges: [],
-    profileSong: ORRA_SONGS[2],
+    profileSong: ORRA_SONGS[13], // "Gremlin Mode On"
   },
   {
     id: 'bot08',
@@ -219,7 +231,7 @@ const mockUsers = [
     auraLevel: 5,
     auraXP: 250,
     badges: ['Explorer', 'Early Adopter'],
-    profileSong: ORRA_SONGS[4],
+    profileSong: ORRA_SONGS[8], // "Glow Up Season V2"
   },
   {
     id: 'bot09',
@@ -237,7 +249,7 @@ const mockUsers = [
     auraLevel: 2,
     auraXP: 110,
     badges: ['Beat Maker'],
-    profileSong: ORRA_SONGS[0],
+    profileSong: ORRA_SONGS[4], // "Back of the Tracks"
   },
   {
     id: 'bot10',
@@ -255,7 +267,7 @@ const mockUsers = [
     auraLevel: 5,
     auraXP: 290,
     badges: ['Top Creator', 'Art Soul'],
-    profileSong: ORRA_SONGS[3],
+    profileSong: ORRA_SONGS[14], // "Top Eight Crown"
   },
   {
     id: 'bot11',
@@ -273,7 +285,7 @@ const mockUsers = [
     auraLevel: 1,
     auraXP: 45,
     badges: [],
-    profileSong: ORRA_SONGS[4],
+    profileSong: ORRA_SONGS[4], // "Back of the Tracks"
   },
   {
     id: 'bot12',
@@ -291,7 +303,7 @@ const mockUsers = [
     auraLevel: 3,
     auraXP: 200,
     badges: ['Foodie Elite'],
-    profileSong: ORRA_SONGS[2],
+    profileSong: ORRA_SONGS[10], // "Flirt Era"
   },
   {
     id: 'bot13',
@@ -309,7 +321,7 @@ const mockUsers = [
     auraLevel: 5,
     auraXP: 280,
     badges: ['Style Icon', 'Trendsetter'],
-    profileSong: ORRA_SONGS[1],
+    profileSong: ORRA_SONGS[15], // "Unbothered Queen"
   },
   {
     id: 'bot14',
@@ -327,7 +339,7 @@ const mockUsers = [
     auraLevel: 2,
     auraXP: 95,
     badges: [],
-    profileSong: ORRA_SONGS[0],
+    profileSong: ORRA_SONGS[13], // "Gremlin Mode On"
   },
   {
     id: 'bot15',
@@ -345,7 +357,7 @@ const mockUsers = [
     auraLevel: 6,
     auraXP: 350,
     badges: ['Beat Maker', 'Judge'],
-    profileSong: ORRA_SONGS[0],
+    profileSong: ORRA_SONGS[0], // "ORRA Gives Me Everything"
   },
   {
     id: 'bot16',
@@ -363,7 +375,7 @@ const mockUsers = [
     auraLevel: 4,
     auraXP: 230,
     badges: ['Wellness Warrior'],
-    profileSong: ORRA_SONGS[3],
+    profileSong: ORRA_SONGS[5], // "Cloud Nine ID"
   },
   {
     id: 'bot17',
@@ -381,7 +393,7 @@ const mockUsers = [
     auraLevel: 1,
     auraXP: 35,
     badges: [],
-    profileSong: ORRA_SONGS[2],
+    profileSong: ORRA_SONGS[11], // "No Cap Motivation"
   },
   {
     id: 'bot18',
@@ -399,7 +411,7 @@ const mockUsers = [
     auraLevel: 2,
     auraXP: 130,
     badges: ['Word Smith'],
-    profileSong: ORRA_SONGS[3],
+    profileSong: ORRA_SONGS[2], // "Welcome to My Page"
   },
   {
     id: 'bot19',
@@ -417,7 +429,7 @@ const mockUsers = [
     auraLevel: 3,
     auraXP: 160,
     badges: ['Thrill Seeker'],
-    profileSong: ORRA_SONGS[4],
+    profileSong: ORRA_SONGS[13], // "Gremlin Mode On"
   },
   {
     id: 'bot20',
@@ -435,7 +447,7 @@ const mockUsers = [
     auraLevel: 1,
     auraXP: 70,
     badges: [],
-    profileSong: ORRA_SONGS[2],
+    profileSong: ORRA_SONGS[9], // "Squad Love"
   },
   {
     id: 'bot21',
@@ -453,7 +465,7 @@ const mockUsers = [
     auraLevel: 2,
     auraXP: 100,
     badges: ['Dreamer'],
-    profileSong: ORRA_SONGS[1],
+    profileSong: ORRA_SONGS[14], // "Top Eight Crown"
   },
   {
     id: 'bot22',
@@ -471,7 +483,7 @@ const mockUsers = [
     auraLevel: 2,
     auraXP: 120,
     badges: ['Golden Heart'],
-    profileSong: ORRA_SONGS[4],
+    profileSong: ORRA_SONGS[2], // "Welcome to My Page"
   },
   {
     id: 'bot23',
@@ -489,7 +501,7 @@ const mockUsers = [
     auraLevel: 3,
     auraXP: 190,
     badges: ['Hero', 'Foodie Elite'],
-    profileSong: ORRA_SONGS[0],
+    profileSong: ORRA_SONGS[4], // "Back of the Tracks"
   },
   {
     id: 'bot24',
@@ -507,7 +519,7 @@ const mockUsers = [
     auraLevel: 4,
     auraXP: 240,
     badges: ['Fitness First', 'Motivator'],
-    profileSong: ORRA_SONGS[1],
+    profileSong: ORRA_SONGS[11], // "No Cap Motivation"
   },
   {
     id: 'bot25',
@@ -525,7 +537,7 @@ const mockUsers = [
     auraLevel: 3,
     auraXP: 170,
     badges: ['Meme Lord'],
-    profileSong: ORRA_SONGS[3],
+    profileSong: ORRA_SONGS[1], // "Like and Follow"
   },
 ];
 
@@ -2518,6 +2530,30 @@ async function main() {
       console.log('⚠️  No founder account found to update password\n');
     }
   }
+
+  // ========================================
+  // 13. Update bot profile songs (even if users already exist)
+  // ========================================
+  console.log('🎵 Updating bot profile songs to match personalities...');
+  let songsUpdated = 0;
+  for (const u of mockUsers) {
+    if (u.id === 'founder') continue; // Skip founder — preserve their choice
+    const song = u.profileSong ?? ORRA_SONGS[0];
+    try {
+      await prisma.user.update({
+        where: { id: u.id },
+        data: {
+          profileSongUrl: song.url,
+          profileSongTitle: song.title,
+          profileSongArtist: song.artist,
+        },
+      });
+      songsUpdated++;
+    } catch {
+      // Bot may not exist yet — skip
+    }
+  }
+  console.log(`✅ Profile songs updated for ${songsUpdated} bots\n`);
 
   // ========================================
   // Summary
