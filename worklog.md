@@ -138,3 +138,22 @@ Stage Summary:
 - Auto-backup happens on every profile edit and every /api/me load
 - Backup file tracked in git for cross-deployment persistence
 - All changes pushed to GitHub main branch
+---
+Task ID: 3
+Agent: Main
+Task: Fix profile save login flash + update bot profile songs
+
+Work Log:
+- Diagnosed: NextAuth update() call after profile save briefly sets status to 'unauthenticated', causing the auth page to flash
+- Added wasAuthenticated guard in page.tsx: once authenticated, the app stays visible even during session refresh
+- Added 1-second debounce on unauthenticated store reset in app-wrapper.tsx
+- Updated ORRA_SONGS array from 5 to 16 songs (added 11 Suno songs)
+- Assigned personality-matched songs to all 25 bots (e.g., nurses→Cloud Nine, gamers→Gremlin Mode, fashion→Unbothered Queen)
+- Added seed step 13 that always updates bot profile songs (even if users already exist)
+- Founder song is never overwritten by the song update step
+
+Stage Summary:
+- Profile save no longer flashes the login page
+- All 25 bots have unique personality-matched profile songs
+- 16 total songs now in the seed library
+- Changes pushed to GitHub
