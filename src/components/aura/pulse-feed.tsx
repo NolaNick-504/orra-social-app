@@ -815,7 +815,7 @@ export function PulseFeed() {
           fetchNextPage();
         }
       },
-      { rootMargin: '400px' },
+      { rootMargin: '800px' },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -1171,11 +1171,35 @@ export function PulseFeed() {
         </div>
       </div>
 
-      {/* Loading State */}
+      {/* Loading State — skeleton cards for first load */}
       {postsLoading && (
-        <div className="glass-panel rounded-2xl p-8 text-center">
-          <div className="w-8 h-8 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-slate-400 text-sm">Loading posts...</p>
+        <div className="space-y-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="glass-panel rounded-2xl p-4 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white/10" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-24 rounded-full bg-white/10" />
+                  <div className="h-2 w-16 rounded-full bg-white/5" />
+                </div>
+              </div>
+              <div className="mt-3 space-y-2">
+                <div className="h-3 w-full rounded-full bg-white/10" />
+                <div className="h-3 w-3/4 rounded-full bg-white/10" />
+              </div>
+              {i !== 2 && <div className="mt-3 h-40 rounded-xl bg-white/5" />}
+              <div className="mt-3 flex justify-around">
+                <div className="h-6 w-16 rounded-full bg-white/5" />
+                <div className="h-6 w-16 rounded-full bg-white/5" />
+                <div className="h-6 w-16 rounded-full bg-white/5" />
+                <div className="h-6 w-16 rounded-full bg-white/5" />
+              </div>
+            </div>
+          ))}
+          <div className="flex items-center justify-center py-2">
+            <div className="w-5 h-5 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+            <span className="ml-2 text-xs text-slate-500">Loading your feed...</span>
+          </div>
         </div>
       )}
 
@@ -1233,7 +1257,7 @@ export function PulseFeed() {
         const headerIsCurrentUser = isEcho ? echoerIsCurrentUser : isUserPost;
 
         // Insert an ad card every 8-12 posts (tighter intervals for more ads as feed grows)
-        const AD_INTERVALS = [8, 10, 9, 11, 8, 10, 9, 12, 8, 11, 10, 9, 12, 8, 10, 11, 9];
+        const AD_INTERVALS = [8, 10, 9, 11, 8, 10, 9, 12, 8, 11, 10, 9, 12, 8, 10, 11, 9, 10, 8, 12, 11, 9, 10, 8];
         let adSlot = 0;
         let adThreshold = AD_INTERVALS[0];
         const showAd = (index + 1) >= adThreshold && (index + 1) === adThreshold;
@@ -1511,6 +1535,139 @@ export function PulseFeed() {
             borderColor: 'border-lime-300',
             neonShadow: '0 0 20px rgba(132,204,22,1), 0 0 50px rgba(132,204,22,0.7), 0 0 100px rgba(132,204,22,0.4), 0 0 150px rgba(132,204,22,0.2), inset 0 0 20px rgba(132,204,22,0.2)',
             neonShadowHover: '0 0 25px rgba(132,204,22,1), 0 0 70px rgba(132,204,22,0.9), 0 0 120px rgba(132,204,22,0.5), 0 0 180px rgba(132,204,22,0.3), inset 0 0 25px rgba(132,204,22,0.25)',
+          },
+          // === OUT-OF-THIS-WORLD PROFESSIONAL ADS — COSMIC & FUTURISTIC ===
+          {
+            badge: 'SPONSORED',
+            badgeColor: 'bg-sky-600',
+            brand: 'ASTRAL TECH',
+            brandIcon: <Sparkles className="w-3 h-3" />,
+            image: '/images/ads/astral-tech-ad.jpg',
+            headline: 'Beyond the Stars',
+            subtext: 'Neural interface headset that lets you control your devices with thought alone. The future is not coming — it is here.',
+            details: 'AstralLink v3 | $499 | Pre-order now | Ships Q3',
+            website: 'astraltech.io',
+            phone: '1-888-ASTRAL-3',
+            address: 'San Francisco, CA',
+            hours: 'Pre-order 24/7',
+            rating: '4.9',
+            reviews: '52.1K',
+            cta: 'Pre-Order Now',
+            ctaColor: 'bg-sky-600 hover:bg-sky-500',
+            glowColor: 'sky',
+            borderColor: 'border-sky-300',
+            neonShadow: '0 0 20px rgba(14,165,233,1), 0 0 50px rgba(14,165,233,0.7), 0 0 100px rgba(14,165,233,0.4), 0 0 150px rgba(14,165,233,0.2), inset 0 0 20px rgba(14,165,233,0.2)',
+            neonShadowHover: '0 0 25px rgba(14,165,233,1), 0 0 70px rgba(14,165,233,0.9), 0 0 120px rgba(14,165,233,0.5), 0 0 180px rgba(14,165,233,0.3), inset 0 0 25px rgba(14,165,233,0.25)',
+          },
+          {
+            badge: 'PROMOTED',
+            badgeColor: 'bg-fuchsia-600',
+            brand: 'COSMOS BEAUTY',
+            brandIcon: <Star className="w-3 h-3" />,
+            image: '/images/ads/cosmos-beauty-ad.jpg',
+            headline: 'Stardust in a Bottle',
+            subtext: 'Holographic nail polish that shifts through 12 colors based on light and movement. Wear the aurora borealis on your fingertips.',
+            details: '8 shades | $28/bottle | Limited celestial collection',
+            website: 'cosmosbeauty.co',
+            phone: '1-800-COSMOS-GLOW',
+            address: 'Miami, FL',
+            hours: 'Drop goes live: Friday 8PM ET',
+            rating: '4.9',
+            reviews: '34.7K',
+            cta: 'Catch the Drop',
+            ctaColor: 'bg-fuchsia-600 hover:bg-fuchsia-500',
+            glowColor: 'fuchsia',
+            borderColor: 'border-fuchsia-300',
+            neonShadow: '0 0 20px rgba(192,38,211,1), 0 0 50px rgba(192,38,211,0.7), 0 0 100px rgba(192,38,211,0.4), 0 0 150px rgba(192,38,211,0.2), inset 0 0 20px rgba(192,38,211,0.2)',
+            neonShadowHover: '0 0 25px rgba(192,38,211,1), 0 0 70px rgba(192,38,211,0.9), 0 0 120px rgba(192,38,211,0.5), 0 0 180px rgba(192,38,211,0.3), inset 0 0 25px rgba(192,38,211,0.25)',
+          },
+          {
+            badge: 'AD',
+            badgeColor: 'bg-slate-600',
+            brand: 'PRISM Optics',
+            brandIcon: <Sparkles className="w-3 h-3" />,
+            image: '/images/ads/prism-optics-ad.jpg',
+            headline: 'See in Another Dimension',
+            subtext: 'Smart glasses with real-time AR overlay, translation, and infinite zoom. The world just got an upgrade.',
+            details: 'Prism Pro | $799 | Prescription compatible | 12hr battery',
+            website: 'prismoptics.com',
+            phone: '1-833-PRISM-AR',
+            address: 'Seattle, WA',
+            hours: 'Order now — ships in 2 days',
+            rating: '4.8',
+            reviews: '18.9K',
+            cta: 'Experience AR',
+            ctaColor: 'bg-slate-600 hover:bg-slate-500',
+            glowColor: 'slate',
+            borderColor: 'border-slate-300',
+            neonShadow: '0 0 20px rgba(148,163,184,1), 0 0 50px rgba(148,163,184,0.7), 0 0 100px rgba(148,163,184,0.4), 0 0 150px rgba(148,163,184,0.2), inset 0 0 20px rgba(148,163,184,0.2)',
+            neonShadowHover: '0 0 25px rgba(148,163,184,1), 0 0 70px rgba(148,163,184,0.9), 0 0 120px rgba(148,163,184,0.5), 0 0 180px rgba(148,163,184,0.3), inset 0 0 25px rgba(148,163,184,0.25)',
+          },
+          {
+            badge: 'SPONSORED',
+            badgeColor: 'bg-teal-600',
+            brand: 'VOID FRAGRANCE',
+            brandIcon: <Sparkles className="w-3 h-3" />,
+            image: '/images/ads/void-fragrance-ad.jpg',
+            headline: 'Wear the Cosmos',
+            subtext: 'A fragrance engineered from molecular data of actual meteorites. Smell like nothing on Earth — because it is not from Earth.',
+            details: '50ml | $185 | Unisex | Limited to 2,000 bottles',
+            website: 'voidfragrance.com',
+            phone: '1-888-VOID-SCT',
+            address: 'New York, NY',
+            hours: 'Available now while supplies last',
+            rating: '4.9',
+            reviews: '7.3K',
+            cta: 'Claim Your Bottle',
+            ctaColor: 'bg-teal-600 hover:bg-teal-500',
+            glowColor: 'teal',
+            borderColor: 'border-teal-300',
+            neonShadow: '0 0 20px rgba(20,184,166,1), 0 0 50px rgba(20,184,166,0.7), 0 0 100px rgba(20,184,166,0.4), 0 0 150px rgba(20,184,166,0.2), inset 0 0 20px rgba(20,184,166,0.2)',
+            neonShadowHover: '0 0 25px rgba(20,184,166,1), 0 0 70px rgba(20,184,166,0.9), 0 0 120px rgba(20,184,166,0.5), 0 0 180px rgba(20,184,166,0.3), inset 0 0 25px rgba(20,184,166,0.25)',
+          },
+          {
+            badge: 'PROMOTED',
+            badgeColor: 'bg-violet-600',
+            brand: 'NEBULA DRINKS',
+            brandIcon: <Waves className="w-3 h-3" />,
+            image: '/images/ads/nebula-drinks-ad.jpg',
+            headline: 'Taste the Galaxy',
+            subtext: 'Sparkling adaptogen beverages with color-shifting micro-crystals. Every sip is a light show. Zero alcohol, infinite vibes.',
+            details: '4 cosmic flavors | $4.99/can | Variety 8-pack $34',
+            website: 'nebuladrinks.com',
+            phone: '1-800-NEBULA-8',
+            address: 'Austin, TX',
+            hours: 'Delivered in 30 min or less',
+            rating: '4.8',
+            reviews: '41.2K',
+            cta: 'Try the Galaxy',
+            ctaColor: 'bg-violet-600 hover:bg-violet-500',
+            glowColor: 'violet',
+            borderColor: 'border-violet-300',
+            neonShadow: '0 0 20px rgba(139,92,246,1), 0 0 50px rgba(139,92,246,0.7), 0 0 100px rgba(139,92,246,0.4), 0 0 150px rgba(139,92,246,0.2), inset 0 0 20px rgba(139,92,246,0.2)',
+            neonShadowHover: '0 0 25px rgba(139,92,246,1), 0 0 70px rgba(139,92,246,0.9), 0 0 120px rgba(139,92,246,0.5), 0 0 180px rgba(139,92,246,0.3), inset 0 0 25px rgba(139,92,246,0.25)',
+          },
+          {
+            badge: 'AD',
+            badgeColor: 'bg-rose-600',
+            brand: 'ECLIPSE AUTO',
+            brandIcon: <Zap className="w-3 h-3" />,
+            image: '/images/ads/eclipse-auto-ad.jpg',
+            headline: 'Driving Reinvented',
+            subtext: 'The hypercar that runs on solar paint. 0-60 in 1.8 seconds. 800 mile range. Painted with photovoltaic nanocoating.',
+            details: 'Eclipse One | $142,000 | Reserve $5,000 | 2026 delivery',
+            website: 'eclipseauto.com',
+            phone: '1-888-ECLIPSE-1',
+            address: 'Los Angeles, CA',
+            hours: 'Reservations open now',
+            rating: '5.0',
+            reviews: '3.4K',
+            cta: 'Reserve Yours',
+            ctaColor: 'bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500',
+            glowColor: 'rose',
+            borderColor: 'border-rose-300',
+            neonShadow: '0 0 20px rgba(244,63,94,1), 0 0 50px rgba(244,63,94,0.7), 0 0 100px rgba(244,63,94,0.4), 0 0 150px rgba(244,63,94,0.2), inset 0 0 20px rgba(244,63,94,0.2)',
+            neonShadowHover: '0 0 25px rgba(244,63,94,1), 0 0 70px rgba(244,63,94,0.9), 0 0 120px rgba(244,63,94,0.5), 0 0 180px rgba(244,63,94,0.3), inset 0 0 25px rgba(244,63,94,0.25)',
           },
         ];
 
@@ -1964,20 +2121,70 @@ export function PulseFeed() {
       })}
 
       {/* Infinite scroll sentinel — IntersectionObserver watches this */}
-      <div ref={sentinelRef} className="h-1" />
+      <div ref={sentinelRef} className="h-4" />
 
-      {/* Loading more posts spinner */}
+      {/* Loading more posts — skeleton cards for smooth UX */}
       {isFetchingNextPage && (
-        <div className="flex items-center justify-center py-6">
-          <div className="w-6 h-6 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-          <span className="ml-2 text-sm text-slate-400">Loading more posts...</span>
+        <div className="space-y-4 py-2">
+          {/* Skeleton card 1 */}
+          <div className="glass-panel rounded-2xl p-4 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/10" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-24 rounded-full bg-white/10" />
+                <div className="h-2 w-16 rounded-full bg-white/5" />
+              </div>
+            </div>
+            <div className="mt-3 space-y-2">
+              <div className="h-3 w-full rounded-full bg-white/10" />
+              <div className="h-3 w-3/4 rounded-full bg-white/10" />
+            </div>
+            <div className="mt-3 h-40 rounded-xl bg-white/5" />
+            <div className="mt-3 flex justify-around">
+              <div className="h-6 w-16 rounded-full bg-white/5" />
+              <div className="h-6 w-16 rounded-full bg-white/5" />
+              <div className="h-6 w-16 rounded-full bg-white/5" />
+              <div className="h-6 w-16 rounded-full bg-white/5" />
+            </div>
+          </div>
+          {/* Skeleton card 2 */}
+          <div className="glass-panel rounded-2xl p-4 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/10" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-20 rounded-full bg-white/10" />
+                <div className="h-2 w-14 rounded-full bg-white/5" />
+              </div>
+            </div>
+            <div className="mt-3 space-y-2">
+              <div className="h-3 w-full rounded-full bg-white/10" />
+              <div className="h-3 w-1/2 rounded-full bg-white/10" />
+            </div>
+            <div className="mt-3 flex justify-around">
+              <div className="h-6 w-16 rounded-full bg-white/5" />
+              <div className="h-6 w-16 rounded-full bg-white/5" />
+              <div className="h-6 w-16 rounded-full bg-white/5" />
+              <div className="h-6 w-16 rounded-full bg-white/5" />
+            </div>
+          </div>
+          {/* Center spinner */}
+          <div className="flex items-center justify-center py-2">
+            <div className="w-5 h-5 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+            <span className="ml-2 text-xs text-slate-500">Loading more vibes...</span>
+          </div>
         </div>
       )}
 
-      {/* End of feed message */}
+      {/* End of feed — beautiful cosmic closure */}
       {!hasNextPage && filteredPosts.length > 0 && !postsLoading && (
-        <div className="text-center py-6">
-          <p className="text-sm text-slate-500">You&apos;ve reached the end</p>
+        <div className="text-center py-10 space-y-3">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600/20 to-fuchsia-600/20 flex items-center justify-center border border-violet-500/20">
+              <Sparkles className="w-7 h-7 text-violet-400" />
+            </div>
+          </div>
+          <p className="text-sm font-semibold text-violet-300">You&apos;ve explored every vibe</p>
+          <p className="text-xs text-slate-500 max-w-[200px] mx-auto">Pull down to refresh or tap Home for the latest pulses</p>
         </div>
       )}
 
