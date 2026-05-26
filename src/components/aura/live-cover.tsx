@@ -30,22 +30,22 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
  * Category-specific cover images — AI-generated covers matching each category.
  */
 const CATEGORY_COVERS: Record<string, string> = {
-  music: '/uploads/live-covers/late-night-vibes.jpg',
-  gaming: '/uploads/live-covers/ranked-grind.jpg',
-  dance: '/uploads/live-covers/dance-challenge.jpg',
-  comedy: '/uploads/live-covers/storytime-qa.jpg',
-  sports: '/uploads/live-covers/pregame-warmup.jpg',
-  art: '/uploads/live-covers/painting-session.jpg',
-  lifestyle: '/uploads/live-covers/cooking-special.jpg',
-  trending: '/uploads/live-covers/just-chatting.jpg',
-  cooking: '/uploads/live-covers/making-ramen.jpg',
-  food: '/uploads/live-covers/cooking-special.jpg',
-  fitness: '/uploads/live-covers/morning-yoga.jpg',
-  tech: '/uploads/live-covers/tech-news.jpg',
-  fashion: '/uploads/live-covers/fashion-lookbook.jpg',
-  education: '/uploads/live-covers/study-session.jpg',
-  talk: '/uploads/live-covers/storytime-qa.jpg',
-  live: '/uploads/live-covers/just-chatting.jpg',
+  music: '/images/live-covers/music.jpg',
+  gaming: '/images/live-covers/gaming.jpg',
+  dance: '/images/live-covers/dance.jpg',
+  comedy: '/images/live-covers/comedy.jpg',
+  sports: '/images/live-covers/sports.jpg',
+  art: '/images/live-covers/art.jpg',
+  lifestyle: '/images/live-covers/lifestyle.jpg',
+  trending: '/images/live-covers/trending.jpg',
+  cooking: '/images/live-covers/cooking.jpg',
+  food: '/images/live-covers/food.jpg',
+  fitness: '/images/live-covers/fitness.jpg',
+  tech: '/images/live-covers/tech.jpg',
+  fashion: '/images/live-covers/fashion.jpg',
+  education: '/images/live-covers/education.jpg',
+  talk: '/images/live-covers/talk.jpg',
+  live: '/images/live-covers/live.jpg',
 };
 
 /**

@@ -2599,8 +2599,8 @@ const danceEntriesData = [
   { id: 'de6', authorId: 'bot19', description: 'Krump energy with skate style!', thumbnail: '/images/dance/entry5.jpg', likesCount: 43010 },
   { id: 'de7', authorId: 'bot05', description: 'Robot dance challenge — engineer style', thumbnail: '/images/dance/entry6.jpg', likesCount: 38900 },
   { id: 'de8', authorId: 'bot07', description: 'Cyberpunk choreography — gaming meets dance', thumbnail: '/images/dance/entry7.jpg', likesCount: 32780 },
-  { id: 'de9', authorId: 'bot24', description: 'Athletic flow — fitness meets rhythm', thumbnail: '/images/dance/entry8.jpg', likesCount: 28450 },
-  { id: 'de10', authorId: 'bot09', description: 'Chicago house meets hip-hop — born on the South Side', thumbnail: '/images/dance/entry9.jpg', likesCount: 24120 },
+  { id: 'de9', authorId: 'bot24', description: 'Athletic flow — fitness meets rhythm', thumbnail: '/images/dance/entry0.jpg', likesCount: 28450 },
+  { id: 'de10', authorId: 'bot09', description: 'Chicago house meets hip-hop — born on the South Side', thumbnail: '/images/dance/entry1.jpg', likesCount: 24120 },
 ];
 
 // ============================================================

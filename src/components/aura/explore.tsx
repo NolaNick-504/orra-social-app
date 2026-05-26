@@ -292,10 +292,10 @@ export function Explore() {
             </div>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { title: 'Coffee Shop Vibes', image: 'https://picsum.photos/seed/near1/300/200', dist: '0.3 mi' },
-                { title: 'Street Art Walk', image: 'https://picsum.photos/seed/near2/300/200', dist: '0.5 mi' },
-                { title: 'Rooftop Sunsets', image: 'https://picsum.photos/seed/near3/300/200', dist: '1.2 mi' },
-                { title: 'Dance Studio', image: 'https://picsum.photos/seed/near4/300/200', dist: '0.8 mi' },
+                { title: 'Coffee Shop Vibes', image: '/images/posts/poem-coffee-cup.jpg', dist: '0.3 mi' },
+                { title: 'Street Art Walk', image: '/images/posts/art1.jpg', dist: '0.5 mi' },
+                { title: 'Rooftop Sunsets', image: '/images/posts/barcelona-sunset.jpg', dist: '1.2 mi' },
+                { title: 'Dance Studio', image: '/images/posts/dance1.jpg', dist: '0.8 mi' },
               ].map((place, i) => (
                 <div key={i} className="relative rounded-xl overflow-hidden aspect-[3/2] group cursor-pointer">
                   <img src={place.image} alt={place.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
