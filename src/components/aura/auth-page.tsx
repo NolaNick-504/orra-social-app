@@ -318,13 +318,13 @@ export function AuthPage() {
           </div>
           <div className="space-y-2">
             {[
-              { email: 'zara@orra.app', name: 'Zara Miles', role: 'Fashion & Lifestyle', gradient: 'from-pink-500 to-rose-500' },
-              { email: 'jay@orra.app', name: 'Jay Parker', role: 'Gamer & Streamer', gradient: 'from-green-500 to-emerald-500' },
-              { email: 'maya@orra.app', name: 'Maya Chen', role: 'Food Blogger', gradient: 'from-orange-500 to-amber-500' },
-              { email: 'dre@orra.app', name: 'Dre Williams', role: 'Music Producer', gradient: 'from-blue-500 to-indigo-500' },
-              { email: 'jessica@orra.app', name: 'Jessica Art', role: 'Digital Artist', gradient: 'from-violet-500 to-purple-500' },
-              { email: 'marcus@orra.app', name: 'Marcus Rivera', role: 'Dancer', gradient: 'from-cyan-500 to-teal-500' },
-              { email: 'lunasky@orra.app', name: 'Luna Sky', role: 'Creator', gradient: 'from-fuchsia-500 to-pink-500' },
+              { email: 'bot13@orra.app', name: 'Zara Miles', role: 'Fashion & Lifestyle', gradient: 'from-pink-500 to-rose-500' },
+              { email: 'bot14@orra.app', name: 'Jaylen Parker', role: 'Gamer & Streamer', gradient: 'from-green-500 to-emerald-500' },
+              { email: 'bot12@orra.app', name: 'Maya Chen', role: 'Food Blogger', gradient: 'from-orange-500 to-amber-500' },
+              { email: 'bot15@orra.app', name: 'Dre Williams', role: 'Music Producer', gradient: 'from-blue-500 to-indigo-500' },
+              { email: 'bot10@orra.app', name: 'Luna Kim', role: 'Illustrator & Cat Mom', gradient: 'from-violet-500 to-purple-500' },
+              { email: 'bot04@orra.app', name: 'Marcus Rivera', role: 'Dance Instructor', gradient: 'from-cyan-500 to-teal-500' },
+              { email: 'bot08@orra.app', name: 'Elena Vasquez', role: 'World Traveler', gradient: 'from-fuchsia-500 to-pink-500' },
             ].map((demo) => (
               <button
                 key={demo.email}

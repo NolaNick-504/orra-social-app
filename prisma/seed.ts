@@ -28,7 +28,7 @@ const mockUsers = [
   {
     id: 'founder',
     email: 'nickjoseph8087@gmail.com',
-    name: 'Nick Orraceo',
+    name: 'Nicholas',
     handle: '@nickorraceo',
     avatar: '/images/avatars/bots/founder-avatar.jpg',
     coverImage: '/images/covers/founder.jpg',
@@ -38,7 +38,7 @@ const mockUsers = [
     verified: true,
     online: true,
     auraTokens: 100000,
-    auraLevel: 51,
+    auraLevel: 50,
     auraXP: 750,
     badges: ['Early Adopter', 'ORRA OG', 'Founder', 'Visionary', 'ORRA Architect'],
     profileSong: ORRA_SONGS[3], // "ORRA"
@@ -1994,6 +1994,7 @@ interface SeedCounts {
 
 async function main() {
   const counts: SeedCounts = {
+    created: 0, skipped: 0,
     usersCreated: 0, usersSkipped: 0,
     postsCreated: 0, postsSkipped: 0,
     commentsCreated: 0, commentsSkipped: 0,
