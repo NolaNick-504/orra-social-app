@@ -14,7 +14,7 @@ export interface ProfileSong {
   sunoUrl?: string; // link to Suno page
 }
 
-// ===== ORRA ORIGINAL SONGS (Local MP3s) =====
+// ===== ORRA ORIGINAL SONGS (Local MP3s — instrumentals) =====
 const ORRA_LOCAL_SONGS: ProfileSong[] = [
   {
     id: 'orra-anthem',
@@ -68,13 +68,13 @@ const ORRA_LOCAL_SONGS: ProfileSong[] = [
   },
 ];
 
-// ===== ORRA SUNO SONGS (from the ORRA APP playlist) =====
+// ===== ORRA SUNO SONGS (vocal tracks from Suno AI) =====
 const ORRA_SUNO_SONGS: ProfileSong[] = [
   {
     id: 'orra-cloud-nine-id',
     title: 'Cloud Nine ID',
     artist: 'ORRA',
-    url: '/api/serve-file?path=music/orra/placeholder-cloud-nine.mp3',
+    url: '/music/orra/cloud-nine-id.mp3',
     genre: 'Hyperpop',
     mood: 'Playful',
     duration: '2:30',
@@ -85,7 +85,7 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
     id: 'orra-thumbs-in-orbit',
     title: 'Thumbs In Orbit',
     artist: 'ORRA',
-    url: '/api/serve-file?path=music/orra/placeholder-thumbs-orbit.mp3',
+    url: '/music/orra/thumbs-in-orbit.mp3',
     genre: 'Pop',
     mood: 'Upbeat',
     duration: '2:45',
@@ -96,7 +96,7 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
     id: 'orra-glow-up-season-v1',
     title: 'Glow Up Season V1',
     artist: 'ORRA',
-    url: '/api/serve-file?path=music/orra/placeholder-glow-up-v1.mp3',
+    url: '/music/orra/glow-up-season-v1.mp3',
     genre: 'Tropical House',
     mood: 'Summer',
     duration: '2:50',
@@ -107,7 +107,7 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
     id: 'orra-glow-up-season-v2',
     title: 'Glow Up Season V2',
     artist: 'ORRA',
-    url: '/api/serve-file?path=music/orra/placeholder-glow-up-v2.mp3',
+    url: '/music/orra/glow-up-season-v2.mp3',
     genre: 'Tropical House',
     mood: 'Summer',
     duration: '2:50',
@@ -118,7 +118,7 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
     id: 'orra-squad-love',
     title: 'Squad Love',
     artist: 'ORRA',
-    url: '/api/serve-file?path=music/orra/placeholder-squad-love.mp3',
+    url: '/music/orra/squad-love.mp3',
     genre: 'Pop-Rap',
     mood: 'Hype',
     duration: '2:40',
@@ -129,7 +129,7 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
     id: 'orra-flirt-era',
     title: 'Flirt Era',
     artist: 'ORRA',
-    url: '/api/serve-file?path=music/orra/placeholder-flirt-era.mp3',
+    url: '/music/orra/flirt-era.mp3',
     genre: 'R&B',
     mood: 'Smooth',
     duration: '2:55',
@@ -140,7 +140,7 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
     id: 'orra-no-cap-motivation',
     title: 'No Cap Motivation',
     artist: 'ORRA',
-    url: '/api/serve-file?path=music/orra/placeholder-no-cap.mp3',
+    url: '/music/orra/no-cap-motivation.mp3',
     genre: 'Hip-Hop',
     mood: 'Motivational',
     duration: '2:35',
@@ -151,7 +151,7 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
     id: 'orra-hot-girl-walk-energy',
     title: 'Hot Girl Walk Energy',
     artist: 'ORRA',
-    url: '/api/serve-file?path=music/orra/placeholder-hot-girl.mp3',
+    url: '/music/orra/hot-girl-walk-energy.mp3',
     genre: 'Funky Pop',
     mood: 'Fun',
     duration: '2:45',
@@ -162,7 +162,7 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
     id: 'orra-gremlin-mode-on',
     title: 'Gremlin Mode On',
     artist: 'ORRA',
-    url: '/api/serve-file?path=music/orra/placeholder-gremlin.mp3',
+    url: '/music/orra/gremlin-mode-on.mp3',
     genre: 'Hyperpop',
     mood: 'Chaos',
     duration: '2:20',
@@ -173,7 +173,7 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
     id: 'orra-top-eight-crown',
     title: 'Top Eight Crown',
     artist: 'ORRA',
-    url: '/api/serve-file?path=music/orra/placeholder-top-eight.mp3',
+    url: '/music/orra/top-eight-crown.mp3',
     genre: 'Pop',
     mood: 'Nostalgic',
     duration: '2:50',
@@ -184,7 +184,7 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
     id: 'orra-unbothered-queen',
     title: 'Unbothered Queen',
     artist: 'ORRA',
-    url: '/api/serve-file?path=music/orra/placeholder-unbothered.mp3',
+    url: '/music/orra/unbothered-queen.mp3',
     genre: 'Pop',
     mood: 'Confident',
     duration: '3:00',
@@ -193,8 +193,62 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
   },
 ];
 
+// ===== ORRA NEW SONGS (additional Suno tracks) =====
+const ORRA_NEW_SONGS: ProfileSong[] = [
+  {
+    id: 'orra-neon-prayer',
+    title: 'Neon Prayer',
+    artist: 'ORRA',
+    url: '/music/orra/ate-the-last-pickle-blues.mp3',
+    genre: 'R&B',
+    mood: 'Soulful',
+    duration: '3:15',
+    coverArt: '/images/songs/neon-prayer-cover.jpeg',
+  },
+  {
+    id: 'orra-midnight-confession',
+    title: 'Midnight Confession',
+    artist: 'ORRA',
+    url: '/music/orra/donny-maduro-man.mp3',
+    genre: 'R&B',
+    mood: 'Intimate',
+    duration: '3:42',
+    coverArt: '/images/songs/midnight-confession-cover.jpeg',
+  },
+  {
+    id: 'orra-golden-hour-vibes',
+    title: 'Golden Hour Vibes',
+    artist: 'ORRA',
+    url: '/music/orra/her-eyes-pierce-my-soul.mp3',
+    genre: 'Tropical House',
+    mood: 'Dreamy',
+    duration: '3:08',
+    coverArt: '/images/songs/golden-hour-vibes-cover.jpeg',
+  },
+  {
+    id: 'orra-crawfish-boil',
+    title: 'Crawfish Boil',
+    artist: 'ORRA',
+    url: '/music/orra/last-memory-of-you.mp3',
+    genre: 'Hip-Hop',
+    mood: 'Turnt',
+    duration: '2:48',
+    coverArt: '/images/songs/crawfish-boil-cover.jpeg',
+  },
+  {
+    id: 'orra-aurora-bounce',
+    title: 'Aurora Bounce',
+    artist: 'ORRA',
+    url: '/music/orra/mega-me.mp3',
+    genre: 'Hyperpop',
+    mood: 'Energetic',
+    duration: '3:30',
+    coverArt: '/images/songs/aurora-bounce-cover.jpeg',
+  },
+];
+
 // The full song library — all ORRA originals
-export const ORRA_SONGS: ProfileSong[] = [...ORRA_LOCAL_SONGS, ...ORRA_SUNO_SONGS];
+export const ORRA_SONGS: ProfileSong[] = [...ORRA_LOCAL_SONGS, ...ORRA_SUNO_SONGS, ...ORRA_NEW_SONGS];
 
 // The full song library — ORRA originals only
 export const SONG_LIBRARY: ProfileSong[] = ORRA_SONGS;
@@ -219,7 +273,7 @@ export function filterSongsByGenre(genre: string): ProfileSong[] {
 }
 
 export function getVocalSongs(): ProfileSong[] {
-  return ORRA_SUNO_SONGS;
+  return [...ORRA_SUNO_SONGS, ...ORRA_NEW_SONGS];
 }
 
 export function getInstrumentalSongs(): ProfileSong[] {

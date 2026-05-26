@@ -478,7 +478,11 @@ export function EditProfileModal() {
 
         // Update NextAuth session so JWT reflects the new avatar/handle
         // This prevents stale session data from showing old avatar on refresh
-        try { await update(); } catch {}
+        // IMPORTANT: We use a delayed, non-blocking update() to avoid a session
+        // status flicker (brief "unauthenticated") that causes the login page to flash.
+        // Since the Zustand store is already updated with fresh data from /api/me,
+        // the UI is correct immediately — the JWT update is just for consistency.
+        setTimeout(() => { update().catch(() => {}); }, 500);
 
         // Clear ALL profileEdits since the full profile is now fresh from the API
         // This prevents stale profileEdits from overriding the fresh DB data on next render

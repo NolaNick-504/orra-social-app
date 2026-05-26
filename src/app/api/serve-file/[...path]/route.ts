@@ -23,6 +23,13 @@ const MIME_TYPES: Record<string, string> = {
   '.mp4': 'video/mp4',
   '.webm': 'video/webm',
   '.mov': 'video/quicktime',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.flac': 'audio/flac',
+  '.webp': 'image/webp',
 };
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB

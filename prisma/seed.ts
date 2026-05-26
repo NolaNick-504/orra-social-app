@@ -40,23 +40,30 @@ function saveFounderBackup(data: Record<string, any>) {
 // ORRA Profile Songs (from /public/music/orra/)
 // ============================================================
 const ORRA_SONGS = [
-  { url: '/music/orra/orra-gives-me-everything.mp3', title: 'ORRA Gives Me Everything', artist: 'ORRA' },
-  { url: '/music/orra/like-and-follow.mp3', title: 'Like and Follow', artist: 'ORRA' },
-  { url: '/music/orra/welcome-to-my-page.mp3', title: 'Welcome to My Page', artist: 'ORRA' },
-  { url: '/music/orra/orra.mp3', title: 'ORRA', artist: 'ORRA' },
-  { url: '/music/orra/back-of-the-tracks.mp3', title: 'Back of the Tracks', artist: 'ORRA' },
-  // Suno songs (served via /api/serve-file)
-  { url: '/api/serve-file?path=music/orra/placeholder-cloud-nine.mp3', title: 'Cloud Nine ID', artist: 'ORRA' },
-  { url: '/api/serve-file?path=music/orra/placeholder-thumbs-orbit.mp3', title: 'Thumbs In Orbit', artist: 'ORRA' },
-  { url: '/api/serve-file?path=music/orra/placeholder-glow-up-v1.mp3', title: 'Glow Up Season V1', artist: 'ORRA' },
-  { url: '/api/serve-file?path=music/orra/placeholder-glow-up-v2.mp3', title: 'Glow Up Season V2', artist: 'ORRA' },
-  { url: '/api/serve-file?path=music/orra/placeholder-squad-love.mp3', title: 'Squad Love', artist: 'ORRA' },
-  { url: '/api/serve-file?path=music/orra/placeholder-flirt-era.mp3', title: 'Flirt Era', artist: 'ORRA' },
-  { url: '/api/serve-file?path=music/orra/placeholder-no-cap.mp3', title: 'No Cap Motivation', artist: 'ORRA' },
-  { url: '/api/serve-file?path=music/orra/placeholder-hot-girl.mp3', title: 'Hot Girl Walk Energy', artist: 'ORRA' },
-  { url: '/api/serve-file?path=music/orra/placeholder-gremlin.mp3', title: 'Gremlin Mode On', artist: 'ORRA' },
-  { url: '/api/serve-file?path=music/orra/placeholder-top-eight.mp3', title: 'Top Eight Crown', artist: 'ORRA' },
-  { url: '/api/serve-file?path=music/orra/placeholder-unbothered.mp3', title: 'Unbothered Queen', artist: 'ORRA' },
+  // Local instrumentals
+  { url: '/music/orra/orra-gives-me-everything.mp3', title: 'ORRA Gives Me Everything', artist: 'ORRA' },       // [0]
+  { url: '/music/orra/like-and-follow.mp3', title: 'Like and Follow', artist: 'ORRA' },                        // [1]
+  { url: '/music/orra/welcome-to-my-page.mp3', title: 'Welcome to My Page', artist: 'ORRA' },                  // [2]
+  { url: '/music/orra/orra.mp3', title: 'ORRA', artist: 'ORRA' },                                              // [3]
+  { url: '/music/orra/back-of-the-tracks.mp3', title: 'Back of the Tracks', artist: 'ORRA' },                  // [4]
+  // Suno vocal tracks (now with actual MP3s downloaded from Suno)
+  { url: '/music/orra/cloud-nine-id.mp3', title: 'Cloud Nine ID', artist: 'ORRA' },                            // [5]
+  { url: '/music/orra/thumbs-in-orbit.mp3', title: 'Thumbs In Orbit', artist: 'ORRA' },                        // [6]
+  { url: '/music/orra/glow-up-season-v1.mp3', title: 'Glow Up Season V1', artist: 'ORRA' },                    // [7]
+  { url: '/music/orra/glow-up-season-v2.mp3', title: 'Glow Up Season V2', artist: 'ORRA' },                    // [8]
+  { url: '/music/orra/squad-love.mp3', title: 'Squad Love', artist: 'ORRA' },                                  // [9]
+  { url: '/music/orra/flirt-era.mp3', title: 'Flirt Era', artist: 'ORRA' },                                    // [10]
+  { url: '/music/orra/no-cap-motivation.mp3', title: 'No Cap Motivation', artist: 'ORRA' },                    // [11]
+  { url: '/music/orra/hot-girl-walk-energy.mp3', title: 'Hot Girl Walk Energy', artist: 'ORRA' },              // [12]
+  { url: '/music/orra/gremlin-mode-on.mp3', title: 'Gremlin Mode On', artist: 'ORRA' },                        // [13]
+  { url: '/music/orra/top-eight-crown.mp3', title: 'Top Eight Crown', artist: 'ORRA' },                        // [14]
+  { url: '/music/orra/unbothered-queen.mp3', title: 'Unbothered Queen', artist: 'ORRA' },                      // [15]
+  // New songs
+  { url: '/music/orra/ate-the-last-pickle-blues.mp3', title: 'Neon Prayer', artist: 'ORRA' },                  // [16]
+  { url: '/music/orra/donny-maduro-man.mp3', title: 'Midnight Confession', artist: 'ORRA' },                   // [17]
+  { url: '/music/orra/her-eyes-pierce-my-soul.mp3', title: 'Golden Hour Vibes', artist: 'ORRA' },              // [18]
+  { url: '/music/orra/last-memory-of-you.mp3', title: 'Crawfish Boil', artist: 'ORRA' },                       // [19]
+  { url: '/music/orra/mega-me.mp3', title: 'Aurora Bounce', artist: 'ORRA' },                                  // [20]
 ];
 
 // ============================================================
@@ -105,7 +112,7 @@ const mockUsers = [
     auraLevel: 4,
     auraXP: 180,
     badges: ['Early Adopter', 'Plant Parent'],
-    profileSong: ORRA_SONGS[5], // "Cloud Nine ID"
+    profileSong: ORRA_SONGS[16], // "Neon Prayer"
   },
   {
     id: 'bot02',
@@ -123,7 +130,7 @@ const mockUsers = [
     auraLevel: 2,
     auraXP: 90,
     badges: [],
-    profileSong: ORRA_SONGS[11], // "No Cap Motivation"
+    profileSong: ORRA_SONGS[17], // "Midnight Confession"
   },
   {
     id: 'bot03',
@@ -141,7 +148,7 @@ const mockUsers = [
     auraLevel: 6,
     auraXP: 310,
     badges: ['Trendsetter', 'Early Adopter'],
-    profileSong: ORRA_SONGS[12], // "Hot Girl Walk Energy"
+    profileSong: ORRA_SONGS[18], // "Golden Hour Vibes"
   },
   {
     id: 'bot04',
@@ -213,7 +220,7 @@ const mockUsers = [
     auraLevel: 1,
     auraXP: 55,
     badges: [],
-    profileSong: ORRA_SONGS[13], // "Gremlin Mode On"
+    profileSong: ORRA_SONGS[19], // "Crawfish Boil"
   },
   {
     id: 'bot08',
@@ -249,7 +256,7 @@ const mockUsers = [
     auraLevel: 2,
     auraXP: 110,
     badges: ['Beat Maker'],
-    profileSong: ORRA_SONGS[4], // "Back of the Tracks"
+    profileSong: ORRA_SONGS[20], // "Aurora Bounce"
   },
   {
     id: 'bot10',
@@ -321,7 +328,7 @@ const mockUsers = [
     auraLevel: 5,
     auraXP: 280,
     badges: ['Style Icon', 'Trendsetter'],
-    profileSong: ORRA_SONGS[15], // "Unbothered Queen"
+    profileSong: ORRA_SONGS[12], // "Hot Girl Walk Energy"
   },
   {
     id: 'bot14',
@@ -339,7 +346,7 @@ const mockUsers = [
     auraLevel: 2,
     auraXP: 95,
     badges: [],
-    profileSong: ORRA_SONGS[13], // "Gremlin Mode On"
+    profileSong: ORRA_SONGS[5], // "Cloud Nine ID"
   },
   {
     id: 'bot15',
@@ -483,7 +490,7 @@ const mockUsers = [
     auraLevel: 2,
     auraXP: 120,
     badges: ['Golden Heart'],
-    profileSong: ORRA_SONGS[2], // "Welcome to My Page"
+    profileSong: ORRA_SONGS[16], // "Neon Prayer"
   },
   {
     id: 'bot23',
@@ -501,7 +508,7 @@ const mockUsers = [
     auraLevel: 3,
     auraXP: 190,
     badges: ['Hero', 'Foodie Elite'],
-    profileSong: ORRA_SONGS[4], // "Back of the Tracks"
+    profileSong: ORRA_SONGS[17], // "Midnight Confession"
   },
   {
     id: 'bot24',
@@ -519,7 +526,7 @@ const mockUsers = [
     auraLevel: 4,
     auraXP: 240,
     badges: ['Fitness First', 'Motivator'],
-    profileSong: ORRA_SONGS[11], // "No Cap Motivation"
+    profileSong: ORRA_SONGS[18], // "Golden Hour Vibes"
   },
   {
     id: 'bot25',
@@ -537,7 +544,7 @@ const mockUsers = [
     auraLevel: 3,
     auraXP: 170,
     badges: ['Meme Lord'],
-    profileSong: ORRA_SONGS[1], // "Like and Follow"
+    profileSong: ORRA_SONGS[20], // "Aurora Bounce"
   },
 ];
 
