@@ -225,16 +225,46 @@ function StoreHydrator({ children }: { children: React.ReactNode }) {
   // while !isHydrated, so we want to transition to real content ASAP.
   // The real API data will arrive shortly after and populate the profile correctly.
   useEffect(() => {
-    if (status !== 'authenticated') return;
+    // Only run this safety net for authenticated or likely-authenticated users
+    // (status can be 'loading' if session API is slow but cookie exists)
+    if (status === 'unauthenticated') return;
     const timeout = setTimeout(() => {
       const store = useAuraStore.getState();
       if (!store.isHydrated) {
-        console.warn('ORRA: Hydration timeout in StoreHydrator — forcing isHydrated=true without fallback user');
+        console.warn('ORRA: Hydration timeout in StoreHydrator — forcing isHydrated=true');
+        // If we have session data, create a minimal user from it
+        if (session?.user) {
+          const userId = (session.user as Record<string, unknown>).id as string || '';
+          const fallbackUser: CurrentUser = {
+            id: userId,
+            name: session.user.name || '',
+            handle: ((session.user as Record<string, unknown>).handle as string) || '',
+            email: session.user.email || '',
+            avatar: ((session.user as Record<string, unknown>).avatar as string) || '/api/uploads?path=images/orra-logo.png',
+            coverImage: '/api/uploads?path=images/profile-cover.png',
+            bio: ((session.user as Record<string, unknown>).bio as string) || '',
+            location: ((session.user as Record<string, unknown>).location as string) || '',
+            website: ((session.user as Record<string, unknown>).website as string) || '',
+            verified: false,
+            online: true,
+            auraTokens: ((session.user as Record<string, unknown>).auraTokens as number) || 0,
+            auraLevel: ((session.user as Record<string, unknown>).auraLevel as number) || 1,
+            auraXP: 0,
+            dailyStreak: 0,
+            badges: '[]',
+            followers: 0,
+            following: 0,
+            posts: 0,
+            joinDate: '',
+            profileSetupComplete: true,
+          };
+          setCurrentUser(fallbackUser);
+        }
         useAuraStore.setState({ isHydrated: true, profileSetupComplete: true });
       }
-    }, 1000);
+    }, 1500);
     return () => clearTimeout(timeout);
-  }, [status]);
+  }, [status, session, setCurrentUser]);
 
   return <>{children}</>;
 }

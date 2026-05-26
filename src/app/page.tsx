@@ -451,6 +451,18 @@ export default function Home() {
     if (isAuthenticated) setWasAuthenticated(true);
   }, [isAuthenticated]);
 
+  // Check if a session cookie exists — this tells us the user might be authenticated
+  // even if the session API is slow or times out. This prevents unauthenticated users
+  // from being shown the AuthenticatedApp (with skeleton content that never resolves)
+  // when the session check times out.
+  const [hasSessionCookie, setHasSessionCookie] = useState(false);
+  useEffect(() => {
+    // Check document.cookie for the NextAuth session token
+    // This is only available on the client side
+    const cookieExists = document.cookie.includes('next-auth.session-token=');
+    if (cookieExists) setHasSessionCookie(true);
+  }, []);
+
   // Determine if the initial session check is done.
   // Key insight: during a session refetch, `status` briefly goes back to 'loading',
   // but `session` retains its previous value. So we check both:
@@ -461,7 +473,6 @@ export default function Home() {
 
   // Safety timeout: if session check takes longer than 2 seconds, proceed anyway.
   // The app should NEVER show a blank screen for more than 2 seconds.
-  // If we have a session cookie, treat as authenticated. If not, show auth page.
   useEffect(() => {
     if (status === 'loading' && !sessionTimedOut) {
       const timeout = setTimeout(() => {
@@ -476,7 +487,6 @@ export default function Home() {
 
   // If the initial session check hasn't completed yet, show the ORRA logo
   // spinner — but ONLY for a maximum of 2 seconds. After that, we proceed.
-  // Safety: if stuck for 8 seconds, force a full page reload.
   if (!initialCheckDone) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
@@ -490,10 +500,16 @@ export default function Home() {
     );
   }
 
-  // If session timed out but cookie exists, treat as authenticated
-  // Also: if user was ever authenticated this session, keep showing the app
-  // (prevents NextAuth update() from briefly flashing the login page)
-  const shouldShowApp = isAuthenticated || sessionTimedOut || wasAuthenticated;
+  // Show the authenticated app ONLY if:
+  // 1. The user is actually authenticated (session exists), OR
+  // 2. The user was previously authenticated in this session (prevents flicker during session refresh), OR
+  // 3. The session check timed out BUT a session cookie exists (user is likely authenticated, API is just slow)
+  //
+  // CRITICAL: We do NOT use sessionTimedOut alone to bypass auth. If the session API
+  // times out and there's no session cookie, the user is not authenticated and should
+  // see the AuthPage (login form), NOT the AuthenticatedApp (which would show skeleton
+  // content that never resolves = "just load screen" bug).
+  const shouldShowApp = isAuthenticated || wasAuthenticated || (sessionTimedOut && hasSessionCookie);
 
   if (!shouldShowApp) {
     return (
