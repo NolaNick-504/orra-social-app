@@ -117,3 +117,24 @@ Stage Summary:
 - Demo account login buttons now work (emails match DB)
 - Cover image unchanged per user request
 - Changes pushed to GitHub main branch
+---
+Task ID: 2
+Agent: Main
+Task: Make founder profile never change across restarts/re-seeds
+
+Work Log:
+- Added founder-profile-backup.json file that persists in git
+- Added auto-backup on profile edit (PUT /api/users/profile)
+- Added auto-backup on every /api/me call for founder
+- Modified seed script to read backup BEFORE creating founder user
+- Added pre-wipe backup in FORCE_WIPE mode (backs up from DB before deleting)
+- Backup contains: name, handle, avatar, coverImage, bio, location, website, profileSong, auraTokens, auraLevel, auraXP, badges
+- Tested: FORCE_WIPE + re-seed correctly restores "Nick Joseph", level 50, custom avatar
+- Fixed TS operator precedence errors (mixing || and ??)
+- Fixed demo account emails to use bot##@orra.app format
+
+Stage Summary:
+- Founder profile now persists across container restarts and re-seeding
+- Auto-backup happens on every profile edit and every /api/me load
+- Backup file tracked in git for cross-deployment persistence
+- All changes pushed to GitHub main branch
