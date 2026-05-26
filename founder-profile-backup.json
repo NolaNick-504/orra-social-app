@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-05-26T17:41:01.822Z",
+  "data": {
+    "name": "Nick Joseph",
+    "handle": "@nickorraceo",
+    "avatar": "/api/uploads?file=avatar-founder-7ace5481.jpg",
+    "coverImage": "/images/covers/founder.jpg",
+    "bio": "Founder of ORRA — building the next-gen social universe where creativity meets connection. Turning vision into reality, one pulse at a time. New Orleans born, worldwide impact.",
+    "location": "New Orleans, LA",
+    "website": "orra.app",
+    "profileSongUrl": "/music/orra/orra.mp3",
+    "profileSongTitle": "ORRA",
+    "profileSongArtist": "ORRA",
+    "auraTokens": 100000,
+    "auraLevel": 50,
+    "auraXP": 750,
+    "badges": "[\"Early Adopter\",\"ORRA OG\",\"Founder\",\"Visionary\",\"ORRA Architect\"]"
+  }
+}

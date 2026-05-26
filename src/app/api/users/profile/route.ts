@@ -1,10 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, writeQueue } from '@/lib/db';
 import { getAuthUserId } from '@/lib/auth-helpers';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+
+// Founder profile backup file — survives container restarts and re-seeding
+const FOUNDER_BACKUP_PATH = path.join(process.cwd(), '..', '..', 'founder-profile-backup.json');
+// Also try the project root directly (for non-standalone mode)
+const FOUNDER_BACKUP_ALT = path.join(process.cwd(), 'founder-profile-backup.json');
+
+async function backupFounderProfile(user: Record<string, any>) {
+  try {
+    const backup = {
+      timestamp: new Date().toISOString(),
+      data: {
+        name: user.name,
+        handle: user.handle,
+        avatar: user.avatar,
+        coverImage: user.coverImage,
+        bio: user.bio,
+        location: user.location,
+        website: user.website,
+        profileSongUrl: user.profileSongUrl || '',
+        profileSongTitle: user.profileSongTitle || '',
+        profileSongArtist: user.profileSongArtist || '',
+        auraTokens: user.auraTokens,
+        auraLevel: user.auraLevel,
+        auraXP: user.auraXP,
+        badges: user.badges || '[]',
+      }
+    };
+    const json = JSON.stringify(backup, null, 2);
+    // Save to both possible locations
+    for (const p of [FOUNDER_BACKUP_PATH, FOUNDER_BACKUP_ALT]) {
+      try {
+        const dir = path.dirname(p);
+        if (!existsSync(dir)) await mkdir(dir, { recursive: true });
+        await writeFile(p, json, 'utf-8');
+      } catch { /* one location may not be writable */ }
+    }
+    console.log('[PROFILE BACKUP] Founder profile backed up');
+  } catch (err) {
+    console.error('[PROFILE BACKUP] Failed:', err);
+  }
+}
 
 // Increase body size limit for profile picture uploads (base64 images can be large)
 export const maxBodyLength = 10 * 1024 * 1024; // 10MB
@@ -152,9 +193,16 @@ export async function PUT(request: NextRequest) {
           profileSongArtist: true,
           auraTokens: true,
           auraLevel: true,
+          auraXP: true,
+          badges: true,
         },
       });
     });
+
+    // Auto-backup founder profile so it survives re-seeding
+    if (userId === 'founder') {
+      await backupFounderProfile(updatedUser);
+    }
 
     return NextResponse.json({ success: true, data: updatedUser });
   } catch (error) {

@@ -221,7 +221,7 @@ async function main() {
     await prisma.user.update({
       where: { id: 'founder' },
       data: {
-        name: 'Nicholas',
+        name: 'Nick Joseph',
         handle: '@nickorraceo',
         bio: 'Founder of ORRA — building the next-gen social universe where creativity meets connection. Turning vision into reality, one pulse at a time. New Orleans born, worldwide impact.',
         avatar: '/images/avatars/bots/founder-avatar.jpg',

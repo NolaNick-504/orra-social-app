@@ -1,10 +1,40 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
+import path from 'path';
 
 const prisma = new PrismaClient();
 
 const SALT_ROUNDS = 12;
 const DEFAULT_PASSWORD = 'password123';
+
+// Founder profile backup file — survives container restarts and re-seeding
+const FOUNDER_BACKUP_FILE = path.join(process.cwd(), 'founder-profile-backup.json');
+
+// Load founder profile backup if it exists
+function loadFounderBackup(): Record<string, any> | null {
+  try {
+    if (existsSync(FOUNDER_BACKUP_FILE)) {
+      const raw = readFileSync(FOUNDER_BACKUP_FILE, 'utf-8');
+      const backup = JSON.parse(raw);
+      console.log('📋 Founder profile backup found (from', backup.timestamp, ')');
+      return backup.data;
+    }
+  } catch (err) {
+    console.warn('⚠️  Could not load founder backup:', err);
+  }
+  return null;
+}
+
+// Save founder profile backup
+function saveFounderBackup(data: Record<string, any>) {
+  try {
+    const backup = { timestamp: new Date().toISOString(), data };
+    writeFileSync(FOUNDER_BACKUP_FILE, JSON.stringify(backup, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('⚠️  Could not save founder backup:', err);
+  }
+}
 
 // ============================================================
 // ORRA Profile Songs (from /public/music/orra/)
@@ -28,7 +58,7 @@ const mockUsers = [
   {
     id: 'founder',
     email: 'nickjoseph8087@gmail.com',
-    name: 'Nicholas',
+    name: 'Nick Joseph',
     handle: '@nickorraceo',
     avatar: '/images/avatars/bots/founder-avatar.jpg',
     coverImage: '/images/covers/founder.jpg',
@@ -2011,6 +2041,23 @@ async function main() {
   const FORCE_WIPE = process.env.ORRA_SEED_FORCE === '1';
 
   if (FORCE_WIPE) {
+    // Before wiping, try to backup the founder's current profile from the DB
+    try {
+      const existingFounder = await prisma.user.findUnique({
+        where: { id: 'founder' },
+        select: {
+          name: true, handle: true, avatar: true, coverImage: true,
+          bio: true, location: true, website: true,
+          profileSongUrl: true, profileSongTitle: true, profileSongArtist: true,
+          auraTokens: true, auraLevel: true, auraXP: true, badges: true,
+        },
+      });
+      if (existingFounder) {
+        saveFounderBackup(existingFounder);
+        console.log('👑 Founder profile backed up before wipe\n');
+      }
+    } catch { /* Table may not exist yet */ }
+
     console.log('⚠️  FORCE WIPE MODE — Deleting all existing data!\n');
     const deleteOps = [
       () => prisma.sharedPost.deleteMany(),
@@ -2045,6 +2092,14 @@ async function main() {
   console.log('🌱 Seeding ORRA database (safe mode — preserving existing data)...\n');
 
   // ========================================
+  // 0. Load founder profile backup (if exists)
+  // ========================================
+  const founderBackup = loadFounderBackup();
+  if (founderBackup) {
+    console.log('👑 Founder profile backup will be applied after user creation\n');
+  }
+
+  // ========================================
   // 1. Create Users (skip if already exists)
   // ========================================
   console.log('👤 Ensuring users exist...');
@@ -2052,26 +2107,33 @@ async function main() {
   const founderPassword = await bcrypt.hash('Weareone504', SALT_ROUNDS);
 
   for (const u of mockUsers) {
-    const song = u.profileSong ?? ORRA_SONGS[0];
+    // For the founder: use backup data if available, otherwise use seed defaults
+    const founderData = (u.id === 'founder' && founderBackup) ? founderBackup : null;
+    const song = founderData ? {
+      url: founderData.profileSongUrl || u.profileSong?.url || ORRA_SONGS[0].url,
+      title: founderData.profileSongTitle || u.profileSong?.title || ORRA_SONGS[0].title,
+      artist: founderData.profileSongArtist || u.profileSong?.artist || ORRA_SONGS[0].artist,
+    } : (u.profileSong ?? ORRA_SONGS[0]);
+
     try {
       await prisma.user.create({
         data: {
           id: u.id,
           email: u.email,
-          name: u.name,
-          handle: u.handle,
+          name: founderData?.name || u.name,
+          handle: founderData?.handle || u.handle,
           password: u.id === 'founder' ? founderPassword : hashedPassword,
-          avatar: u.avatar,
-          coverImage: u.coverImage ?? '/images/profile-cover.jpg',
-          bio: u.bio ?? '',
-          location: u.location ?? '',
-          website: u.website ?? '',
+          avatar: founderData?.avatar || u.avatar,
+          coverImage: founderData?.coverImage || (u.coverImage ?? '/images/profile-cover.jpg'),
+          bio: founderData?.bio || (u.bio ?? ''),
+          location: founderData?.location || (u.location ?? ''),
+          website: founderData?.website || (u.website ?? ''),
           verified: u.verified ?? false,
           online: u.online ?? false,
-          auraTokens: u.auraTokens,
-          auraLevel: u.auraLevel,
-          auraXP: u.auraXP ?? 50,
-          badges: JSON.stringify(u.badges ?? []),
+          auraTokens: founderData?.auraTokens || u.auraTokens,
+          auraLevel: founderData?.auraLevel || u.auraLevel,
+          auraXP: founderData?.auraXP || (u.auraXP ?? 50),
+          badges: founderData?.badges || JSON.stringify(u.badges ?? []),
           profileSetupComplete: true,
           profileSongUrl: song.url,
           profileSongTitle: song.title,
@@ -2079,10 +2141,14 @@ async function main() {
         },
       });
       counts.usersCreated++;
+      // Log when backup data was applied
+      if (founderData) {
+        console.log(`👑 Founder profile restored from backup (name: ${founderData.name}, level: ${founderData.auraLevel})`);
+      }
     } catch (e: any) {
       if (e.code === 'P2002') {
-        // User already exists — skip, don't overwrite
-        console.log(`User ${u.id} already exists, skipping...`);
+        // User already exists — NEVER overwrite, preserve their profile data
+        console.log(`User ${u.id} already exists, skipping (preserving existing data)...`);
         counts.usersSkipped++;
       } else {
         throw e;

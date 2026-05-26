@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getAuthUserId } from '@/lib/auth-helpers';
+import { writeFile, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +82,24 @@ export async function GET() {
 
     if (!user) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+    }
+
+    // Auto-backup founder profile on every /api/me call (fire-and-forget)
+    // This ensures the backup always has the latest data
+    if (userId === 'founder') {
+      const backupPaths = [
+        path.join(process.cwd(), '..', '..', 'founder-profile-backup.json'),
+        path.join(process.cwd(), 'founder-profile-backup.json'),
+      ];
+      const backup = { timestamp: new Date().toISOString(), data: user };
+      const json = JSON.stringify(backup, null, 2);
+      for (const p of backupPaths) {
+        try {
+          const dir = path.dirname(p);
+          if (!existsSync(dir)) await mkdir(dir, { recursive: true });
+          await writeFile(p, json, 'utf-8');
+        } catch { /* one location may not be writable */ }
+      }
     }
 
     // Organize likes by type
