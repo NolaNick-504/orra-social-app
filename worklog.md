@@ -79,3 +79,20 @@ Stage Summary:
 - Duplicate posts eliminated with Map-based deduplication
 - Home button scrolls to top and refreshes feed
 - Edit cover feature completely removed
+
+---
+Task ID: 10
+Agent: Main
+Task: Oracle Cloud deployment setup - create setup script and guide
+
+Work Log:
+- Analyzed screenshot showing user on Oracle Cloud creating compute instance
+- Created comprehensive oracle-cloud-setup.sh script with 14 steps
+- Pushed setup script to GitHub (cleaned large backup files from git history first)
+- Script handles: Node.js install, app clone, build, PM2, Nginx, SSL, backups, firewall
+
+Stage Summary:
+- oracle-cloud-setup.sh created and pushed to GitHub
+- Git history cleaned of 100MB+ backup files
+- Script will auto-configure everything on the Oracle Cloud VM
+- SQLite database on real VM = persistent storage (solves profile reverting issue)
