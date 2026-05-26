@@ -132,3 +132,5 @@ PROJECT_STATE.md
 
 # Test results
 test-results/
+backups/
+*.tar.gz
