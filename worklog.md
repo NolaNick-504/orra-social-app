@@ -96,3 +96,24 @@ Stage Summary:
 - Git history cleaned of 100MB+ backup files
 - Script will auto-configure everything on the Oracle Cloud VM
 - SQLite database on real VM = persistent storage (solves profile reverting issue)
+---
+Task ID: 1
+Agent: Main
+Task: Fix profile page reverting and login issues
+
+Work Log:
+- Analyzed user screenshot showing profile should display "Nicholas" with level 50
+- Found founder seed data had name "Nick Orraceo" and level 51
+- Updated seed.ts: name → "Nicholas", auraLevel → 50, kept coverImage as /images/covers/founder.jpg
+- Discovered demo account emails were WRONG: auth-page.tsx used zara@orra.app, jay@orra.app etc. but seed data uses bot13@orra.app, bot14@orra.app
+- Fixed all demo account emails and names to match actual seed data
+- Replaced non-existent "Jessica Art" and "Luna Sky" with "Luna Kim" and "Elena Vasquez"
+- Re-seeded database with corrected data
+- Verified login works for founder (password: Weareone504) and demo accounts (password: password123)
+- Pushed all changes to GitHub
+
+Stage Summary:
+- Founder profile now seeds as "Nicholas" level 50
+- Demo account login buttons now work (emails match DB)
+- Cover image unchanged per user request
+- Changes pushed to GitHub main branch
