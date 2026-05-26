@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, awardXPAndTokens } from '@/lib/db';
 import { requireAuth, getAuthUserId } from '@/lib/auth-helpers';
 
 // POST /api/connections - Send a connection request
@@ -341,13 +341,7 @@ export async function PATCH(req: NextRequest) {
           },
         });
 
-        await db.user.update({
-          where: { id: followRequest.followerId },
-          data: {
-            auraTokens: { increment: 2 },
-            auraXP: { increment: 5 },
-          },
-        });
+        await awardXPAndTokens(followRequest.followerId, 2, 5);
       }
 
       // Create notification for the requester that their request was accepted

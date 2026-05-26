@@ -54,12 +54,11 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // SECURITY: Never return the reset token in the API response.
-    // In production, send the token via email. Returning it here would allow
-    // anyone who knows an email to take over that account.
-    // For dev/testing, the token is stored in the VerificationToken table
-    // and can be looked up directly in the database if needed.
-    console.log(`[DEV ONLY] Password reset token generated for ${email}: ${resetToken}`);
+    // SECURITY: Never return the reset token in the API response or log it.
+    // In production, send the token via email. The token is stored in the
+    // VerificationToken table and can be looked up directly in the database if needed.
+    // DO NOT log the reset token — it allows account takeover if logs are exposed.
+    console.log(`[AUTH] Password reset token generated for ${email}`);
 
     return NextResponse.json({
       success: true,

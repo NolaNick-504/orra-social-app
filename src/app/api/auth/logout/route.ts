@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
+    // DEBUG: Log what's calling logout
+    const referer = request.headers.get('referer') || 'no-referer';
+    const userAgent = request.headers.get('user-agent') || 'no-ua';
+    console.warn(`ORRA LOGOUT called from: ${referer} | UA: ${userAgent.substring(0, 80)}`);
+
     // Determine if we should use Secure flag (match login route behavior)
     const forwardedProto = request.headers.get('x-forwarded-proto');
     const isSecure = forwardedProto === 'https' || request.nextUrl.protocol === 'https:';

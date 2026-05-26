@@ -332,7 +332,7 @@ export default function VibeCheckGame({
       const bonus = 5;
       setTokensEarned((prev) => prev + bonus);
       callbacks.earnTokens(bonus, `vibe_check_match_r${currentRound}`);
-      callbacks.showToast(`🎯 Majority match! +${bonus} tokens`, { duration: 2000 });
+      callbacks.showToast(`🎯 Majority match! +${bonus} tokens`, { duration: 1500 });
     } else {
       callbacks.showToast('🦄 Unique choice!', { duration: 1500 });
     }

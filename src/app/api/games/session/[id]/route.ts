@@ -16,6 +16,11 @@ export async function GET(
     
     const { id } = await params;
 
+    // Validate ID format to prevent Prisma crashes on non-CUID strings
+    if (!id || id.length < 10) {
+      return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 });
+    }
+
     const session = await db.gameSession.findUnique({
       where: { id },
       include: {

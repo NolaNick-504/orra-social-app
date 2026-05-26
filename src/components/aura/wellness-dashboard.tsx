@@ -124,12 +124,12 @@ export function WellnessDashboard() {
   const browsePercent = 100 - creativePercent - socialPercent;
 
   const handleTakeBreak = () => {
-    toast.success('Great choice! Take a 5-minute break and come back refreshed.', { duration: 5000 });
+    toast.success('Great choice! Take a 5-minute break and come back refreshed.', { duration: 1500 });
     useAuraStore.setState((s) => ({
       auraTokens: s.auraTokens + 5,
       wellnessScore: Math.min(100, (s.wellnessScore || 50) + 10),
     }));
-    toast.success('+5 ORRA for taking a wellness break!', { duration: 3000 });
+    toast.success('+5 ORRA for taking a wellness break!', { duration: 1500 });
   };
 
   return (

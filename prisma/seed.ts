@@ -531,12 +531,12 @@ const feedPosts = [
     id: 'p0founder3',
     authorId: 'founder',
     text: 'ORRA just hit 1000 users and I am beyond grateful. Every single one of you believed in this vision before anyone else did. This is YOUR platform. We building together.',
-    images: [],
+    images: ['/images/posts/orra-milestone.jpg'],
     likesCount: 42000,
     commentsCount: 3200,
     sharesCount: 15000,
     vibeTag: 'hyped',
-    type: 'text',
+    type: 'image',
   },
 
   // ---- Amira (bot01) — nurse, plant mom ----
@@ -555,7 +555,7 @@ const feedPosts = [
     id: 'p01b',
     authorId: 'bot01',
     text: 'My patient today told me I made her hospital stay bearable. I almost cried right there at the nurses station. This is why I do what I do.',
-    images: ['/images/posts/nurse-child-drawing.jpg'],
+    images: ['/images/posts/nurse-hand-holding.jpg'],
     likesCount: 2100,
     commentsCount: 189,
     sharesCount: 340,
@@ -566,7 +566,7 @@ const feedPosts = [
     id: 'p01c',
     authorId: 'bot01',
     text: 'Night shift nurses, I see you. The silence at 3 AM when all your patients are sleeping is both peaceful and terrifying. Stay strong out there.',
-    images: ['/images/posts/nurse-night-3am.jpg'],
+    images: ['/images/posts/nurse-shift.jpg'],
     likesCount: 2100,
     commentsCount: 167,
     sharesCount: 234,
@@ -601,7 +601,7 @@ const feedPosts = [
     id: 'p02b',
     authorId: 'bot02',
     text: 'My youngest just beat me in Madden. I am not even mad, I am terrified for the future. This kid has no mercy.',
-    images: ['/images/posts/madden-kid.jpg'],
+    images: ['/images/posts/madden-gaming.jpg'],
     likesCount: 4200,
     commentsCount: 312,
     sharesCount: 890,
@@ -636,7 +636,7 @@ const feedPosts = [
     id: 'p03b',
     authorId: 'bot03',
     text: 'First gen grads, where you at? Just paid off my last student loan and I am literally crying at my desk. Three jobs, no sleep, but we made it. Mama, we made it.',
-    images: ['/images/posts/student-loan-celebration.jpg'],
+    images: ['/images/posts/student-loan-paid.jpg'],
     likesCount: 18500,
     commentsCount: 1200,
     sharesCount: 4500,
@@ -647,12 +647,12 @@ const feedPosts = [
     id: 'p03c',
     authorId: 'bot03',
     text: 'This AI just generated a full album in 30 seconds and honestly some of the tracks are genuinely good. Are we watching the birth of a new genre or the death of human creativity? Discuss.',
-    images: ['/images/posts/smart-contract-deploy.jpg'],
+    images: [],
     likesCount: 15600,
     commentsCount: 1200,
     sharesCount: 4500,
     vibeTag: 'focused',
-    type: 'image',
+    type: 'text',
   },
 
   // ---- Marcus (bot04) — dance instructor ----
@@ -671,7 +671,7 @@ const feedPosts = [
     id: 'p04b',
     authorId: 'bot04',
     text: 'One of my students just nailed a routine she has been struggling with for weeks. The look on her face was everything. This is why I teach.',
-    images: ['/images/posts/dance-student-nailing.jpg'],
+    images: ['/images/posts/dance-studio.jpg'],
     likesCount: 3400,
     commentsCount: 178,
     sharesCount: 120,
@@ -682,12 +682,12 @@ const feedPosts = [
     id: 'p04c',
     authorId: 'bot04',
     text: 'Choreography tip: Stop thinking about the steps and start feeling the music. Your body already knows what to do. Trust the rhythm and let it move you.',
-    images: ['/images/posts/dance-off-stage.jpg'],
+    images: [],
     likesCount: 4200,
     commentsCount: 267,
     sharesCount: 345,
     vibeTag: 'focused',
-    type: 'image',
+    type: 'text',
   },
 
   // ---- Raj (bot05) — software engineer, food blogger ----
@@ -706,7 +706,7 @@ const feedPosts = [
     id: 'p05b',
     authorId: 'bot05',
     text: 'Deployed my first smart contract today! The decentralized web is the future and I am here for it. Web3 developers, where you at?',
-    images: ['/images/posts/smart-contract-deploy.jpg'],
+    images: ['/images/posts/laptop-code.jpg'],
     likesCount: 3200,
     commentsCount: 234,
     sharesCount: 567,
@@ -717,7 +717,7 @@ const feedPosts = [
     id: 'p05c',
     authorId: 'bot05',
     text: 'Meal prep Sunday is my therapy. 5 days of butter chicken, dal, and fresh naan. My coworkers are jealous every single Monday and I am not sharing. Okay maybe a little.',
-    images: ['/images/posts/meal-prep-sunday.jpg'],
+    images: ['/images/posts/butter-chicken.jpg'],
     likesCount: 4500,
     commentsCount: 289,
     sharesCount: 567,
@@ -741,7 +741,7 @@ const feedPosts = [
     id: 'p06b',
     authorId: 'bot06',
     text: 'Six years ago I was renting a chair in someone else shop. Today I signed the lease on my SECOND salon location. Never let anyone tell you your dream is too big.',
-    images: ['/images/posts/salon-lease-signing.jpg'],
+    images: ['/images/posts/salon-chair.jpg'],
     likesCount: 24500,
     commentsCount: 1800,
     sharesCount: 5600,
@@ -765,12 +765,12 @@ const feedPosts = [
     id: 'p07a',
     authorId: 'bot07',
     text: 'When your WiFi dies mid-game and you just stare at the screen like... RIP my killstreak. Anyone else been there?',
-    images: ['/images/posts/wifi-died-gaming.jpg'],
+    images: [],
     likesCount: 6700,
     commentsCount: 345,
     sharesCount: 567,
     vibeTag: 'laughing',
-    type: 'image',
+    type: 'text',
   },
   {
     id: 'p07b',
@@ -800,7 +800,7 @@ const feedPosts = [
     id: 'p08a',
     authorId: 'bot08',
     text: 'Sunset vibes from Barcelona! Travel changes your perspective on everything. Every corner of this city tells a story, and I am here for all of it.',
-    images: ['/images/posts/barcelona-sunset.jpg'],
+    images: ['/images/posts/barcelona-alley.jpg'],
     likesCount: 4500,
     commentsCount: 189,
     sharesCount: 340,
@@ -811,7 +811,7 @@ const feedPosts = [
     id: 'p08b',
     authorId: 'bot08',
     text: 'Got lost in the streets of Lisbon at 2 AM and found the most incredible live music in a basement bar. The best moments are never planned.',
-    images: ['/images/posts/lisbon-basement-music.jpg'],
+    images: ['/images/posts/lisbon-cafe.jpg'],
     likesCount: 6800,
     commentsCount: 312,
     sharesCount: 890,
@@ -846,7 +846,7 @@ const feedPosts = [
     id: 'p09b',
     authorId: 'bot09',
     text: 'Studio session went until 4 AM. My neighbors probably hate me but this beat is going to shake the culture. Mama said my beats slap and she is never wrong.',
-    images: ['/images/posts/late-night-studio-session.jpg'],
+    images: ['/images/posts/bedroom-studio-late.jpg'],
     likesCount: 1800,
     commentsCount: 123,
     sharesCount: 178,
@@ -870,7 +870,7 @@ const feedPosts = [
     id: 'p10b',
     authorId: 'bot10',
     text: 'Art block is REAL. Been staring at a blank canvas for 2 hours. Send help, inspiration, or snacks. Preferably all three.',
-    images: ['/images/posts/art-block-blank.jpg'],
+    images: ['/images/posts/art-block-canvas.jpg'],
     likesCount: 5600,
     commentsCount: 423,
     sharesCount: 678,
@@ -905,12 +905,12 @@ const feedPosts = [
     id: 'p11b',
     authorId: 'bot11',
     text: 'Wife asked me to fix the dishwasher. I fixed it. Then I broke it again. Then I fixed it again. The dishwasher and I are in a complicated relationship.',
-    images: ['/images/posts/dishwasher-repair.jpg'],
+    images: [],
     likesCount: 8900,
     commentsCount: 567,
     sharesCount: 2100,
     vibeTag: 'laughing',
-    type: 'image',
+    type: 'text',
   },
 
   // ---- Maya (bot12) — food blogger ----
@@ -929,7 +929,7 @@ const feedPosts = [
     id: 'p12b',
     authorId: 'bot12',
     text: 'Food hack: freeze your grapes. Trust me on this one — they become like little sorbet bites. Perfect summer snack. You can thank me later!',
-    images: ['/images/posts/frozen-grapes.jpg'],
+    images: ['/images/posts/ramen.jpg'],
     likesCount: 6200,
     commentsCount: 456,
     sharesCount: 1890,
@@ -953,7 +953,7 @@ const feedPosts = [
     id: 'p13b',
     authorId: 'bot13',
     text: 'Met Gala inspired look — ORRA edition. Who says you need a red carpet to serve looks? Style is attitude, not labels.',
-    images: ['/images/posts/met-gala-orra.jpg'],
+    images: ['/images/posts/fashion-streetwear.jpg'],
     likesCount: 19800,
     commentsCount: 1340,
     sharesCount: 4500,
@@ -977,12 +977,12 @@ const feedPosts = [
     id: 'p14b',
     authorId: 'bot14',
     text: 'Just hit Diamond rank in TWO games in the same week! The grind is real but the payoff is sweeter. Who else out here chasing ranks?',
-    images: ['/images/posts/diamond-rank-achieved.jpg'],
+    images: [],
     likesCount: 4500,
     commentsCount: 312,
     sharesCount: 432,
     vibeTag: 'hyped',
-    type: 'image',
+    type: 'text',
   },
 
   // ---- Dre (bot15) — producer/DJ ----
@@ -1001,7 +1001,7 @@ const feedPosts = [
     id: 'p15b',
     authorId: 'bot15',
     text: 'Studio session went CRAZY last night. 6 beats in one session, all fire. The album is coming together and I cannot wait for yall to hear this.',
-    images: ['/images/posts/studio-collab-6-beats.jpg'],
+    images: ['/images/posts/studio-beats.jpg'],
     likesCount: 11000,
     commentsCount: 890,
     sharesCount: 2300,
@@ -1012,12 +1012,12 @@ const feedPosts = [
     id: 'p15c',
     authorId: 'bot15',
     text: 'Anyone else addicted to the ORRA Dance Off? The talent this season is absolutely insane. I submitted my entry and I am literally shaking.',
-    images: ['/images/posts/dance-off-stage.jpg'],
+    images: [],
     likesCount: 2900,
     commentsCount: 178,
     sharesCount: 456,
     vibeTag: 'hyped',
-    type: 'image',
+    type: 'text',
   },
 
   // ---- Nia (bot16) — yoga ----
@@ -1047,7 +1047,7 @@ const feedPosts = [
     id: 'p16c',
     authorId: 'bot16',
     text: 'Your body is not a machine. Rest is not laziness, it is maintenance. Take the nap, skip the workout, drink the water. Be gentle with yourself today.',
-    images: ['/images/posts/breathwork-morning.jpg'],
+    images: ['/images/posts/self-care-rest.jpg'],
     likesCount: 6700,
     commentsCount: 423,
     sharesCount: 1200,
@@ -1071,7 +1071,7 @@ const feedPosts = [
     id: 'p17b',
     authorId: 'bot17',
     text: 'My professor pulled me aside today and said she sees me trying. She told me to keep going. Sometimes one sentence from someone who believes in you changes everything.',
-    images: ['/images/posts/calculus-study.jpg'],
+    images: ['/images/posts/professor-encouragement.jpg'],
     likesCount: 15600,
     commentsCount: 1100,
     sharesCount: 4200,
@@ -1084,12 +1084,12 @@ const feedPosts = [
     id: 'p18a',
     authorId: 'bot18',
     text: 'new poem:\n\ni keep rewriting the same letter\nin different handwriting\nhoping the words will finally\nsound like\nthe truth\n\nmaybe the ink is tired too',
-    images: ['/images/posts/poem-coffee-cup.jpg'],
+    images: [],
     likesCount: 4100,
     commentsCount: 267,
     sharesCount: 890,
     vibeTag: 'dramatic',
-    type: 'image',
+    type: 'text',
   },
   {
     id: 'p18b',
@@ -1106,7 +1106,7 @@ const feedPosts = [
     id: 'p18c',
     authorId: 'bot18',
     text: 'The barista at my shop started writing my poem fragments on the cups. Someone told me they kept their coffee cup because the words made them feel seen. This is why I write.',
-    images: ['/images/posts/poem-coffee-cup.jpg'],
+    images: ['/images/posts/open-mic.jpg'],
     likesCount: 5400,
     commentsCount: 345,
     sharesCount: 780,
@@ -1143,7 +1143,7 @@ const feedPosts = [
     id: 'p20a',
     authorId: 'bot20',
     text: 'My 6 year old just told me I am the best chef in the whole wide world. I made dinosaur nuggets. The bar is low but I will take the win.',
-    images: ['/images/posts/dino-nuggets-plate.jpg'],
+    images: ['/images/posts/dino-nuggets.jpg'],
     likesCount: 9200,
     commentsCount: 567,
     sharesCount: 2300,
@@ -1154,23 +1154,23 @@ const feedPosts = [
     id: 'p20b',
     authorId: 'bot20',
     text: 'Some days being a single mom feels like drowning and other days it feels like flying. Today was a flying day. My kids are my whole world and I would not change a thing.',
-    images: [],
+    images: ['/images/posts/single-mom-love.jpg'],
     likesCount: 14200,
     commentsCount: 890,
     sharesCount: 3400,
     vibeTag: 'peaceful',
-    type: 'text',
+    type: 'image',
   },
   {
     id: 'p20c',
     authorId: 'bot20',
     text: 'Tax season as an accountant AND a single mom is my personal villain origin story. If you see me crying at my desk, just slide coffee my way and walk away slowly.',
-    images: ['/images/posts/tax-season-mom.jpg'],
+    images: [],
     likesCount: 7800,
     commentsCount: 567,
     sharesCount: 1900,
     vibeTag: 'laughing',
-    type: 'image',
+    type: 'text',
   },
 
   // ---- Omar (bot21) — architecture student ----
@@ -1189,7 +1189,7 @@ const feedPosts = [
     id: 'p21b',
     authorId: 'bot21',
     text: 'Just got my first internship at an architecture firm! I cried in the parking lot for ten minutes. All those sleepless nights were not for nothing.',
-    images: ['/images/posts/internship-celebration.jpg'],
+    images: ['/images/posts/architecture-internship.jpg'],
     likesCount: 11200,
     commentsCount: 678,
     sharesCount: 2100,
@@ -1200,7 +1200,7 @@ const feedPosts = [
     id: 'p21c',
     authorId: 'bot21',
     text: '3D printing my first architectural model today. This is the future of design and I am holding it in my hands. 200 hours of rendering led to this moment.',
-    images: ['/images/posts/3d-print-architecture.jpg'],
+    images: ['/images/posts/architecture-model.jpg'],
     likesCount: 4500,
     commentsCount: 234,
     sharesCount: 567,
@@ -1213,7 +1213,7 @@ const feedPosts = [
     id: 'p22a',
     authorId: 'bot22',
     text: 'My grandkids taught me how to use ORRA today. I already have 3 followers and I do not know what that means but I am winning! Abuela is online!',
-    images: ['/images/posts/garden-spring.jpg'],
+    images: [],
     likesCount: 28900,
     commentsCount: 2100,
     sharesCount: 8900,
@@ -1224,7 +1224,7 @@ const feedPosts = [
     id: 'p22b',
     authorId: 'bot22',
     text: 'Retired after 35 years of teaching. Today a former student emailed me to say I changed her life. I am not crying, you are crying. Actually we both are.',
-    images: ['/images/posts/retired-teacher-email.jpg'],
+    images: ['/images/posts/retired-teacher-letter.jpg'],
     likesCount: 18700,
     commentsCount: 1340,
     sharesCount: 5600,
@@ -1248,7 +1248,7 @@ const feedPosts = [
     id: 'p23a',
     authorId: 'bot23',
     text: 'Just got back from a call. Everyone is safe. That is the only thing that matters. Hug your people tight tonight, you never know.',
-    images: ['/images/posts/firefighter-cooking.jpg'],
+    images: ['/images/posts/firefighter-return.jpg'],
     likesCount: 8500,
     commentsCount: 423,
     sharesCount: 1200,
@@ -1259,7 +1259,7 @@ const feedPosts = [
     id: 'p23b',
     authorId: 'bot23',
     text: 'Made risotto for the station tonight. The boys said it was the best thing I have ever cooked. I told them it was the first thing I have ever cooked properly. Honesty is the best policy.',
-    images: ['/images/posts/firefighter-cooking.jpg'],
+    images: ['/images/posts/fire-station.jpg'],
     likesCount: 4300,
     commentsCount: 289,
     sharesCount: 567,
@@ -1307,7 +1307,7 @@ const feedPosts = [
     id: 'p25a',
     authorId: 'bot25',
     text: 'POV: You said "just one more episode" 4 hours ago and now it is 3 AM. Asking for a friend. The friend is me.',
-    images: ['/images/posts/late-night-binge.jpg'],
+    images: ['/images/posts/late-night-tv.jpg'],
     likesCount: 15600,
     commentsCount: 1200,
     sharesCount: 3400,
@@ -1335,118 +1335,6 @@ const feedPosts = [
     sharesCount: 4800,
     vibeTag: 'laughing',
     type: 'text',
-  },
-
-  // ---- Emotional/Heartfelt Posts ----
-  {
-    id: 'pem01',
-    authorId: 'bot01',
-    text: "Today a 4-year-old patient drew me a picture before she left. She said 'Thank you for making me not scared.' I'm not gonna lie, I cried in the break room after. This job breaks your heart and fills it at the same time. 💜",
-    images: ['/images/posts/nurse-child-drawing.jpg'],
-    likesCount: 24300,
-    commentsCount: 1860,
-    sharesCount: 5400,
-    vibeTag: 'care',
-    type: 'image',
-  },
-  {
-    id: 'pem02',
-    authorId: 'bot02',
-    text: "My youngest told me he wants to be just like me when he grows up. Man... I've been stressing about not being enough and this little dude thinks I'm the whole world. I gotta stop doubting myself. For them. 🙏",
-    images: ['/images/posts/coach-son-sunset.jpg'],
-    likesCount: 18700,
-    commentsCount: 1340,
-    sharesCount: 4100,
-    vibeTag: 'care',
-    type: 'image',
-  },
-  {
-    id: 'pem03',
-    authorId: 'bot06',
-    text: "A client came in today who just finished chemo. She wanted a style for her new growth. The way she looked at herself in the mirror... y'all don't understand. This ain't just hair. This is dignity. This is feeling like yourself again. I love what I do. 🥹",
-    images: ['/images/posts/salon-chemo-client.jpg'],
-    likesCount: 34200,
-    commentsCount: 2800,
-    sharesCount: 9500,
-    vibeTag: 'care',
-    type: 'image',
-  },
-  {
-    id: 'pem04',
-    authorId: 'bot09',
-    text: "3 years ago I was making beats in my mama's living room with cracked software. Today I got my first placement. Ma, we made it. Every late night, every 'you need a real job' — it was worth it. Never let nobody kill your dream. 🎵🔥",
-    images: ['/images/posts/producer-first-placement.jpg'],
-    likesCount: 27800,
-    commentsCount: 2100,
-    sharesCount: 7600,
-    vibeTag: 'hyped',
-    type: 'image',
-  },
-  {
-    id: 'pem05',
-    authorId: 'bot15',
-    text: "People ask how I balance med school and dance. Truth is, I don't always. Some days the books win. Some days the studio wins. But both of them keep me alive in different ways. You don't have to choose one thing. You're allowed to be whole. 💃🏽📚",
-    images: [],
-    likesCount: 21500,
-    commentsCount: 1670,
-    sharesCount: 5800,
-    vibeTag: 'peaceful',
-    type: 'text',
-  },
-  {
-    id: 'pem06',
-    authorId: 'bot08',
-    text: "Met an 82-year-old woman at a hostel in Lisbon who's been traveling solo for 15 years since her husband passed. She said 'Grief is just love with nowhere to go, so I send it everywhere.' I will never forget her. 🌍",
-    images: ['/images/posts/lisbon-elderly-traveler.jpg'],
-    likesCount: 41200,
-    commentsCount: 3200,
-    sharesCount: 12400,
-    vibeTag: 'care',
-    type: 'image',
-  },
-  {
-    id: 'pem07',
-    authorId: 'bot21',
-    text: "We did it. After 8 months of fighting, the city approved our community garden. 40 families are going to have fresh vegetables this summer. Nobody believed a group of neighbors could take on City Hall. We showed them. Power is in the people. Always has been. ✊",
-    images: ['/images/posts/community-garden-win.jpg'],
-    likesCount: 29600,
-    commentsCount: 2300,
-    sharesCount: 8200,
-    vibeTag: 'hyped',
-    type: 'image',
-  },
-  {
-    id: 'pem08',
-    authorId: 'bot16',
-    text: "10 years ago today, my mom lost everything in Katrina. She rebuilt with nothing but faith and stubbornness. I get my grind from her. Every rep, every client, every early morning — that's her strength flowing through me. NOLA strong forever. 🏠💜",
-    images: ['/images/posts/nola-strong-workout.jpg'],
-    likesCount: 22400,
-    commentsCount: 1780,
-    sharesCount: 6300,
-    vibeTag: 'care',
-    type: 'image',
-  },
-  {
-    id: 'pem09',
-    authorId: 'bot19',
-    text: "A guy came up to my truck tonight, ordered one taco, and left a $100 tip. He said 'My wife loved your food. She passed last month. This was her favorite spot.' I didn't know what to say. I just hugged him. Food is more than flavor. It's memory. It's love. 🌮❤️",
-    images: ['/images/posts/food-truck-night.jpg'],
-    likesCount: 38700,
-    commentsCount: 2900,
-    sharesCount: 11200,
-    vibeTag: 'sad',
-    type: 'image',
-  },
-  {
-    id: 'pem10',
-    authorId: 'bot24',
-    text: "Finally finished the renovation I've been working on for 6 months. The client is a single mom who saved for 3 years to afford it. When she walked in and started crying... that's why I do this. Design isn't about pretty things. It's about making someone feel like they finally have a home. 🏡✨",
-    images: ['/images/posts/home-renovation-reveal.jpg'],
-    likesCount: 26100,
-    commentsCount: 2050,
-    sharesCount: 7400,
-    vibeTag: 'care',
-    type: 'image',
   },
 ];
 
@@ -1594,23 +1482,6 @@ const commentsData = [
   { id: 'c88', postId: 'p01c', authorId: 'bot01', text: 'The 3 AM quiet is a whole mood. Hang in there fellow night shift warriors.', parentId: null, replyToName: null },
   { id: 'c89', postId: 'p22c', authorId: 'bot22', text: 'Abuela knows best! That garden is going to be beautiful. Jalapenos are essential.', parentId: null, replyToName: null },
   { id: 'c90', postId: 'p03c', authorId: 'bot09', text: 'As a producer this terrifies and excites me. AI cannot replace soul though. At least I hope not.', parentId: null, replyToName: null },
-
-  // Comments on Emotional/Heartfelt Posts
-  { id: 'c91', postId: 'pem01', authorId: 'bot22', text: 'Oh honey, I am crying just reading this. You are doing sacred work. That little girl will remember you forever.', parentId: null, replyToName: null },
-  { id: 'c92', postId: 'pem01', authorId: 'bot23', text: 'As a firefighter I get it — the moments that break you are the ones that remind you why you signed up. Stay strong Amira.', parentId: null, replyToName: null },
-  { id: 'c93', postId: 'pem02', authorId: 'bot06', text: 'Devin, you ARE enough. Those boys see the real you and the real you is more than enough. Never forget that.', parentId: null, replyToName: null },
-  { id: 'c94', postId: 'pem03', authorId: 'bot01', text: 'Tasha... this made me ugly cry. You gave her more than a hairstyle. You gave her back herself. That is everything.', parentId: null, replyToName: null },
-  { id: 'c95', postId: 'pem03', authorId: 'bot20', text: 'As someone whose mom went through chemo, I can tell you — the stylist who made her feel beautiful again was her hero. You are that person Tasha.', parentId: null, replyToName: null },
-  { id: 'c96', postId: 'pem04', authorId: 'bot15', text: 'YO Donte!! First placement!! I knew it was coming! That grind always pays off. Congrats bro, this is just the beginning! 🔥', parentId: null, replyToName: null },
-  { id: 'c97', postId: 'pem04', authorId: 'bot09', text: 'Thank you! From cracked software to placements — the journey is real. Never give up on your sound.', parentId: 'c96', replyToName: 'Dre Williams' },
-  { id: 'c98', postId: 'pem05', authorId: 'bot16', text: 'This is exactly what I needed to hear today. I beat myself up for not being 100% at everything. You are right — we are allowed to be whole, not perfect.', parentId: null, replyToName: null },
-  { id: 'c99', postId: 'pem06', authorId: 'bot18', text: '"Grief is just love with nowhere to go, so I send it everywhere." That might be the most beautiful sentence I have ever heard. I am writing that down.', parentId: null, replyToName: null },
-  { id: 'c100', postId: 'pem07', authorId: 'bot05', text: 'Community organizing WORKS. 40 families eating fresh this summer because yall refused to quit. This is what real change looks like. Salute!', parentId: null, replyToName: null },
-  { id: 'c101', postId: 'pem08', authorId: 'bot01', text: 'NOLA strong. Your mama is a warrior and she raised one. That resilience is in your DNA. Sending so much love today. 💜', parentId: null, replyToName: null },
-  { id: 'c102', postId: 'pem09', authorId: 'bot12', text: 'Kai... I have no words. Food IS memory. Every recipe I make carries someone with it. That man felt his wife with him at your truck. You gave him that.', parentId: null, replyToName: null },
-  { id: 'c103', postId: 'pem09', authorId: 'bot11', text: 'Brother, that hit hard. A hundred dollar tip for a taco... that was not about the food. That was about love. You did right by hugging him.', parentId: null, replyToName: null },
-  { id: 'c104', postId: 'pem10', authorId: 'bot20', text: 'As a single mom who has dreamed of making my place feel like OUR home... this made me tear up. You are changing lives Jade. Not just decorating them.', parentId: null, replyToName: null },
-  { id: 'c105', postId: 'pem10', authorId: 'bot13', text: 'Interior design with a soul. That is what separates decorators from artists. You gave that woman a HOME. That is priceless.', parentId: null, replyToName: null },
 ];
 
 // ============================================================
@@ -2094,6 +1965,13 @@ const notificationsData = [
 // SEED FUNCTION
 // ============================================================
 
+// Counters for safe-seed reporting
+interface SeedCounts {
+  created: number;
+  skipped: number;
+}
+
+
 // ============================================================
 // SAFE SEED: Only creates data that doesn't already exist.
 // NEVER wipes user customizations (profile changes, ads, etc.)
@@ -2173,37 +2051,42 @@ async function main() {
   const founderPassword = await bcrypt.hash('Weareone504', SALT_ROUNDS);
 
   for (const u of mockUsers) {
-    const existing = await prisma.user.findFirst({ where: { id: u.id } });
-    if (existing) {
-      counts.usersSkipped++;
-      continue;
-    }
     const song = u.profileSong ?? ORRA_SONGS[0];
-    await prisma.user.create({
-      data: {
-        id: u.id,
-        email: u.email,
-        name: u.name,
-        handle: u.handle,
-        password: u.id === 'founder' ? founderPassword : hashedPassword,
-        avatar: u.avatar,
-        coverImage: u.coverImage ?? '/images/profile-cover.jpg',
-        bio: u.bio ?? '',
-        location: u.location ?? '',
-        website: u.website ?? '',
-        verified: u.verified ?? false,
-        online: u.online ?? false,
-        auraTokens: u.auraTokens,
-        auraLevel: u.auraLevel,
-        auraXP: u.auraXP ?? 50,
-        badges: JSON.stringify(u.badges ?? []),
-        profileSetupComplete: true,
-        profileSongUrl: song.url,
-        profileSongTitle: song.title,
-        profileSongArtist: song.artist,
-      },
-    });
-    counts.usersCreated++;
+    try {
+      await prisma.user.create({
+        data: {
+          id: u.id,
+          email: u.email,
+          name: u.name,
+          handle: u.handle,
+          password: u.id === 'founder' ? founderPassword : hashedPassword,
+          avatar: u.avatar,
+          coverImage: u.coverImage ?? '/images/profile-cover.jpg',
+          bio: u.bio ?? '',
+          location: u.location ?? '',
+          website: u.website ?? '',
+          verified: u.verified ?? false,
+          online: u.online ?? false,
+          auraTokens: u.auraTokens,
+          auraLevel: u.auraLevel,
+          auraXP: u.auraXP ?? 50,
+          badges: JSON.stringify(u.badges ?? []),
+          profileSetupComplete: true,
+          profileSongUrl: song.url,
+          profileSongTitle: song.title,
+          profileSongArtist: song.artist,
+        },
+      });
+      counts.usersCreated++;
+    } catch (e: any) {
+      if (e.code === 'P2002') {
+        // User already exists — skip, don't overwrite
+        console.log(`User ${u.id} already exists, skipping...`);
+        counts.usersSkipped++;
+      } else {
+        throw e;
+      }
+    }
   }
   console.log(`✅ Users: ${counts.usersCreated} created, ${counts.usersSkipped} skipped\n`);
 
@@ -2212,26 +2095,31 @@ async function main() {
   // ========================================
   console.log('📝 Ensuring posts exist...');
   for (const p of feedPosts) {
-    const existing = await prisma.post.findFirst({ where: { id: p.id } });
-    if (existing) {
-      counts.postsSkipped++;
-      continue;
+    try {
+      await prisma.post.create({
+        data: {
+          id: p.id,
+          text: p.text,
+          images: JSON.stringify(p.images),
+          vibeTag: p.vibeTag,
+          type: p.type,
+          likesCount: p.likesCount,
+          commentsCount: p.commentsCount,
+          sharesCount: p.sharesCount,
+          authorId: p.authorId,
+          createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+      counts.postsCreated++;
+    } catch (e: any) {
+      if (e.code === 'P2002') {
+        // Post already exists — skip, don't overwrite
+        console.log(`Post ${p.id} already exists, skipping...`);
+        counts.postsSkipped++;
+      } else {
+        throw e;
+      }
     }
-    await prisma.post.create({
-      data: {
-        id: p.id,
-        text: p.text,
-        images: JSON.stringify(p.images),
-        vibeTag: p.vibeTag,
-        type: p.type,
-        likesCount: p.likesCount,
-        commentsCount: p.commentsCount,
-        sharesCount: p.sharesCount,
-        authorId: p.authorId,
-        createdAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-      },
-    });
-    counts.postsCreated++;
   }
   console.log(`✅ Posts: ${counts.postsCreated} created, ${counts.postsSkipped} skipped\n`);
 
@@ -2240,23 +2128,28 @@ async function main() {
   // ========================================
   console.log('💬 Ensuring comments exist...');
   for (const c of commentsData) {
-    const existing = await prisma.comment.findFirst({ where: { id: c.id } });
-    if (existing) {
-      counts.commentsSkipped++;
-      continue;
+    try {
+      await prisma.comment.create({
+        data: {
+          id: c.id,
+          text: c.text,
+          postId: c.postId,
+          authorId: c.authorId,
+          parentId: c.parentId,
+          replyToName: c.replyToName,
+          createdAt: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000),
+        },
+      });
+      counts.commentsCreated++;
+    } catch (e: any) {
+      if (e.code === 'P2002') {
+        // Comment already exists — skip, don't overwrite
+        console.log(`Comment ${c.id} already exists, skipping...`);
+        counts.commentsSkipped++;
+      } else {
+        throw e;
+      }
     }
-    await prisma.comment.create({
-      data: {
-        id: c.id,
-        text: c.text,
-        postId: c.postId,
-        authorId: c.authorId,
-        parentId: c.parentId,
-        replyToName: c.replyToName,
-        createdAt: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000),
-      },
-    });
-    counts.commentsCreated++;
   }
   console.log(`✅ Comments: ${counts.commentsCreated} created, ${counts.commentsSkipped} skipped\n`);
 

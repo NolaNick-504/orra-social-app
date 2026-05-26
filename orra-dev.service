@@ -1,0 +1,21 @@
+#!/bin/bash
+# ORRA Dev Server Watchdog
+# Restarts the dev server automatically if it crashes
+# Run this in the background: nohup bash /home/z/my-project/watchdog.sh &
+
+while true; do
+  # Check if dev server is running
+  if ! pgrep -f "next dev" > /dev/null; then
+    echo "[$(date)] Dev server down — restarting..." >> /tmp/orra-watchdog.log
+    cd /home/z/my-project
+    nohup npx next dev -p 3000 -H 0.0.0.0 >> /tmp/orra-dev.log 2>&1 &
+    sleep 8
+    # Verify it started
+    if curl -s -o /dev/null http://localhost:3000; then
+      echo "[$(date)] Dev server restarted successfully" >> /tmp/orra-watchdog.log
+    else
+      echo "[$(date)] Dev server failed to start — will retry" >> /tmp/orra-watchdog.log
+    fi
+  fi
+  sleep 10
+done

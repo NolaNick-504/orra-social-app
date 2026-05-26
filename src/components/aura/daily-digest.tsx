@@ -4,7 +4,7 @@ import { useAuraStore } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { usePosts } from '@/lib/api-hooks';
 import { X, Sparkles, TrendingUp, Flame, Star, Zap, Crown, Users, Calendar, Heart } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect } from 'react';
 
 export function DailyDigest() {
   const { showDigest, dismissDigest, userSettings, auraTokens, auraLevel, dailyStreak } = useAuraStore();
@@ -131,16 +131,17 @@ export function DailyDigest() {
 export function useDailyDigest() {
   const { userSettings, lastDigestDate, showDigest } = useAuraStore();
 
-  useMemo(() => {
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!userSettings?.digestEnabled) return;
     // Show digest once per day
     const today = new Date().toISOString().split('T')[0];
     if (lastDigestDate !== today && !showDigest) {
       // Delay 1.5 seconds after app loads for smooth UX
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         useAuraStore.setState({ showDigest: true });
       }, 1500);
+      return () => clearTimeout(timer);
     }
   }, [userSettings?.digestEnabled, lastDigestDate, showDigest]);
 }

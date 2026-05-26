@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, awardXPAndTokens } from '@/lib/db';
 import { requireAuth, handleApiError } from '@/lib/auth-helpers';
 
 export const dynamic = 'force-dynamic';
@@ -117,13 +117,7 @@ export async function POST(req: NextRequest) {
     });
 
     // 10. Award tokens and XP server-side
-    await db.user.update({
-      where: { id: auth.userId! },
-      data: {
-        auraTokens: { increment: tokenReward },
-        auraXP: { increment: xpReward },
-      },
-    });
+    await awardXPAndTokens(auth.userId!, tokenReward, xpReward);
 
     // 11. Record the TokenAction for anti-farming
     await db.tokenAction.create({

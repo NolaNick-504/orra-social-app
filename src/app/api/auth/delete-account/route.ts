@@ -33,10 +33,38 @@ export async function POST(req: NextRequest) {
       where: { id: userId },
     });
 
-    return NextResponse.json({
+    // Clear session cookies so the deleted user cannot remain authenticated
+    const forwardedProto = req.headers.get('x-forwarded-proto');
+    const isSecure = forwardedProto === 'https' || req.nextUrl.protocol === 'https:';
+
+    const response = NextResponse.json({
       success: true,
       message: 'Account deleted successfully',
     });
+
+    response.cookies.set('next-auth.session-token', '', {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    });
+    response.cookies.set('next-auth.callback-url', '', {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    });
+    response.cookies.set('next-auth.csrf-token', '', {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    });
+
+    return response;
   } catch (error) {
     console.error('Delete account error:', error);
     return NextResponse.json(

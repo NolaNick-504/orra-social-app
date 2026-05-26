@@ -3,13 +3,16 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
 // Reaction types with their emoji, label, and color
+// Keys must match VALID_REACTIONS in /api/likes route: ["like", "wow", "omg", "wtf", "laughing", "sad", "care", "prayers"]
 export const REACTION_TYPES = [
-  { key: 'heart', emoji: '❤️', label: 'Like', color: 'text-red-400', bg: 'bg-red-500/20', ring: 'ring-red-500/40' },
+  { key: 'like', emoji: '❤️', label: 'Like', color: 'text-red-400', bg: 'bg-red-500/20', ring: 'ring-red-500/40' },
   { key: 'wow', emoji: '😮', label: 'Wow', color: 'text-amber-400', bg: 'bg-amber-500/20', ring: 'ring-amber-500/40' },
   { key: 'omg', emoji: '😱', label: 'OMG', color: 'text-fuchsia-400', bg: 'bg-fuchsia-500/20', ring: 'ring-fuchsia-500/40' },
   { key: 'wtf', emoji: '🤯', label: 'WTF', color: 'text-orange-400', bg: 'bg-orange-500/20', ring: 'ring-orange-500/40' },
-  { key: 'laugh', emoji: '😂', label: 'Haha', color: 'text-yellow-400', bg: 'bg-yellow-500/20', ring: 'ring-yellow-500/40' },
+  { key: 'laughing', emoji: '😂', label: 'Laughing', color: 'text-amber-400', bg: 'bg-yellow-500/20', ring: 'ring-yellow-500/40' },
   { key: 'sad', emoji: '😢', label: 'Sad', color: 'text-blue-400', bg: 'bg-blue-500/20', ring: 'ring-blue-500/40' },
+  { key: 'care', emoji: '🥰', label: 'Care', color: 'text-pink-400', bg: 'bg-pink-500/20', ring: 'ring-pink-500/40' },
+  { key: 'prayers', emoji: '🙏', label: 'Prayers', color: 'text-emerald-400', bg: 'bg-emerald-500/20', ring: 'ring-emerald-500/40' },
 ] as const;
 
 export type ReactionKey = typeof REACTION_TYPES[number]['key'];
@@ -111,7 +114,7 @@ export function ReactionButton({
   const isLongPress = useRef(false);
   const [burstEmoji, setBurstEmoji] = useState<string | null>(null);
 
-  const reaction = currentReaction ? getReactionDisplay(currentReaction) : REACTION_TYPES[0];
+  const reaction = currentReaction ? getReactionDisplay(currentReaction) : REACTION_TYPES[0]; // defaults to 'like'
 
   const handlePressStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     isLongPress.current = false;
@@ -132,11 +135,11 @@ export function ReactionButton({
     }
     if (isLongPress.current) return; // Long press was handled, don't toggle
 
-    // Short tap — toggle default heart reaction
-    if (isLiked && currentReaction === 'heart') {
+    // Short tap — toggle default like reaction
+    if (isLiked && currentReaction === 'like') {
       onUnreact(postId);
     } else {
-      onReact(postId, 'heart');
+      onReact(postId, 'like');
       setBurstEmoji('❤️');
       setTimeout(() => setBurstEmoji(null), 600);
     }

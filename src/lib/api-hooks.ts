@@ -267,7 +267,8 @@ export function useInfinitePosts(vibeTag?: string) {
         ? lastPage.pagination.page + 1
         : undefined,
     staleTime: 15000,
-    refetchInterval: 30000,
+    // NOTE: refetchInterval removed — it causes infinite query pages to reset on
+    // each interval tick, breaking endless scroll. Users refresh via Home button instead.
     refetchOnWindowFocus: true,
   });
 }

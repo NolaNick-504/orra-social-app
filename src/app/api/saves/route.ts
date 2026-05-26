@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, serializedTransaction } from '@/lib/db';
 import { getAuthUserId } from '@/lib/auth-helpers';
 
 export async function POST(request: NextRequest) {
@@ -25,13 +25,17 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       // Unsave
-      await db.save.delete({ where: { id: existing.id } });
+      await serializedTransaction(async (tx) => {
+        await tx.save.delete({ where: { id: existing.id } });
+      });
       return NextResponse.json({ success: true, data: { action: 'unsaved' } });
     }
 
     // Save
-    await db.save.create({
-      data: { userId, targetId, targetType },
+    await serializedTransaction(async (tx) => {
+      await tx.save.create({
+        data: { userId, targetId, targetType },
+      });
     });
 
     return NextResponse.json({ success: true, data: { action: 'saved' } });

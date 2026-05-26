@@ -234,7 +234,7 @@ export default function StoryChallengeGame({ onClose, currentUser, callbacks, ac
       isFeatured
         ? `🌟 Story of the Day! +${bonusTokens} ORRA +${bonusXP} XP`
         : `📖 Great story! +${bonusTokens} ORRA +${bonusXP} XP`,
-      { duration: 3000 }
+      { duration: 1500 }
     );
     callbacks.completeGame(userStoryVotes, isFeatured);
     // Close the game overlay after collecting rewards

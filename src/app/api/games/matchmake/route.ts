@@ -162,6 +162,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, data: session });
   } catch (error) {
     console.error('Matchmaking error:', error);
-    return NextResponse.json({ success: false, error: 'Matchmaking failed' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Matchmaking failed';
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

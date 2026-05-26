@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, awardXPAndTokens, serializedTransaction } from '@/lib/db';
 import { requireAuth, handleApiError } from '@/lib/auth-helpers';
 
 export const dynamic = 'force-dynamic';
@@ -118,16 +118,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
-    // Check token cost
-    if (game.tokenCost > 0 && user.auraTokens < game.tokenCost) {
-      return NextResponse.json({ success: false, error: `Need ${game.tokenCost} ORRA tokens to start this challenge` }, { status: 400 });
-    }
-
-    // Deduct tokens if needed (use atomic decrement to prevent race conditions)
+    // Check token cost and deduct atomically inside a transaction to prevent race conditions
     if (game.tokenCost > 0) {
-      await db.user.update({
-        where: { id: user.id },
-        data: { auraTokens: { decrement: game.tokenCost } },
+      // Use serializedTransaction to check balance and deduct in one atomic operation
+      // Previously this was two separate operations (check then deduct), allowing double-spend
+      await serializedTransaction(async (tx) => {
+        const currentUser = await tx.user.findUnique({
+          where: { id: auth.userId! },
+          select: { auraTokens: true },
+        });
+        if (!currentUser || currentUser.auraTokens < game.tokenCost) {
+          throw new Error('INSUFFICIENT_TOKENS');
+        }
+        await tx.user.update({
+          where: { id: auth.userId! },
+          data: { auraTokens: { decrement: game.tokenCost } },
+        });
       });
     }
 
@@ -185,12 +191,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Award XP for starting
-    await db.user.update({
-      where: { id: auth.userId! },
-      data: {
-        auraXP: { increment: 5 },
-      },
-    });
+    await awardXPAndTokens(auth.userId!, 0, 5);
 
     // Record token action
     if (game.tokenCost > 0) {
@@ -215,7 +216,11 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, data: result });
-  } catch (error) {
+  } catch (error: any) {
+    // Handle known transaction errors
+    if (error?.message === 'INSUFFICIENT_TOKENS') {
+      return NextResponse.json({ success: false, error: 'Insufficient ORRA tokens to start this challenge' }, { status: 400 });
+    }
     return handleApiError(error, 'Challenges POST');
   }
 }

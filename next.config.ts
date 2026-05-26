@@ -1,11 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // NOTE: output:'standalone' is NOT compatible with our custom server.js
-  // (which uses next({ dev: false }) — "next start" doesn't work in standalone mode).
-  // To use standalone mode, we'd need to rewrite server.js to use .next/standalone/server.js
-  // and move chunk handling to Next.js middleware. Keeping this disabled for now.
-  // output: 'standalone',
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -63,15 +58,12 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
-      // NOTE: Removed /sw.js → /api/sw rewrite.
-      // The rewrite was replacing the useful v8 SW (public/sw.js) with a
-      // self-destruct SW that cleared all caches and unregistered itself.
-      // This caused loading screen freezes because:
-      // 1. Cached JS chunks were nuked on every SW update
-      // 2. No SW was active to show reconnect page during cold starts
-      // 3. The 15s watchdog triggered redirect loops via clear-cache.html
-      // The v8 SW in public/sw.js is now served directly, and the headers()
-      // config above ensures it gets no-cache headers.
+      {
+        // Serve sw.js via API route so we can control Cache-Control headers
+        // Static files in public/ get aggressive caching we can't override
+        source: '/sw.js',
+        destination: '/api/sw',
+      },
       {
         source: '/uploads/:path*',
         destination: '/api/uploads?file=:path*',

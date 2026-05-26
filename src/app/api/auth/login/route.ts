@@ -2,11 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { encode } from 'next-auth/jwt';
+import { checkRateLimit, getClientIdentifier, LOGIN_RATE_LIMIT } from '@/lib/rate-limit';
 
 const SECRET = process.env.NEXTAUTH_SECRET;
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit login attempts
+    const clientId = getClientIdentifier(request);
+    const rateLimit = checkRateLimit(`login:${clientId}`, LOGIN_RATE_LIMIT);
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { success: false, error: `Too many login attempts. Try again in ${rateLimit.retryAfter} seconds.` },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body;
 

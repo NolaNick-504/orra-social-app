@@ -5,6 +5,37 @@ import { useCreateComment, useComments } from '@/lib/api-hooks';
 import { resolveImageUrl } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState, useRef, useEffect, useCallback } from 'react';
+
+// Live-updating time-ago component
+function timeAgo(dateStr: string | number): string {
+  const now = Date.now();
+  const then = typeof dateStr === 'number' ? dateStr : new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay}d`;
+}
+
+function LiveTimeAgo({ date, suffix = true }: { date: string | number; suffix?: boolean }) {
+  const [, forceUpdate] = useState(0);
+  useEffect(() => {
+    const then = typeof date === 'number' ? date : new Date(date).getTime();
+    const diffMs = Date.now() - then;
+    let interval: ReturnType<typeof setInterval>;
+    if (diffMs < 60_000) interval = setInterval(() => forceUpdate(n => n + 1), 10_000);
+    else if (diffMs < 3_600_000) interval = setInterval(() => forceUpdate(n => n + 1), 30_000);
+    else if (diffMs < 86_400_000) interval = setInterval(() => forceUpdate(n => n + 1), 60_000);
+    else interval = setInterval(() => forceUpdate(n => n + 1), 600_000);
+    return () => clearInterval(interval);
+  }, [date]);
+  const t = timeAgo(date);
+  if (t === 'Just now') return <>{t}</>;
+  return <>{suffix ? `${t} ago` : t}</>;
+}
 import { toast } from 'sonner';
 import { Send, MessageCircle, X, CornerDownRight } from 'lucide-react';
 
@@ -87,7 +118,7 @@ export function CommentSection({ postId, currentUser, show, onToggle, commentCou
     createCommentApi.mutate({ postId, text, parentId: replyToId || null, replyToName: replyToName || null }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-        queryClient.invalidateQueries({ queryKey: ['posts'] });
+        queryClient.invalidateQueries({ queryKey: ['posts', 'infinite'] });
       },
       onError: () => {
         toast.error('Comment failed to sync');
@@ -162,14 +193,7 @@ export function CommentSection({ postId, currentUser, show, onToggle, commentCou
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 ml-1">
                     <p className="text-[10px] text-slate-600">
-                      {Math.floor((Date.now() - c.createdAt) / 60000) < 1
-                        ? 'Just now'
-                        : Math.floor((Date.now() - c.createdAt) / 60000) < 60
-                        ? `${Math.floor((Date.now() - c.createdAt) / 60000)}m ago`
-                        : Math.floor((Date.now() - c.createdAt) / 3600000) < 24
-                        ? `${Math.floor((Date.now() - c.createdAt) / 3600000)}h ago`
-                        : `${Math.floor((Date.now() - c.createdAt) / 86400000)}d ago`
-                      }
+                      <LiveTimeAgo date={c.createdAt} />
                     </p>
                     <button
                       onClick={() => { setReplyToId(c.id); setReplyToName(c.userName); setInputActive(true); requestAnimationFrame(() => { requestAnimationFrame(() => { inputRef.current?.focus(); }); }); }}
@@ -206,12 +230,7 @@ export function CommentSection({ postId, currentUser, show, onToggle, commentCou
                         </div>
                         <div className="flex items-center gap-3 mt-0.5 ml-1">
                           <p className="text-[10px] text-slate-600">
-                            {Math.floor((Date.now() - r.createdAt) / 60000) < 1
-                              ? 'Just now'
-                              : Math.floor((Date.now() - r.createdAt) / 60000) < 60
-                              ? `${Math.floor((Date.now() - r.createdAt) / 60000)}m ago`
-                              : `${Math.floor((Date.now() - r.createdAt) / 3600000)}h ago`
-                            }
+                            <LiveTimeAgo date={r.createdAt} />
                           </p>
                           <button
                             onClick={() => { setReplyToId(r.id); setReplyToName(r.userName); setInputActive(true); requestAnimationFrame(() => { requestAnimationFrame(() => { inputRef.current?.focus(); }); }); }}

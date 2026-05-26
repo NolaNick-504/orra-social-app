@@ -315,7 +315,7 @@ export function TokenShop() {
   // Handle purchase
   const handlePurchase = (item: ShopItem) => {
     if (auraTokens < item.cost) {
-      toast.error('Not enough ORRA tokens!', { duration: 2000 });
+      toast.error('Not enough ORRA tokens!', { duration: 1500 });
       return;
     }
 
@@ -344,18 +344,18 @@ export function TokenShop() {
           if (item.id.startsWith('tip_')) {
             if (tipTarget) {
               success = tipUser(tipTarget, item.cost);
-              if (success) toast.success(`Tipped ${item.cost} ORRA tokens!`, { duration: 2000 });
+              if (success) toast.success(`Tipped ${item.cost} ORRA tokens!`, { duration: 1500 });
             } else {
-              toast.error('Select a user to tip first', { duration: 2000 });
+              toast.error('Select a user to tip first', { duration: 1500 });
               setPurchasing(null);
               return;
             }
           } else if (item.id.startsWith('gift_')) {
             if (giftTarget) {
               success = giftTokens(giftTarget, item.cost);
-              if (success) toast.success(`Gifted ${item.cost} ORRA tokens!`, { duration: 2000 });
+              if (success) toast.success(`Gifted ${item.cost} ORRA tokens!`, { duration: 1500 });
             } else {
-              toast.error('Select a friend to gift first', { duration: 2000 });
+              toast.error('Select a friend to gift first', { duration: 1500 });
               setPurchasing(null);
               return;
             }
@@ -365,29 +365,29 @@ export function TokenShop() {
         case 'Visibility': {
           const postId = boostTargetPost || `boost-${Date.now()}`;
           success = boostPost(postId, item.cost);
-          if (success) toast.success('Post boosted!', { duration: 2000 });
+          if (success) toast.success('Post boosted!', { duration: 1500 });
           break;
         }
         case 'Content':
           success = unlockContent(`content-${Date.now()}`, item.cost);
-          if (success) toast.success('Premium content unlocked!', { duration: 2000 });
+          if (success) toast.success('Premium content unlocked!', { duration: 1500 });
           break;
         case 'Reactions':
           success = addSuperReaction(`reaction-${Date.now()}`, item.cost);
-          if (success) toast.success('Super Reaction ready!', { duration: 2000 });
+          if (success) toast.success('Super Reaction ready!', { duration: 1500 });
           break;
       }
 
       if (success) {
         // Only show generic toast for categories that don't have a custom toast already
         if (!['Social', 'Visibility', 'Content', 'Reactions'].includes(item.category)) {
-          toast.success(`${item.name} purchased! -${item.cost} ORRA`, { duration: 2500 });
+          toast.success(`${item.name} purchased! -${item.cost} ORRA`, { duration: 1500 });
         }
       } else if (item.category !== 'Social') {
-        toast.error('Purchase failed. You may already own this item.', { duration: 2000 });
+        toast.error('Purchase failed. You may already own this item.', { duration: 1500 });
       }
     } catch {
-      toast.error('Something went wrong', { duration: 2000 });
+      toast.error('Something went wrong', { duration: 1500 });
     } finally {
       setPurchasing(null);
     }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthUserId } from "@/lib/auth-helpers";
-import { db } from "@/lib/db";
+import { db, awardXPAndTokens } from "@/lib/db";
 
 // GET /api/aura - Get current user's aura stats
 export async function GET() {
@@ -35,9 +35,9 @@ export async function GET() {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    // Calculate level progress (assuming 100 XP per level)
-    const xpForNextLevel = user.auraLevel * 100;
-    const xpProgress = user.auraXP % 100;
+    // Calculate level progress (1000 XP per level, matching awardXPAndTokens logic)
+    const xpForNextLevel = 1000;
+    const xpProgress = user.auraXP;
 
     return NextResponse.json({
       success: true,
@@ -124,26 +124,26 @@ export async function POST() {
       });
     }
 
-    await db.$transaction([
-      db.tokenAction.create({
-        data: {
-          userId,
-          action: "daily_streak",
-          targetId: todayStr,
-          tokensEarned: tokensAwarded,
-          xpEarned: xpAwarded,
-        },
-      }),
-      db.user.update({
-        where: { id: userId },
-        data: {
-          dailyStreak: newStreak,
-          lastActiveDate: todayStr,
-          auraTokens: { increment: tokensAwarded },
-          auraXP: { increment: xpAwarded },
-        },
-      }),
-    ]);
+    await db.tokenAction.create({
+      data: {
+        userId,
+        action: "daily_streak",
+        targetId: todayStr,
+        tokensEarned: tokensAwarded,
+        xpEarned: xpAwarded,
+      },
+    });
+
+    // Update streak data on user, then award XP+tokens via centralized function
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        dailyStreak: newStreak,
+        lastActiveDate: todayStr,
+      },
+    });
+
+    await awardXPAndTokens(userId, tokensAwarded, xpAwarded);
 
     return NextResponse.json({
       success: true,

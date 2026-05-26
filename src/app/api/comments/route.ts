@@ -277,28 +277,21 @@ export async function POST(req: NextRequest) {
         try {
           const baseUrl = process.env.NEXTAUTH_URL || `http://localhost:3000`;
           const apiKey = process.env.AUTOPOST_KEY || process.env.NEXTAUTH_SECRET || 'orra-internal-autopost-2026';
-          // 10s timeout to prevent hung connections accumulating
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 10_000);
-          try {
-            await fetch(`${baseUrl}/api/auto-comment`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-autopost-key': apiKey,
-              },
-              body: JSON.stringify({
-                postId: autoPostId,
-                text: responseText,
-                authorId: botId,
-              }),
-              signal: controller.signal,
-            });
-          } finally {
-            clearTimeout(timeout);
-          }
+          await fetch(`${baseUrl}/api/auto-comment`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-autopost-key': apiKey,
+            },
+            body: JSON.stringify({
+              postId: autoPostId,
+              text: responseText,
+              authorId: botId,
+            }),
+          });
         } catch (err) {
           // Auto-response is best-effort; don't log errors loudly
+          console.error('[auto-response] Failed:', err);
         }
       }, delay);
     }

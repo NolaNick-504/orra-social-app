@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUserId } from "@/lib/auth-helpers";
-import { db } from "@/lib/db";
+import { db, awardXPAndTokens } from "@/lib/db";
 
 // POST /api/dance/entries - Submit dance entry
 export async function POST(request: NextRequest) {
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create entry and award tokens in a transaction
+    // Create entry and track token action in a transaction
     const entry = await db.$transaction(async (tx) => {
       const newEntry = await tx.danceEntry.create({
         data: {
@@ -83,17 +83,11 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Award +5 tokens + 10 XP
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          auraTokens: { increment: 5 },
-          auraXP: { increment: 10 },
-        },
-      });
-
       return newEntry;
     });
+
+    // Award +5 tokens + 10 XP (outside transaction — awardXPAndTokens has its own write queue)
+    await awardXPAndTokens(userId, 5, 10);
 
     return NextResponse.json(
       {

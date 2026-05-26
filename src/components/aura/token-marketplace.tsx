@@ -182,7 +182,7 @@ export function TokenMarketplace() {
     // Deduct tokens
     useAuraStore.setState((s) => ({ auraTokens: s.auraTokens - item.cost }));
     setPurchasedItems((prev) => new Set([...prev, item.id]));
-    toast.success(`Purchased ${item.name}! -${item.cost} ORRA`, { duration: 3000 });
+    toast.success(`Purchased ${item.name}! -${item.cost} ORRA`, { duration: 1500 });
   };
 
   return (

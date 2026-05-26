@@ -1,0 +1,132 @@
+{
+  "_comment": "🚫 LOCKED IMAGES — DO NOT REGENERATE, REPLACE, OR MODIFY 🚫",
+  "_owner_instruction": "These images are locked by the app owner. They must NOT be changed unless the owner explicitly asks.",
+  "_last_updated": "2026-05-14",
+  "_purpose": "Any AI agent or script MUST read this file before generating or overwriting images. If a path is listed here, it is PROTECTED.",
+
+  "banner": {
+    "game-arena-banner-v3.png": {
+      "path": "/images/banners/game-arena-banner-v3.png",
+      "description": "Game Arena main banner — ORRA Arena featured section",
+      "locked": true,
+      "locked_reason": "Owner approved design — must not change without explicit owner request"
+    },
+    "dance-off-banner.png": {
+      "path": "/images/banners/dance-off-banner.png",
+      "description": "Dance Off event banner — shown on the Pulse feed",
+      "locked": true,
+      "locked_reason": "Owner approved design — feed banner must not change"
+    },
+    "game-arena-banner.png": {
+      "path": "/images/banners/game-arena-banner.png",
+      "description": "Game Arena promo banner — shown on the Pulse feed",
+      "locked": true,
+      "locked_reason": "Owner approved design — feed banner must not change"
+    }
+  },
+
+  "game_covers_v3": {
+    "trivia-blast.png": {
+      "path": "/images/game-covers-v3/trivia-blast.png",
+      "description": "Trivia Blast game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "would-you-rather.png": {
+      "path": "/images/game-covers-v3/would-you-rather.png",
+      "description": "Would You Rather game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "prism.png": {
+      "path": "/images/game-covers-v3/prism.png",
+      "description": "PrISM personality game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "aura-quiz.png": {
+      "path": "/images/game-covers-v3/aura-quiz.png",
+      "description": "Aura Quiz game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "hot-take.png": {
+      "path": "/images/game-covers-v3/hot-take.png",
+      "description": "Hot Take game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "guess-the-vibe.png": {
+      "path": "/images/game-covers-v3/guess-the-vibe.png",
+      "description": "Guess the Vibe game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "emoji-quest.png": {
+      "path": "/images/game-covers-v3/emoji-quest.png",
+      "description": "Emoji Quest game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "poll-party.png": {
+      "path": "/images/game-covers-v3/poll-party.png",
+      "description": "Poll Party game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "meme-lab.png": {
+      "path": "/images/game-covers-v3/meme-lab.png",
+      "description": "Meme Lab game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "predict-it.png": {
+      "path": "/images/game-covers-v3/predict-it.png",
+      "description": "Predict It game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "two-truths-lie.png": {
+      "path": "/images/game-covers-v3/two-truths-lie.png",
+      "description": "Two Truths & A Lie game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "song-match.png": {
+      "path": "/images/game-covers-v3/song-match.png",
+      "description": "Song Match game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "quick-draw.png": {
+      "path": "/images/game-covers-v3/quick-draw.png",
+      "description": "Quick Draw game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "color-wars.png": {
+      "path": "/images/game-covers-v3/color-wars.png",
+      "description": "Color Wars game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "rate-my-fit.png": {
+      "path": "/images/game-covers-v3/rate-my-fit.png",
+      "description": "Rate My Fit game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "story-challenge.png": {
+      "path": "/images/game-covers-v3/story-challenge.png",
+      "description": "Story Challenge game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    },
+    "roast-battle.png": {
+      "path": "/images/game-covers-v3/roast-battle.png",
+      "description": "Roast Battle game cover",
+      "locked": true,
+      "locked_reason": "Owner approved design"
+    }
+  }
+}

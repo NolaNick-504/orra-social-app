@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, serializedTransaction, writeQueue } from "@/lib/db";
+import { db, serializedTransaction, writeQueue, awardXPAndTokens } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-helpers";
 
 // POST /api/reposts - Toggle repost
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
           data: { sharesCount: { decrement: 1 } },
         });
 
-        return { reposted: false };
+        return { reposted: false, shouldAward: false };
       } else {
         // Add repost
         await tx.repost.create({
@@ -85,19 +85,16 @@ export async function POST(req: NextRequest) {
               xpEarned: 3,
             },
           });
-
-          await tx.user.update({
-            where: { id: auth.userId },
-            data: {
-              auraTokens: { increment: 2 },
-              auraXP: { increment: 3 },
-            },
-          });
         }
 
-        return { reposted: true };
+        return { reposted: true, shouldAward: !existingAction };
       }
     });
+
+    // Award tokens + XP outside transaction (awardXPAndTokens has its own write queue)
+    if (result.shouldAward) {
+      await awardXPAndTokens(auth.userId!, 2, 3);
+    }
 
     return NextResponse.json({ success: true, data: result });
   } catch (error) {

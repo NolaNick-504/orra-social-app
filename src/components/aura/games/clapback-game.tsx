@@ -219,7 +219,7 @@ export default function ClapbackGame({
       setQuickDrawEarned(true);
       setTokensEarned((prev) => prev + 5);
       callbacks.earnTokens(5, 'clapback_quick_draw');
-      callbacks.showToast('⚡ Quick Draw! +5 bonus tokens!', { duration: 2000 });
+      callbacks.showToast('⚡ Quick Draw! +5 bonus tokens!', { duration: 1500 });
     }
 
     // Submit to server

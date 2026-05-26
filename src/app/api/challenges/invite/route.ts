@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
-import { db, serializedTransaction } from '@/lib/db';
+import { db, serializedTransaction, awardXPAndTokens } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,11 +69,7 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // Award XP for accepting
-        await tx.user.update({
-          where: { id: userId },
-          data: { auraXP: { increment: 5 } },
-        });
+        // Award XP for accepting (moved outside transaction — awardXPAndTokens has its own write queue)
 
         // Notify the challenger
         await tx.notification.create({
@@ -85,6 +81,9 @@ export async function POST(req: NextRequest) {
           },
         });
       });
+
+      // Award XP for accepting (outside transaction — awardXPAndTokens has its own write queue)
+      await awardXPAndTokens(userId, 0, 5);
 
       return NextResponse.json({ success: true, data: { status: 'accepted' } });
     } else {

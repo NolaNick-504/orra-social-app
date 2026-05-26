@@ -144,8 +144,7 @@ function PrismCompanionPanel() {
         }));
 
         // Earn 1 ORRA for chatting with Prism (max 10 per day)
-        const { auraTokens } = useAuraStore.getState();
-        useAuraStore.setState({ auraTokens: auraTokens + 1 });
+        useAuraStore.getState().earnTokens(1, 'Prism AI chat');
       } else {
         throw new Error(data.error || 'AI response failed');
       }

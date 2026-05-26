@@ -1,0 +1,53 @@
+ORRA RESTORE POINT - 2026-05-16
+================================
+
+Git Commit: 3c5d46f
+Branch: main
+Database Backup: backups/custom.db.restore-point
+
+HOW TO RESTORE:
+===============
+
+Full Restore (source code + database + rebuild):
+  bash /home/z/my-project/restore.sh
+
+Database Only (fast - use if data disappeared):
+  bash /home/z/my-project/restore-db.sh
+
+Manual Database Restore:
+  1. pkill -f next
+  2. cp /home/z/my-project/backups/custom.db.restore-point /home/z/my-project/db/custom.db
+  3. NEXTAUTH_SECRET=orra-super-secret-key-2025-production DATABASE_URL=file:/home/z/my-project/db/custom.db npx next start -p 3000 &
+
+Manual Source Code Restore:
+  1. cd /home/z/my-project
+  2. git checkout 3c5d46f -- src/ prisma/ public/
+  3. npx next build --webpack
+  4. NEXTAUTH_SECRET=orra-super-secret-key-2025-production DATABASE_URL=file:/home/z/my-project/db/custom.db npx next start -p 3000 &
+
+ENVIRONMENT VARIABLES NEEDED:
+  NEXTAUTH_SECRET=orra-super-secret-key-2025-production
+  DATABASE_URL=file:/home/z/my-project/db/custom.db
+
+DATABASE STATS AT RESTORE POINT:
+  17 users, 207 posts, 1324 comments, 124 likes
+  58 follows, 9 chats, 27 messages
+  12 hubs, 69 hub posts, 8 dance entries
+  27 reels, 22 stories, 0 purchases
+
+USER LOGIN:
+  Email: nickjoseph8087@gmail.com
+  Password: password123
+
+FEATURES WORKING AT THIS POINT:
+  ✅ Feed with posts, comments, likes, reactions
+  ✅ Market/Shop - badges, themes, boosts
+  ✅ Messages - DMs, video call, voice call, share posts
+  ✅ Profile song - persistence + preview play
+  ✅ Song library - 40+ songs with R&B/rap vocals
+  ✅ Wellness - real time tracking, activity breakdown
+  ✅ Community Hubs - 12 hubs with posts
+  ✅ Live streaming
+  ✅ Reels
+  ✅ Game Arena
+  ✅ Dance Challenge

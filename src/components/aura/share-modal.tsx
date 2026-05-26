@@ -14,7 +14,7 @@ export function ShareModal() {
   if (!showShareModal) return null;
 
   const handleCopyLink = () => {
-    const link = `${window.location.origin}/post/${sharePostId || 'shared'}`;
+    const link = `${window.location.origin}/?view=post&id=${sharePostId || 'shared'}`;
     navigator.clipboard.writeText(link).then(() => {
       toast.success('Link copied to clipboard!');
     }).catch(() => {
@@ -32,7 +32,7 @@ export function ShareModal() {
         onSuccess: () => {
           // Refresh the feed so the echo shows up
           queryClient.invalidateQueries({ queryKey: ['posts'] });
-          toast.success('Echoed to your feed! +2 ORRA', { duration: 2000 });
+          toast.success('Echoed to your feed! +2 ORRA', { duration: 1500 });
         },
         onError: () => {
           toast.error('Echo failed to sync');
@@ -54,7 +54,7 @@ export function ShareModal() {
       }).catch(() => {
         // Non-critical: DM share failure shouldn't block UX
       });
-      toast.success('Shared via DM! +2 ORRA', { duration: 2000 });
+      toast.success('Shared via DM! +2 ORRA', { duration: 1500 });
       // Refresh feed
       queryClient.invalidateQueries({ queryKey: ['posts'] });
     }

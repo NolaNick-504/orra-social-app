@@ -439,7 +439,7 @@ async function main() {
             text: randomItem(commentPool),
             postId: post.id,
             authorId: commentAuthors[j % commentAuthors.length].id,
-            likesCount: randomInt(0, 15),
+            // likesCount is not a direct field on Comment
             createdAt: commentTime,
           },
         });
@@ -467,7 +467,7 @@ async function main() {
             userId: reactor.id,
             targetId: post.id,
             targetType: 'post',
-            reaction: randomItem(REACTION_TYPES),
+            reactionType: randomItem(REACTION_TYPES),
           },
         });
         totalReactions++;
@@ -488,7 +488,7 @@ async function main() {
             userId: reactor.id,
             targetId: comment.id,
             targetType: 'comment',
-            reaction: randomItem(REACTION_TYPES),
+            reactionType: randomItem(REACTION_TYPES),
           },
         });
         totalReactions++;

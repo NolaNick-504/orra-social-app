@@ -26,15 +26,14 @@ import { AppWrapper } from '@/components/aura/app-wrapper';
 import dynamic from 'next/dynamic';
 
 // Auto-reloading loading screen for dynamic imports
-// If a component takes more than 30 seconds to load (stale chunks, server down),
+// If a component takes more than 8 seconds to load (stale chunks, server down),
 // force a full page reload to get fresh HTML with correct chunk references.
-// 30s is generous enough for slow connections and cold starts.
 function LoadingScreen() {
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      console.warn('ORRA: Component still loading after 30s — forcing page reload');
+      console.warn('ORRA: Component still loading after 8s — forcing page reload');
       window.location.replace('/?_cb=' + Date.now());
-    }, 30000);
+    }, 8000);
     return () => clearTimeout(timer);
   }, []);
 

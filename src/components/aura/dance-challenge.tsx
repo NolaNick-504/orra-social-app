@@ -155,7 +155,7 @@ export function DanceChallenge() {
       }
     } catch (err) {
       console.error('Failed to fetch dance challenge:', err);
-      toast.error('Failed to load dance challenge', { duration: 2000 });
+      toast.error('Failed to load dance challenge', { duration: 1500 });
     } finally {
       setIsLoading(false);
     }
@@ -185,11 +185,11 @@ export function DanceChallenge() {
           voteEntry(entryId);
           toast.success('Voted! +1 ORRA +2 XP', { duration: 1500 });
         } else {
-          toast.error(json.error || 'Failed to vote', { duration: 2000 });
+          toast.error(json.error || 'Failed to vote', { duration: 1500 });
         }
       } catch (err) {
         console.error('Vote failed:', err);
-        toast.error('Failed to vote', { duration: 2000 });
+        toast.error('Failed to vote', { duration: 1500 });
       } finally {
         setIsVoting(null);
       }
@@ -227,18 +227,18 @@ export function DanceChallenge() {
           useAuraStore.getState().earnTokens(tokensAwarded, 'Dance entry submitted');
         }
         submitDanceEntry(submitText.trim());
-        toast.success(`Entry submitted! +${tokensAwarded} ORRA +${xpAwarded} XP`, { duration: 2000 });
+        toast.success(`Entry submitted! +${tokensAwarded} ORRA +${xpAwarded} XP`, { duration: 1500 });
         setSubmitText('');
         setShowSubmitModal(false);
         setActiveTab('my');
         // Refresh data to show updated leaderboard
         fetchChallengeData();
       } else {
-        toast.error(json.error || 'Failed to submit entry', { duration: 2000 });
+        toast.error(json.error || 'Failed to submit entry', { duration: 1500 });
       }
     } catch (err) {
       console.error('Submit failed:', err);
-      toast.error('Failed to submit entry', { duration: 2000 });
+      toast.error('Failed to submit entry', { duration: 1500 });
     } finally {
       setIsSubmitting(false);
     }
@@ -254,7 +254,7 @@ export function DanceChallenge() {
     setIsPlaying(true);
     setTimeout(() => setIsPlaying(false), 5000);
     const song = challenge?.song || 'Neon Dreams - DJ Prism ft. Luna';
-    toast.success(`Now playing: ${song}`, { duration: 2000 });
+    toast.success(`Now playing: ${song}`, { duration: 1500 });
   };
 
   // Loading state

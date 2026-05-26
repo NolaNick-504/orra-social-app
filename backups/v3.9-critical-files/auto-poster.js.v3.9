@@ -1,0 +1,202 @@
+#!/usr/bin/env node
+/**
+ * ORRA Auto-Poster — Generates realistic posts every 5 minutes
+ * Uses Prisma directly (no HTTP needed, runs on same server)
+ * Usage: node scripts/auto-poster.js
+ */
+
+const { execSync } = require('child_process');
+const PROJECT_DIR = '/home/z/my-project';
+
+const POSTS = {
+  tech: [
+    "Just tested the new ORRA AI features and they're insane 🔥",
+    "AI is evolving faster than we think. Are you keeping up?",
+    "Built my first app using only AI prompts today. The future is wild.",
+    "Web3 meets social media — this is what ORRA is building 🌐",
+    "The metaverse isn't dead, it's just getting started. ORRA proves it.",
+    "Quantum computing + social platforms = the next frontier",
+    "Just deployed my first smart contract. Feeling like a blockchain dev! 💎",
+    "Tech tip: always back up your code. Lost 3 hours of work today 😅",
+    "The future of social is decentralized. Who's building it? We are. 🚀",
+    "AI-generated music is getting scary good. Thoughts?",
+    "Just read about the latest breakthrough in neural networks. Mind = blown 🤯",
+    "Web3 gaming is about to have its moment. ORRA Game Arena is ready.",
+    "Coding at 3am hits different when the code actually works 🌙",
+    "The intersection of AI and creativity is where the magic happens ✨",
+  ],
+  lifestyle: [
+    "Morning vibes and ORRA scrolling ☀️ What's everyone up to?",
+    "Just hit the gym. ORRA tokens as motivation? Absolutely 💪",
+    "Coffee + ORRA = perfect morning combo ☕",
+    "Self care isn't selfish. Take that break. You deserve it. 🧘",
+    "New Orleans energy is unmatched. This city inspires everything I build 🎷",
+    "Late night thoughts on ORRA > late night thoughts anywhere else 🌃",
+    "Manifesting a productive week. Who's with me? ✨",
+    "Just cooked the best meal I've had in weeks. Chef mode activated 👨‍🍳",
+    "Sometimes you just need a mental health day. Taking mine today. 🌊",
+    "Sunset hit different when you're building something meaningful 🌅",
+    "Gratitude journal: Day 15. Today I'm grateful for this community 🙏",
+    "Finding balance between the grind and the glow. ORRA helps. ✨",
+    "Weekend mode: activated. What's everyone doing? 🎉",
+    "Music + coding = my productivity hack. What's yours? 🎵",
+  ],
+  social: [
+    "Who else is addicted to the ORRA feed? Can't stop scrolling 😂",
+    "Just found my people on ORRA. This community is everything 🔥",
+    "The Dance Off challenge is INSANE this week. Who's winning? 💃",
+    "Echo if you think ORRA is the future of social! 🌊",
+    "Made 5 new friends on ORRA this week. Best app ever!",
+    "ORRA Game Arena is lowkey the best part of my day 🎮",
+    "The vibes in this community are immaculate ✨",
+    "Just hit 100 followers on ORRA! Y'all are amazing 🎉",
+    "Who's up for a late night ORRA session? 👀",
+    "This community actually cares about each other. That's rare. 💜",
+    "Shoutout to everyone building on ORRA. We see you! 👏",
+    "The ORRA sphere is where it's at. Tokens going UP 📈",
+    "New to ORRA and already obsessed. How did I live without this?",
+    "Best social platform period. Not even close. 🔥",
+  ],
+  creative: [
+    "Working on something special for the ORRA community 👀 Stay tuned...",
+    "Art is how we explain the unexplainable. New piece dropping soon 🎨",
+    "Poetry hit different at 2am. Just wrote my best verse yet ✍️",
+    "Photography is frozen time. Captured something beautiful today 📸",
+    "Creativity isn't a talent, it's a practice. Showed up today. 🎭",
+    "Just designed a new logo concept. ORRA inspired obviously 💜",
+    "Music production session went crazy. New track incoming 🎵",
+    "The best ideas come when you stop trying so hard. Just create. ✨",
+    "Collaboration > Competition. Who wants to create something together?",
+    "Digital art is real art. Period. Don't @ me 🖼️",
+    "Sketching new concepts for the ORRA universe. This is going to be epic 🌌",
+    "Writer's block? Never heard of her. Just start typing. ⌨️",
+  ],
+  wellness: [
+    "Mental health check: How are you really doing today? 💚",
+    "Took a social media break and came back refreshed. Balance is key 🧘",
+    "ORRA's wellness features actually help. Not even kidding 🌿",
+    "Remember: it's okay to log off. Your peace matters most 🕊️",
+    "Daily meditation streak: 7 days. Feeling more centered than ever 🧘‍♀️",
+    "Gratitude > Hustle culture. Change my mind. 🙏",
+    "Sleep is not optional. Recharging tonight for a better tomorrow 😴",
+    "Boundaries are healthy. Setting some new ones today. 🌱",
+    "Movement is medicine. Just walked 10k steps. ORRA kept me company 🚶",
+    "Being vulnerable online is brave, not weak. I see you. 💜",
+    "Wellness isn't just physical. How's your digital wellness? 📱",
+  ],
+  hype: [
+    "ORRA is about to change EVERYTHING. You heard it here first 🔥🔥🔥",
+    "This app is going to be worth billions. Get in NOW! 🚀",
+    "Just earned 50 ORRA tokens in one session. The grind pays off! 💎",
+    "ORRA Dance Off is the most fun I've had on any app EVER 💃🕺",
+    "Who else is telling everyone they know about ORRA?! 📢",
+    "The energy on this app is UNMATCHED. Nothing comes close ⚡",
+    "Early adopters are going to be rewarded. I can feel it 🏆",
+    "ORRA token value going to the MOON 🌙📈",
+    "I've tried every social app. ORRA is the one. Period. 💯",
+    "Building an empire one ORRA token at a time 👑",
+    "The founder of ORRA is cooking something legendary 👨‍🍳🔥",
+    "This platform is what Twitter wishes it could be 😤💜",
+  ],
+};
+
+const VIBES = ['hyped', 'laughing', 'chill', 'dramatic', 'focused', 'peaceful', 'news', 'sports'];
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+// Use Prisma directly via npx
+function prismaQuery(query) {
+  try {
+    const result = execSync(
+      `cd ${PROJECT_DIR} && npx prisma db execute --stdin <<< "${query.replace(/"/g, '\\"')}" 2>/dev/null`,
+      { timeout: 15000, encoding: 'utf-8' }
+    );
+    return result;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Better: use the Prisma Client directly via a Node script
+function createPostDirectly(authorId, text, vibeTag) {
+  try {
+    const script = `
+const { PrismaClient } = require('@prisma/client');
+const db = new PrismaClient();
+async function run() {
+  try {
+    const post = await db.post.create({
+      data: { text: ${JSON.stringify(text)}, vibeTag: ${JSON.stringify(vibeTag)}, type: 'text', authorId: ${JSON.stringify(authorId)}, likesCount: 0, commentsCount: 0, sharesCount: 0 }
+    });
+    await db.user.update({ where: { id: ${JSON.stringify(authorId)} }, data: { auraTokens: { increment: 5 }, auraXP: { increment: 10 } } });
+    console.log(JSON.stringify({ success: true, id: post.id }));
+  } catch(e) { console.log(JSON.stringify({ success: false, error: e.message })); }
+  finally { await db.\$disconnect(); }
+}
+run();
+`;
+    const result = execSync(`cd ${PROJECT_DIR} && node -e '${script.replace(/'/g, "'\"'\"'")}'`, {
+      timeout: 15000, encoding: 'utf-8'
+    });
+    return JSON.parse(result.trim().split('\n').pop());
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// Load user IDs
+let userIds = [];
+function loadUsers() {
+  try {
+    const script = `
+const { PrismaClient } = require('@prisma/client');
+const db = new PrismaClient();
+async function run() {
+  const users = await db.user.findMany({ where: { handle: { not: '@nickorraceo' } }, select: { id: true } });
+  console.log(JSON.stringify(users.map(u => u.id)));
+  await db.\$disconnect();
+}
+run();
+`;
+    const result = execSync(`cd ${PROJECT_DIR} && node -e '${script.replace(/'/g, "'\"'\"'")}'`, {
+      timeout: 10000, encoding: 'utf-8'
+    });
+    userIds = JSON.parse(result.trim().split('\n').pop());
+    return userIds.length;
+  } catch {
+    return 0;
+  }
+}
+
+function postOnce() {
+  try {
+    if (userIds.length === 0) {
+      const count = loadUsers();
+      if (count === 0) { console.error('[AutoPoster] No users'); return; }
+    }
+    const count = Math.floor(Math.random() * 3) + 1;
+    for (let i = 0; i < count; i++) {
+      const authorId = pick(userIds);
+      const cats = Object.keys(POSTS);
+      const text = pick(POSTS[pick(cats)]);
+      const vibeTag = pick(VIBES);
+      const result = createPostDirectly(authorId, text, vibeTag);
+      if (result.success) {
+        console.log(`[AutoPoster] ✅ "${text.substring(0, 50)}..."`);
+      } else {
+        console.warn('[AutoPoster] ⚠️ Failed:', result.error?.substring(0, 80));
+      }
+    }
+  } catch (e) { console.error('[AutoPoster] Error:', e.message); }
+}
+
+// Main
+console.log('[AutoPoster] 🤖 Starting...');
+const userCount = loadUsers();
+console.log(`[AutoPoster] ${userCount} users loaded`);
+if (userCount > 0) {
+  postOnce();
+  setInterval(postOnce, 5 * 60 * 1000);
+  console.log('[AutoPoster] ⏰ Posting every 5 minutes');
+} else {
+  console.error('[AutoPoster] No users found, exiting');
+}

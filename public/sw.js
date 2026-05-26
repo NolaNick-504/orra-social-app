@@ -1,18 +1,17 @@
-// ORRA Service Worker v8 - Cold-Start Resilient
-// - Detects 404/502/platform proxy errors on navigation
-// - Shows "Reconnecting..." page with auto-retry when server is down
+// ORRA Service Worker v7 - Cold-Start Resilient
+// - Detects "sandbox is inactive" / platform proxy errors on navigation
+// - Shows "Waking up..." page with auto-retry when sandbox is cold
 // - Cache-first for /_next/static/ chunks (content-hashed, safe to cache)
 // - Network-first for API calls and HTML pages
-// - NEVER caches error responses
-// - "Try now" button stays in SW scope (never navigates to a raw 404)
-const STATIC_CACHE = 'orra-static-v8';
-const IMAGE_CACHE = 'orra-images-v8';
+// - NEVER caches error responses or "sandbox is inactive" JSON
+const STATIC_CACHE = 'orra-static-v7';
+const IMAGE_CACHE = 'orra-images-v7';
 
-// HTML page shown when the server is down / container is frozen
-const RECONNECT_HTML = `<!DOCTYPE html>
+// HTML page shown when the sandbox/platform is cold-starting
+const WAKING_UP_HTML = `<!DOCTYPE html>
 <html>
 <head>
-  <title>ORRA - Reconnecting...</title>
+  <title>ORRA - Waking Up...</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <style>
@@ -26,123 +25,94 @@ const RECONNECT_HTML = `<!DOCTYPE html>
     .progress-fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #d946ef); border-radius: 2px; transition: width 0.5s ease; width: 0%; }
     .countdown { color: #64748b; font-size: 12px; }
     .attempts { color: #475569; font-size: 11px; margin-top: 8px; }
-    .try-btn { margin-top: 16px; padding: 8px 20px; border-radius: 12px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border: none; font-size: 12px; cursor: pointer; transition: background 0.2s; }
-    .try-btn:hover { background: rgba(255,255,255,0.2); }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="logo">O</div>
-    <h2>Reconnecting...</h2>
-    <p class="subtitle">ORRA is waking back up. This usually takes a few seconds.</p>
+    <h2>Waking Up ORRA</h2>
+    <p class="subtitle">The server is starting up. This takes a few seconds...</p>
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
     <p class="countdown" id="countdown">Retrying in 5s...</p>
     <p class="attempts" id="attempts"></p>
-    <button class="try-btn" id="tryBtn">Try now</button>
   </div>
   <script>
     (function() {
       var attempt = 0;
-      var maxAttempts = 100;
+      var maxAttempts = 20;
       var countdownEl = document.getElementById('countdown');
       var progressEl = document.getElementById('progressFill');
       var attemptsEl = document.getElementById('attempts');
-      var tryBtn = document.getElementById('tryBtn');
 
       function tryConnect() {
         attempt++;
         attemptsEl.textContent = 'Attempt ' + attempt + ' of ' + maxAttempts;
         progressEl.style.width = Math.min((attempt / maxAttempts) * 100, 95) + '%';
 
-        var countdown = 3;
+        var countdown = 5;
+        var targetUrl = window.location.href;
 
         function tick() {
           countdownEl.textContent = 'Retrying in ' + countdown + 's...';
           if (countdown <= 0) {
-            doFetch();
+            // Actually try to fetch the real page
+            fetch(targetUrl, { cache: 'no-store', headers: { 'X-Wake-Up': '1' } })
+              .then(function(res) {
+                // Check if we got a real HTML page (not another error JSON)
+                var ct = (res.headers.get('content-type') || '').toLowerCase();
+                if (res.ok && (ct.includes('text/html') || ct.includes('document'))) {
+                  // Server is alive! Load the real page
+                  window.location.replace(targetUrl.split('?')[0] + '?_cb=' + Date.now());
+                } else if (res.status === 403 || res.status === 502 || res.status === 503) {
+                  // Platform proxy error — server still starting
+                  countdown = 4;
+                  tick();
+                } else {
+                  // Unexpected response — try to read it
+                  return res.text().then(function(text) {
+                    try {
+                      var json = JSON.parse(text);
+                      if (json.error && (json.error.includes('inactive') || json.error.includes('sandbox'))) {
+                        // Still inactive — retry
+                        countdown = 4;
+                        tick();
+                      } else {
+                        // Some other error — just reload the page normally
+                        window.location.replace(targetUrl.split('?')[0] + '?_cb=' + Date.now());
+                      }
+                    } catch(e) {
+                      // Not JSON — could be HTML, just reload
+                      window.location.replace(targetUrl.split('?')[0] + '?_cb=' + Date.now());
+                    }
+                  });
+                }
+              })
+              .catch(function() {
+                // Network error — server not up yet, retry
+                if (attempt < maxAttempts) {
+                  countdown = 4;
+                  tick();
+                } else {
+                  countdownEl.textContent = 'Taking longer than expected. Tap to retry.';
+                  countdownEl.style.cursor = 'pointer';
+                  countdownEl.style.color = '#7c3aed';
+                  countdownEl.onclick = function() {
+                    attempt = 0;
+                    tryConnect();
+                  };
+                }
+              });
             return;
           }
           countdown--;
           setTimeout(tick, 1000);
         }
 
-        function doFetch() {
-          // Use fetch with cache-bust — this stays in service worker scope
-          var targetUrl = window.location.origin + '/?_cb=' + Date.now();
-          fetch(targetUrl, { cache: 'no-store', headers: { 'X-Wake-Up': '1' } })
-            .then(function(res) {
-              var ct = (res.headers.get('content-type') || '').toLowerCase();
-              if (res.ok && (ct.includes('text/html') || ct.includes('document'))) {
-                // Server is alive! Navigate to the real page
-                window.location.replace(targetUrl);
-              } else if (res.status === 403 || res.status === 502 || res.status === 503 || res.status === 404) {
-                // Platform proxy error or server down — keep retrying
-                countdown = 2;
-                tick();
-              } else {
-                // Unexpected — try reading the body
-                return res.text().then(function(text) {
-                  try {
-                    var json = JSON.parse(text);
-                    if (json.error && (json.error.includes('inactive') || json.error.includes('sandbox'))) {
-                      countdown = 2;
-                      tick();
-                    } else {
-                      window.location.replace(targetUrl);
-                    }
-                  } catch(e) {
-                    // Not JSON — if it looks like HTML, try loading it
-                    if (text.includes('<!DOCTYPE') || text.includes('<html')) {
-                      window.location.replace(targetUrl);
-                    } else {
-                      countdown = 2;
-                      tick();
-                    }
-                  }
-                });
-              }
-            })
-            .catch(function() {
-              // Network error — server not up yet
-              if (attempt < maxAttempts) {
-                countdown = 2;
-                tick();
-              } else {
-                countdownEl.textContent = 'Taking longer than expected. Tap Try now to retry.';
-              }
-            });
-        }
-
         tick();
       }
 
-      // "Try now" button — retries immediately without navigating away
-      tryBtn.addEventListener('click', function() {
-        attempt = 0;
-        countdownEl.textContent = 'Checking...';
-        doFetchImmediate();
-      });
-
-      function doFetchImmediate() {
-        var targetUrl = window.location.origin + '/?_cb=' + Date.now();
-        fetch(targetUrl, { cache: 'no-store', headers: { 'X-Wake-Up': '1' } })
-          .then(function(res) {
-            var ct = (res.headers.get('content-type') || '').toLowerCase();
-            if (res.ok && (ct.includes('text/html') || ct.includes('document'))) {
-              window.location.replace(targetUrl);
-            } else {
-              // Still down — restart the auto-retry loop
-              tryConnect();
-            }
-          })
-          .catch(function() {
-            // Still down — restart the auto-retry loop
-            tryConnect();
-          });
-      }
-
       // Start first attempt after a short delay
-      setTimeout(tryConnect, 1500);
+      setTimeout(tryConnect, 1000);
     })();
   </script>
 </body>
@@ -166,22 +136,10 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Check if a response indicates the server is down
-// NOTE: 404 is NOT treated as server-down for API calls because some API routes
-// legitimately return 404 (e.g., /api/me returning "User not found").
-// For navigation requests, 404 IS treated as server-down because our app
-// doesn't have any real 404 pages — it's always the platform proxy.
-function isServerError(response, isNavigation) {
-  if (!response) return true;
-  if (response.status === 502 || response.status === 503) return true;
-  // Only treat 404 as server-down for navigation requests (HTML pages)
-  if (isNavigation && response.status === 404) return true;
-  return false;
-}
-
-// Check if a response body looks like a platform error
+// Check if a response body looks like a platform error (JSON with sandbox error)
 function isPlatformErrorResponse(response) {
   const contentType = (response.headers.get('content-type') || '').toLowerCase();
+  // If it's JSON instead of HTML for a navigation request, it's likely a platform error
   return contentType.includes('application/json') || contentType.includes('text/plain');
 }
 
@@ -193,11 +151,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // NAVIGATION REQUESTS — handle server down / cold starts
+  // NAVIGATION REQUESTS — Handle sandbox inactive / cold starts
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
+          // Check if the response is actually HTML (what we expect for navigation)
           const contentType = (response.headers.get('content-type') || '').toLowerCase();
           const isHTML = contentType.includes('text/html') || contentType.includes('document');
 
@@ -206,24 +165,12 @@ self.addEventListener('fetch', (event) => {
             return response;
           }
 
-          // Got a non-OK or non-HTML response
-          // This could be: 404 from platform proxy, 502 from Caddy, JSON error, etc.
-          if (isServerError(response, true)) {
-            // Server is down — show reconnect page
-            return new Response(RECONNECT_HTML, {
-              status: 200,
-              headers: {
-                'Content-Type': 'text/html; charset=utf-8',
-                'X-ORRA-Reconnect': '1',
-                'Cache-Control': 'no-store',
-              },
-            });
-          }
-
-          // Check for platform error in the response body
+          // Got a non-HTML response (likely platform error JSON like "sandbox is inactive")
+          // Clone and read the body to check
           return response.clone().text().then((body) => {
             try {
               const json = JSON.parse(body);
+              // Platform errors: "sandbox is inactive", "container starting", etc.
               if (json.error && (
                 json.error.includes('inactive') ||
                 json.error.includes('sandbox') ||
@@ -232,39 +179,44 @@ self.addEventListener('fetch', (event) => {
                 json.error.includes('timeout') ||
                 json.error.includes('container')
               )) {
-                return new Response(RECONNECT_HTML, {
+                console.log('[SW v7] Platform error detected:', json.error, '— showing waking-up page');
+                return new Response(WAKING_UP_HTML, {
                   status: 200,
                   headers: {
                     'Content-Type': 'text/html; charset=utf-8',
-                    'X-ORRA-Reconnect': '1',
+                    'X-ORRA-Wake-Up': '1',
                     'Cache-Control': 'no-store',
                   },
                 });
               }
             } catch (e) {
-              // Not JSON — check for plain text errors
-              if (body.includes('inactive') || body.includes('sandbox') || body.includes('404 page not found')) {
-                return new Response(RECONNECT_HTML, {
+              // Not valid JSON — could be a plain text error or something else
+              if (body.includes('inactive') || body.includes('sandbox') || body.includes('error')) {
+                console.log('[SW v7] Platform text error detected — showing waking-up page');
+                return new Response(WAKING_UP_HTML, {
                   status: 200,
                   headers: {
                     'Content-Type': 'text/html; charset=utf-8',
-                    'X-ORRA-Reconnect': '1',
+                    'X-ORRA-Wake-Up': '1',
                     'Cache-Control': 'no-store',
                   },
                 });
               }
             }
-            // Some other response — pass through
+
+            // Some other non-HTML response — return as-is
             return response;
           });
         })
         .catch(() => {
-          // Network error — server is down
-          return new Response(RECONNECT_HTML, {
+          // Network error — server is down or unreachable
+          // Show the waking-up page so the user isn't stuck looking at a browser error
+          console.log('[SW v7] Network error on navigation — showing waking-up page');
+          return new Response(WAKING_UP_HTML, {
             status: 200,
             headers: {
               'Content-Type': 'text/html; charset=utf-8',
-              'X-ORRA-Reconnect': '1',
+              'X-ORRA-Wake-Up': '1',
               'Cache-Control': 'no-store',
             },
           });
@@ -273,24 +225,40 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API calls — network first, only intercept 502/503 (platform proxy errors)
-  // IMPORTANT: We do NOT convert 404s to 503s because some API routes
-  // legitimately return 404 (e.g., /api/me "User not found").
+  // API calls — network first, detect platform errors
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          if (response.ok) {
-            return response;
+          // Check for platform error in API response
+          if (response.status === 200) {
+            const contentType = (response.headers.get('content-type') || '').toLowerCase();
+            // If API returns JSON, check for sandbox errors
+            if (contentType.includes('application/json')) {
+              return response.clone().text().then((body) => {
+                try {
+                  const json = JSON.parse(body);
+                  if (json.error && (
+                    json.error.includes('inactive') ||
+                    json.error.includes('sandbox') ||
+                    json.error.includes('container')
+                  )) {
+                    // Platform intercepted the API call — return 503 so client retries
+                    return new Response(JSON.stringify({ ok: false, error: 'sandbox_inactive', retry: true }), {
+                      status: 503,
+                      headers: { 'Content-Type': 'application/json', 'X-ORRA-Sandbox': 'inactive' },
+                    });
+                  }
+                } catch (e) {}
+                // Normal API response — return as-is
+                return new Response(body, {
+                  status: response.status,
+                  statusText: response.statusText,
+                  headers: response.headers,
+                });
+              });
+            }
           }
-          // Only 502/503 indicate the server/container is down
-          if (response.status === 502 || response.status === 503) {
-            return new Response(JSON.stringify({ ok: false, error: 'server_down', retry: true }), {
-              status: 503,
-              headers: { 'Content-Type': 'application/json' },
-            });
-          }
-          // All other errors (including 404, 500) pass through as-is
           return response;
         })
         .catch(() => {
@@ -303,31 +271,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static chunks — network first with cache fallback
-  // This fixes the "stale cache" issue in main browser
+  // Static chunks — cache first
   if (url.pathname.startsWith('/_next/static/')) {
     event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        return fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
-            // Update cache with fresh version
             const responseToCache = networkResponse.clone();
             caches.open(STATIC_CACHE).then((cache) => {
               cache.put(event.request, responseToCache);
             });
-            return networkResponse;
           }
-          // Non-200 response (e.g., 404 for old chunks) — DON'T cache, try cache
-          return caches.match(event.request).then((cachedResponse) => {
-            return cachedResponse || networkResponse;
-          });
-        })
-        .catch(() => {
-          // Network failed — try cache
-          return caches.match(event.request).then((cachedResponse) => {
-            return cachedResponse || new Response('Network error', { status: 503 });
-          });
-        })
+          return networkResponse;
+        }).catch(() => {
+          return new Response('Network error', { status: 503 });
+        });
+      })
     );
     return;
   }

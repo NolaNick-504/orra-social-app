@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, writeQueue } from "@/lib/db";
+import { db, writeQueue, awardXPAndTokens } from "@/lib/db";
 import { getAuthUser, requireAuth } from "@/lib/auth-helpers";
 import { sanitizeText, validateLength, CONTENT_LIMITS } from "@/lib/sanitize";
 
@@ -100,7 +100,7 @@ export async function POST(
       );
     }
 
-    const comment = await db.$transaction(async (tx) => {
+    const { comment, shouldAward } = await db.$transaction(async (tx) => {
       const newComment = await tx.reelComment.create({
         data: {
           text: sanitizeText(text.trim()),
@@ -126,7 +126,7 @@ export async function POST(
         data: { commentsCount: { increment: 1 } },
       });
 
-      // Award +2 tokens + 5 XP for commenting
+      // Check if already awarded for this comment (anti-farming via TokenAction)
       const existingAction = await tx.tokenAction.findUnique({
         where: {
           userId_action_targetId: {
@@ -147,18 +147,15 @@ export async function POST(
             xpEarned: 5,
           },
         });
-
-        await tx.user.update({
-          where: { id: auth.userId },
-          data: {
-            auraTokens: { increment: 2 },
-            auraXP: { increment: 5 },
-          },
-        });
       }
 
-      return newComment;
+      return { comment: newComment, shouldAward: !existingAction };
     });
+
+    // Award tokens + XP for commenting (outside transaction — awardXPAndTokens has its own write queue)
+    if (shouldAward) {
+      await awardXPAndTokens(auth.userId!, 2, 5);
+    }
 
     // Create notification for the reel creator (deferred, non-blocking)
     if (reel.creatorId !== auth.userId!) {

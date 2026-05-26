@@ -2,7 +2,7 @@
 
 import { useAuraStore } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
-import { X, Camera, Upload, Trash2, Image as ImageIcon, AtSign, RefreshCw, Music, Search, ExternalLink, Play, Pause, Volume2 } from 'lucide-react';
+import { X, Camera, Upload, Trash2, AtSign, RefreshCw, Music, Search, ExternalLink, Play, Pause, Volume2, ImagePlus } from 'lucide-react';
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -29,10 +29,15 @@ export function EditProfileModal() {
   const [bio, setBio] = useState(profileEdits.bio ?? currentUser.bio);
   const [location, setLocation] = useState(profileEdits.location ?? currentUser.location);
   const [website, setWebsite] = useState(profileEdits.website ?? currentUser.website);
-  const [coverImage, setCoverImage] = useState(profileEdits.coverImage ?? currentUser.coverImage);
   const [avatarPreview, setAvatarPreview] = useState(profileEdits.avatar ?? currentUser.avatar);
   const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Cover image state
+  const [coverPreview, setCoverPreview] = useState(profileEdits.coverImage ?? currentUser.coverImage);
+  const [coverDataUrl, setCoverDataUrl] = useState<string | null>(null);
+  const [isDraggingCover, setIsDraggingCover] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   // Profile song state
   const [profileSongUrl, setProfileSongUrl] = useState(currentUser.profileSongUrl ?? '');
@@ -109,7 +114,6 @@ export function EditProfileModal() {
   }, [previewingSongId, isPreviewPlaying]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const coverInputRef = useRef<HTMLInputElement>(null);
 
   // Track whether the user has manually edited the handle
   const [handleManuallyEdited, setHandleManuallyEdited] = useState(false);
@@ -127,10 +131,11 @@ export function EditProfileModal() {
       setBio(profileEdits.bio ?? currentUser.bio);
       setLocation(profileEdits.location ?? currentUser.location);
       setWebsite(profileEdits.website ?? currentUser.website);
-      setCoverImage(profileEdits.coverImage ?? currentUser.coverImage);
       setAvatarPreview(profileEdits.avatar ?? currentUser.avatar);
       setAvatarDataUrl(null);
       setHandleManuallyEdited(false);
+      setCoverPreview(profileEdits.coverImage ?? currentUser.coverImage);
+      setCoverDataUrl(null);
       setProfileSongUrl(currentUser.profileSongUrl ?? '');
       setProfileSongTitle(currentUser.profileSongTitle ?? '');
       setProfileSongArtist(currentUser.profileSongArtist ?? '');
@@ -239,26 +244,6 @@ export function EditProfileModal() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [processImageFile]);
 
-  const handleCoverFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5MB');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result as string;
-      if (result) setCoverImage(result);
-    };
-    reader.readAsDataURL(file);
-    if (coverInputRef.current) coverInputRef.current.value = '';
-  }, []);
-
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -286,6 +271,86 @@ export function EditProfileModal() {
     toast.success('Profile picture removed');
   }, []);
 
+  // Cover image processing
+  const processCoverFile = useCallback((file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file (JPG, PNG, GIF, WebP)');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Cover image must be under 10MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (result) {
+        const img = new Image();
+        img.onload = () => {
+          // Cover images should be wider — max 1200px width
+          const MAX_WIDTH = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > MAX_WIDTH) {
+            height = Math.round((height / width) * MAX_WIDTH);
+            width = MAX_WIDTH;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.85);
+            setCoverDataUrl(compressed);
+            setCoverPreview(compressed);
+          } else {
+            setCoverDataUrl(result);
+            setCoverPreview(result);
+          }
+        };
+        img.src = result;
+      }
+    };
+    reader.onerror = () => {
+      toast.error('Failed to read cover image. Please try again.');
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleCoverFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processCoverFile(file);
+    if (coverInputRef.current) coverInputRef.current.value = '';
+  }, [processCoverFile]);
+
+  const handleCoverDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingCover(true);
+  }, []);
+
+  const handleCoverDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingCover(false);
+  }, []);
+
+  const handleCoverDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingCover(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) processCoverFile(file);
+  }, [processCoverFile]);
+
+  const handleRemoveCover = useCallback(() => {
+    setCoverDataUrl(null);
+    setCoverPreview('/api/uploads?path=images/profile-cover.png');
+    toast.success('Cover image removed');
+  }, []);
+
   const [saving, setSaving] = useState(false);
   const queryClient = useQueryClient();
 
@@ -311,11 +376,16 @@ export function EditProfileModal() {
     }
     // Otherwise: avatar wasn't changed, don't include it in the update
 
-    // Cover image: only send if changed
-    const originalCoverImage = profileEdits.coverImage ?? currentUser.coverImage;
-    if (coverImage !== originalCoverImage) {
-      updates.coverImage = coverImage;
+    // Cover image handling: only send if explicitly changed
+    const defaultCover = '/api/uploads?path=images/profile-cover.png';
+    if (coverDataUrl) {
+      // User uploaded a NEW cover (has base64 data)
+      updates.coverImage = coverDataUrl;
+    } else if (coverPreview === defaultCover && currentUser.coverImage !== defaultCover) {
+      // User explicitly removed their custom cover (clicked Remove button)
+      updates.coverImage = '';
     }
+    // Otherwise: cover wasn't changed, don't include it in the update
 
     // Profile song updates
     if (profileSongUrl !== (currentUser.profileSongUrl ?? '')) updates.profileSongUrl = profileSongUrl;
@@ -517,39 +587,71 @@ export function EditProfileModal() {
         </div>
 
         {/* Cover Image Upload */}
-        <div className="mb-4">
-          <label className="block text-xs font-semibold text-slate-400 mb-1.5">Cover Image</label>
-          <div className="flex items-center gap-2">
-            {coverImage && (
-              <div className="w-16 h-10 rounded-lg overflow-hidden ring-1 ring-white/10 flex-shrink-0">
-                <img src={coverImage} alt="Cover preview" className="w-full h-full object-cover" />
-              </div>
-            )}
-            <div className="flex-1 flex items-center gap-2">
-              <input
-                type="text"
-                value={coverImage.startsWith('data:') ? '(Uploaded image)' : coverImage}
-                onChange={(e) => setCoverImage(e.target.value)}
-                placeholder="https://..."
-                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition-all"
+        <div className="mb-5">
+          <label className="block text-xs font-semibold text-slate-400 mb-2">Cover Image</label>
+          <div
+            className={`relative rounded-2xl border-2 border-dashed transition-all duration-300 overflow-hidden ${
+              isDraggingCover
+                ? 'border-violet-400 bg-violet-600/10'
+                : 'border-white/10 bg-white/[0.02] hover:border-violet-500/40'
+            }`}
+            onDragOver={handleCoverDragOver}
+            onDragLeave={handleCoverDragLeave}
+            onDrop={handleCoverDrop}
+          >
+            {/* Cover Preview */}
+            <div
+              className="relative w-full h-32 cursor-pointer group"
+              onClick={() => coverInputRef.current?.click()}
+            >
+              <img
+                src={coverPreview}
+                alt="Cover"
+                className="w-full h-full object-cover"
               />
-              <button
-                type="button"
-                onClick={() => coverInputRef.current?.click()}
-                className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-violet-400 hover:border-violet-500/30 transition-all"
-                title="Upload cover image"
-              >
-                <ImageIcon className="w-4 h-4" />
-              </button>
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              {/* Hover overlay with camera icon */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-1.5">
+                  <ImagePlus className="w-6 h-6 text-white" />
+                  <span className="text-xs font-semibold text-white">Change Cover</span>
+                </div>
+              </div>
             </div>
+
+            {/* Cover action buttons */}
+            <div className="flex items-center justify-between p-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-600/20 text-violet-300 text-xs font-semibold hover:bg-violet-600/30 transition-all border border-violet-500/20"
+                >
+                  <Upload className="w-3.5 h-3.5" /> Upload Cover
+                </button>
+                {coverPreview !== '/api/uploads?path=images/profile-cover.png' && coverPreview !== currentUser.coverImage && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveCover}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600/10 text-red-400 text-xs font-semibold hover:bg-red-600/20 transition-all border border-red-500/20"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove
+                  </button>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-500">JPG, PNG, WebP • Max 10MB</p>
+            </div>
+
+            {/* Hidden Cover File Input */}
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleCoverFileSelect}
+              className="hidden"
+            />
           </div>
-          <input
-            ref={coverInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/gif,image/webp"
-            onChange={handleCoverFileSelect}
-            className="hidden"
-          />
         </div>
 
         {/* Profile Song Section */}

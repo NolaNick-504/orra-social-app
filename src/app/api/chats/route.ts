@@ -18,7 +18,7 @@ export async function GET() {
             members: {
               include: {
                 user: {
-                  select: { id: true, name: true, handle: true, avatar: true, online: true },
+                  select: { id: true, name: true, handle: true, avatar: true, online: true, verified: true },
                 },
               },
             },
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
               members: {
                 include: {
                   user: {
-                    select: { id: true, name: true, handle: true, avatar: true, online: true },
+                    select: { id: true, name: true, handle: true, avatar: true, online: true, verified: true },
                   },
                 },
               },
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
         members: {
           include: {
             user: {
-              select: { id: true, name: true, handle: true, avatar: true, online: true },
+              select: { id: true, name: true, handle: true, avatar: true, online: true, verified: true },
             },
           },
         },

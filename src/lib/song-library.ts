@@ -193,71 +193,17 @@ const ORRA_SUNO_SONGS: ProfileSong[] = [
   },
 ];
 
-// ===== SUNO/EXTERNAL SONGS (AI-generated, diverse genres) =====
-const SUNO_EXTERNAL_SONGS: ProfileSong[] = [
-  {
-    id: 'suno-aurora-bounce',
-    title: 'Aurora Bounce',
-    artist: 'Suno AI',
-    url: '/api/serve-file?path=music/suno/aurora-bounce.mp3',
-    genre: 'Electronic',
-    mood: 'Energetic',
-    duration: '3:00',
-    coverArt: '/images/songs/aurora-bounce-cover.jpeg',
-  },
-  {
-    id: 'suno-midnight-confession',
-    title: 'Midnight Confession',
-    artist: 'Suno AI',
-    url: '/api/serve-file?path=music/suno/midnight-confession.mp3',
-    genre: 'R&B',
-    mood: 'Smooth',
-    duration: '3:30',
-    coverArt: '/images/songs/midnight-confession-cover.jpeg',
-  },
-  {
-    id: 'suno-neon-prayer',
-    title: 'Neon Prayer',
-    artist: 'Suno AI',
-    url: '/api/serve-file?path=music/suno/neon-prayer.mp3',
-    genre: 'Hyperpop',
-    mood: 'Wild',
-    duration: '2:45',
-    coverArt: '/images/songs/neon-prayer-cover.jpeg',
-  },
-  {
-    id: 'suno-crawfish-boil',
-    title: 'Crawfish Boil',
-    artist: 'Suno AI',
-    url: '/api/serve-file?path=music/suno/crawfish-boil.mp3',
-    genre: 'Hip-Hop',
-    mood: 'Gritty',
-    duration: '3:15',
-    coverArt: '/images/songs/crawfish-boil-cover.jpeg',
-  },
-  {
-    id: 'suno-golden-hour-vibes',
-    title: 'Golden Hour Vibes',
-    artist: 'Suno AI',
-    url: '/api/serve-file?path=music/suno/golden-hour-vibes.mp3',
-    genre: 'Tropical House',
-    mood: 'Chill',
-    duration: '3:20',
-    coverArt: '/images/songs/golden-hour-vibes-cover.jpeg',
-  },
-];
-
 // The full song library — all ORRA originals
 export const ORRA_SONGS: ProfileSong[] = [...ORRA_LOCAL_SONGS, ...ORRA_SUNO_SONGS];
 
 // The full song library — ORRA originals only
 export const SONG_LIBRARY: ProfileSong[] = ORRA_SONGS;
 
-// Combined library (ORRA songs + Suno/external songs)
-export const ALL_SONGS: ProfileSong[] = [...ORRA_LOCAL_SONGS, ...ORRA_SUNO_SONGS, ...SUNO_EXTERNAL_SONGS];
+// Combined library (same as ORRA_SONGS since we only have ORRA songs)
+export const ALL_SONGS: ProfileSong[] = ORRA_SONGS;
 
 // Genre options for the song picker
-export const GENRE_OPTIONS = ['All', 'Hip-Hop', 'Pop', 'Hyperpop', 'R&B', 'Tropical House', 'Pop-Rap', 'Funky Pop', 'Electronic'];
+export const GENRE_OPTIONS = ['All', 'Hip-Hop', 'Pop', 'Hyperpop', 'R&B', 'Tropical House', 'Pop-Rap', 'Funky Pop'];
 
 export function getSongById(id: string): ProfileSong | undefined {
   return ALL_SONGS.find(s => s.id === id);

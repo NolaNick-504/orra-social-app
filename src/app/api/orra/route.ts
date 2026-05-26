@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthUserId } from "@/lib/auth-helpers";
-import { db } from "@/lib/db";
+import { db, awardXPAndTokens } from "@/lib/db";
 
 // GET /api/orra - Get current user's ORRA stats
 export async function GET() {
@@ -124,6 +124,9 @@ export async function POST() {
       });
     }
 
+    // Award daily streak tokens + XP (separate from the user update below for dailyStreak/lastActiveDate)
+    await awardXPAndTokens(userId, tokensAwarded, xpAwarded);
+
     await db.$transaction([
       db.tokenAction.create({
         data: {
@@ -139,8 +142,6 @@ export async function POST() {
         data: {
           dailyStreak: newStreak,
           lastActiveDate: todayStr,
-          auraTokens: { increment: tokensAwarded },
-          auraXP: { increment: xpAwarded },
         },
       }),
     ]);

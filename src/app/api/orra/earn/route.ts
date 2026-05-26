@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthUserId } from "@/lib/auth-helpers";
-import { db } from "@/lib/db";
+import { db, awardXPAndTokens } from "@/lib/db";
 
 // POST /api/orra/earn - Earn tokens for actions (like, comment, follow, etc.)
 // Body: { action: string, targetId: string, tokens?: number, xp?: number }
@@ -79,8 +79,8 @@ export async function POST(req: Request) {
       });
     }
 
-    // Record the action and update user balance atomically
-    const user = await db.$transaction(async (tx) => {
+    // Record the action inside transaction, award XP+tokens via awardXPAndTokens
+    await db.$transaction(async (tx) => {
       await tx.tokenAction.create({
         data: {
           userId,
@@ -90,33 +90,9 @@ export async function POST(req: Request) {
           xpEarned,
         },
       });
-
-      // Calculate new level (1000 XP per level, matching client)
-      const updatedUser = await tx.user.update({
-        where: { id: userId },
-        data: {
-          auraTokens: { increment: tokensEarned },
-          auraXP: { increment: xpEarned },
-        },
-        select: { auraTokens: true, auraLevel: true, auraXP: true },
-      });
-
-      // Level up check: 1000 XP per level
-      let newLevel = updatedUser.auraLevel;
-      let remainingXP = updatedUser.auraXP;
-      while (remainingXP >= 1000) {
-        newLevel++;
-        remainingXP -= 1000;
-      }
-      if (newLevel !== updatedUser.auraLevel) {
-        await tx.user.update({
-          where: { id: userId },
-          data: { auraLevel: newLevel, auraXP: remainingXP },
-        });
-      }
-
-      return { ...updatedUser, auraLevel: newLevel, auraXP: remainingXP };
     });
+
+    const result = await awardXPAndTokens(userId, tokensEarned, xpEarned);
 
     return NextResponse.json({
       success: true,
@@ -125,9 +101,9 @@ export async function POST(req: Request) {
         targetId,
         tokensEarned,
         xpEarned,
-        newBalance: user.auraTokens,
-        newLevel: user.auraLevel,
-        newXP: user.auraXP,
+        newBalance: result.auraTokens,
+        newLevel: result.auraLevel,
+        newXP: result.auraXP,
         message: `Earned ${tokensEarned} tokens and ${xpEarned} XP for ${action}`,
       },
     });

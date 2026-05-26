@@ -442,7 +442,7 @@ export function PrismGame({ onBack }: PrismGameProps) {
       } else {
         setPhase('results');
         earnTokens(4, 'Completed PrISM Personality Game');
-        toast.success('+4 ORRA tokens! Personality decoded!', { duration: 3000 });
+        toast.success('+4 ORRA tokens! Personality decoded!', { duration: 1500 });
         setRewarded(true);
         setTimeout(() => setShowRadar(true), 300);
       }

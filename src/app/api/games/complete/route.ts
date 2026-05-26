@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
-import { db } from '@/lib/db';
+import { db, awardXPAndTokens } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,12 +71,7 @@ export async function POST(req: NextRequest) {
     const p2Tokens = isP2Winner ? reward.winnerTokens : isTie ? Math.floor(reward.winnerTokens / 2) : reward.loserTokens;
     const p2XP = isP2Winner ? reward.winnerXP : isTie ? Math.floor(reward.winnerXP / 2) : reward.loserXP;
 
-    await db.user.update({ where: { id: session.player1Id }, data: { auraTokens: { increment: p1Tokens }, auraXP: { increment: p1XP } } });
-    if (session.player2Id) {
-      await db.user.update({ where: { id: session.player2Id }, data: { auraTokens: { increment: p2Tokens }, auraXP: { increment: p2XP } } });
-    }
-
-    // Mark session as completed
+    // Mark session as completed FIRST to prevent double-completion
     await db.gameSession.update({
       where: { id: sessionId },
       data: {
@@ -88,6 +83,12 @@ export async function POST(req: NextRequest) {
         completedAt: new Date(),
       }
     });
+
+    // Award tokens + XP after session is marked complete
+    await awardXPAndTokens(session.player1Id, p1Tokens, p1XP);
+    if (session.player2Id) {
+      await awardXPAndTokens(session.player2Id, p2Tokens, p2XP);
+    }
 
     const isCurrentPlayer1 = session.player1Id === auth.userId;
     const tokensEarned = isCurrentPlayer1 ? p1Tokens : p2Tokens;

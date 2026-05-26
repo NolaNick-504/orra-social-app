@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readFile, writeFile, existsSync, mkdir, copyFile } from 'fs/promises';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from 'fs';
 import path from 'path';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -49,7 +49,7 @@ export async function POST() {
     }
 
     // Validate backup integrity before restoring
-    const backupData = await readFile(latestPath);
+    const backupData = readFileSync(latestPath);
     if (backupData.length < 100) {
       return NextResponse.json({
         ok: false,
@@ -73,7 +73,7 @@ export async function POST() {
     // Ensure db directory exists
     const dbDir = path.dirname(dbPath);
     if (!existsSync(dbDir)) {
-      await mkdir(dbDir, { recursive: true });
+      mkdirSync(dbDir, { recursive: true });
     }
 
     // Step 1: WAL checkpoint the current DB before overwriting
@@ -89,14 +89,14 @@ export async function POST() {
     // Step 2: Keep a pre-restore backup of the current DB
     if (existsSync(dbPath)) {
       try {
-        await copyFile(dbPath, dbPath + '.pre-restore.bak');
+        copyFileSync(dbPath, dbPath + '.pre-restore.bak');
       } catch (e: any) {
         console.warn('Pre-restore backup failed (non-fatal):', e.message);
       }
     }
 
     // Step 3: Write the backup data
-    await writeFile(dbPath, backupData);
+    writeFileSync(dbPath, backupData);
 
     // Step 4: Verify the restored DB is valid
     try {
@@ -107,7 +107,7 @@ export async function POST() {
       if (integrity[0]?.integrity_check !== 'ok') {
         // Restore failed — rollback to pre-restore backup
         if (existsSync(dbPath + '.pre-restore.bak')) {
-          await copyFile(dbPath + '.pre-restore.bak', dbPath);
+          copyFileSync(dbPath + '.pre-restore.bak', dbPath);
         }
         return NextResponse.json({
           ok: false,
@@ -117,7 +117,7 @@ export async function POST() {
     } catch (e: any) {
       // DB open failed after restore — rollback
       if (existsSync(dbPath + '.pre-restore.bak')) {
-        await copyFile(dbPath + '.pre-restore.bak', dbPath);
+        copyFileSync(dbPath + '.pre-restore.bak', dbPath);
       }
       return NextResponse.json({
         ok: false,

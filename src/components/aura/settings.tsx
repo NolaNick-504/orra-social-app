@@ -499,7 +499,7 @@ export function Settings() {
             label="Delete Account"
             description="Permanently delete your account and data"
             icon={AlertTriangle}
-            onClick={() => toast.error('This action cannot be undone. Contact support.', { duration: 3000 })}
+            onClick={() => toast.error('This action cannot be undone. Contact support.', { duration: 1500 })}
             danger
           />
         </div>

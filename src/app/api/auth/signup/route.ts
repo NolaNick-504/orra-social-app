@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { registerUser } from '@/lib/auth-helpers';
+import { checkRateLimit, getClientIdentifier, SIGNUP_RATE_LIMIT } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit signup attempts
+    const clientId = getClientIdentifier(request);
+    const rateLimit = checkRateLimit(`signup:${clientId}`, SIGNUP_RATE_LIMIT);
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { success: false, error: `Too many signup attempts. Try again in ${rateLimit.retryAfter} seconds.` },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } }
+      );
+    }
+
     const body = await request.json();
     const { email, name, handle, password } = body;
 

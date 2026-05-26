@@ -1,80 +1,81 @@
-# ORRA Worklog
+# ORRA Social App - Worklog
 
 ---
 Task ID: 1
-Agent: Main Agent
-Task: Diagnose and fix ORRA app stuck on "Loading ORRA..." screen
+Agent: Main
+Task: Fix server crash - node_modules was missing
 
 Work Log:
-- Audited full codebase: layout.tsx, sw.js, keep-alive-provider.tsx, server.js, dev.sh, next.config.ts
-- Discovered ROOT CAUSE: next.config.ts had /sw.js → /api/sw rewrite that served a "self-destruct" SW v200 instead of the useful v8 SW
-- The self-destruct SW cleared all caches and unregistered itself, leaving no SW for cold-start resilience
-- Without an active SW, the 15s watchdog in layout.tsx triggered redirect to /clear-cache.html → infinite loop
-- Also found: dev.sh never rebuilt after code changes because BUILD_ID was hardcoded
+- Discovered node_modules was completely empty causing "Cannot find module 'next'" error
+- Ran npm install to restore all 881 packages
+- Ran prisma generate to create Prisma client
+- Ran next build to create production build
+- Started server successfully (HTTP 200)
 
 Stage Summary:
-- Removed /sw.js → /api/sw rewrite from next.config.ts (v8 SW now served directly from public/)
-- Simplified /api/sw/route.ts to redirect to /sw.js
-- Fixed v8 SW: don't convert legitimate API 404s to 503s
-- Removed 15s watchdog from layout.tsx (was creating redirect loops)
-- Increased LoadingScreen timeout 8s → 30s
-- Added BUILD_VERSION check to dev.sh (forces rebuild when version changes)
-- Nuked stale build cache at /home/sync/orra-build-cache/
-- Ran fresh `next build` on the container
-- Started server via supervisor-daemon.sh
-- Verified all endpoints: / (200), /sw.js (v8 SW, 200), /api/health (200), JS chunks (200)
+- Server is running again after node_modules restoration
+- Build completed successfully
 
 ---
-Task ID: content-ui-update
-Agent: Main Agent
-Task: Major content and UI update for ORRA social app
+Task ID: 2
+Agent: Main + subagent
+Task: Fix profile data persistence - seed was overwriting user changes
 
 Work Log:
-- Removed "Edit Cover" button from profile page (profile.tsx)
-- Fixed feed dedup to use composite key (echo:echoId vs postId) for proper deduplication
-- Generated 26 individual bot cover images matching each personality using AI
-- Generated 6 new commercial ads (Neon Fit, Velvet Skin, Cipher VPN, Echo Speakers, Flow State, Mythic Snacks)
-- Generated 9 live stream category cover images + updated main live banner
-- Updated live stream creators to use real bot avatars instead of generic placeholder avatars
-- Updated live stream thumbnails to use category-specific covers (/images/live/)
-- Added 25 heartfelt/emotional posts from all bots (modern/today's type content)
-- Updated all 25 bot profile songs with unique songs from extended library (16 songs total)
-- Ensured all bot cover images in DB point to individual covers (/images/covers/botXX.jpg)
-- Added founder profile protection in API (PUT /api/users/profile blocks core field changes for founder)
-- Updated AD_INTERVALS to support 14 ads with more frequent spacing
-- Ran content update script to push all changes to database
-- Pushed all changes to GitHub
-- Rebuilt and restarted server
+- Identified that seed.ts used `upsert` which overwrites existing user data on every seed run
+- Changed seed pattern from `findFirst + create` to `create + try/catch P2002` for users, posts, and comments
+- Updated all bot coverImages from `/images/profile-cover.jpg` to individual paths like `/images/covers/bot01.jpg`
+- Updated founder coverImage to `/images/covers/founder.jpg`
 
 Stage Summary:
-- 26 unique cover images generated per bot personality
-- 6 new ads added (14 total now)
-- 25 new emotional posts added
-- All bots have unique profile songs
-- Founder profile is now protected from changes via API
-- Edit Cover button removed from profile
-- Feed dedup improved with composite keys
-- Server is live and serving updated content
+- Seed will now NEVER overwrite existing user profile data
+- If a user already exists, the create fails with P2002 unique constraint error which is caught and logged
+- All 26 users now have individual cover images in the seed data
+
 ---
-Task ID: 1
-Agent: Main Agent
-Task: Generate matching photos for ORRA posts
+Task ID: 3
+Agent: Main
+Task: Add matching photos for new posts
 
 Work Log:
-- Explored the full seed.ts file to understand all 81 posts and their image references
-- Identified 40+ posts that needed images: text-only posts, posts sharing the same image, and posts with mismatched images
-- Generated 40 AI images using z-ai-generate CLI tool, each custom-prompted to match the post content
-- Updated seed.ts to assign unique, matching images to all posts
-- Changed type from 'text' to 'image' for posts that now have images
-- Fixed duplicate SeedCounts interface that was causing TypeScript compilation errors
-- Re-seeded the database with ORRA_SEED_FORCE=1
-- Rebuilt and restarted the app
-- Verified 75 out of 81 posts now have matching images (6 intentionally remain text-only)
+- Generated 12 AI images for previously text-only posts using z-ai-generate CLI
+- Updated seed.ts to add images to 12 posts (p01b, p01d, p02b, p09b, p10b, p16c, p17b, p20b, p21b, p22b, p23a, p0founder3)
+- Updated existing database records with the new images
+- All new images verified accessible via API
+
+New images generated:
+- nurse-hand-holding.jpg (nurse with patient)
+- succulent-collection.jpg (plant collection)
+- madden-gaming.jpg (gaming on TV)
+- bedroom-studio-late.jpg (late night music production)
+- art-block-canvas.jpg (artist with blank canvas)
+- self-care-rest.jpg (rest and wellness)
+- professor-encouragement.jpg (student and professor)
+- single-mom-love.jpg (mother and children)
+- architecture-internship.jpg (celebrating internship)
+- retired-teacher-letter.jpg (retired teacher reading letter)
+- firefighter-return.jpg (firefighter returning from call)
+- orra-milestone.jpg (ORRA 1000 users celebration)
 
 Stage Summary:
-- 40 new AI-generated post images created in /public/images/posts/
-- All emotional posts (pem01-pem10) now have matching images
-- Posts that previously shared images now have unique images (e.g., dance-studio posts, butter-chicken posts, studio-beats posts)
-- Mismatched images fixed (e.g., frozen grapes post no longer uses ramen.jpg)
-- Database re-seeded successfully with 81 posts, 75 with images
-- App rebuilt and running on localhost:3000
+- 12 new AI-generated images added to public/images/posts/
+- Both seed.ts and live database updated with new image references
+- Posts changed from type 'text' to type 'image'
+
+---
+Task ID: 4-9
+Agent: Subagents
+Task: Fix feed, duplicates, scroll, remove edit cover
+
+Work Log:
+- Removed refetchInterval from useInfinitePosts to restore infinite scroll
+- Added deduplication logic in PulseFeed using Map with composite keys
+- Added scroll-to-top + query invalidation on Home button press in sidebar
+- Removed "Edit Cover" button from profile.tsx
+- Removed cover image editing section from edit-profile-modal.tsx
+
+Stage Summary:
+- Infinite scroll now works properly without periodic refetch resetting pages
+- Duplicate posts eliminated with Map-based deduplication
+- Home button scrolls to top and refreshes feed
+- Edit cover feature completely removed

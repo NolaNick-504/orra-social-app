@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthUserId } from "@/lib/auth-helpers";
+import { getAuthUserId, requireAuth } from "@/lib/auth-helpers";
 import { db } from "@/lib/db";
 
 export const dynamic = 'force-dynamic';
@@ -90,6 +90,58 @@ export async function GET(
     console.error("GET /api/reels/[id] error:", error);
     return NextResponse.json(
       { success: false, error: "Reel not found or internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/reels/[id] - Delete a reel (only by owner)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = await requireAuth();
+    if (auth.response) return auth.response;
+
+    const { id } = await params;
+
+    // Verify the reel exists and belongs to the user
+    const reel = await db.reel.findUnique({
+      where: { id },
+      select: { id: true, creatorId: true },
+    });
+
+    if (!reel) {
+      return NextResponse.json(
+        { success: false, error: "Reel not found" },
+        { status: 404 }
+      );
+    }
+
+    if (reel.creatorId !== auth.userId) {
+      return NextResponse.json(
+        { success: false, error: "You can only delete your own reels" },
+        { status: 403 }
+      );
+    }
+
+    // Delete related data first (likes, saves, comments)
+    await db.like.deleteMany({ where: { targetId: id, targetType: "reel" } });
+    await db.save.deleteMany({ where: { targetId: id, targetType: "reel" } });
+    await db.comment.deleteMany({ where: { postId: id } });
+
+    // Delete the reel
+    await db.reel.delete({ where: { id } });
+
+    return NextResponse.json({
+      success: true,
+      message: "Reel deleted successfully",
+    });
+  } catch (error) {
+    console.error("DELETE /api/reels/[id] error:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to delete reel" },
       { status: 500 }
     );
   }

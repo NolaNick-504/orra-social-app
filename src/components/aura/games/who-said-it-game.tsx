@@ -256,7 +256,7 @@ export default function WhoSaidItGame({ onClose, currentUser, callbacks, accentC
       isWinner
         ? `🧠 People master! +${bonusTokens} ORRA +${bonusXP} XP`
         : `🤔 Nice try! +${bonusTokens} ORRA +${bonusXP} XP`,
-      { duration: 3000 }
+      { duration: 1500 }
     );
     callbacks.completeGame(score, isWinner);
     // Close the game overlay after collecting rewards

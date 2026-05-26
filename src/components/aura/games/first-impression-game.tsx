@@ -42,25 +42,25 @@ interface BotProfile {
 const BOT_PROFILES: BotProfile[] = [
   {
     name: 'Mia',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mia&backgroundColor=b6e3f4',
+    avatar: '/api/uploads?path=images/avatars/maya-avatar.jpg',
     bio: 'Coffee addict, sunset chaser, and professional overthinker ☕',
     answers: [1, 0, 0, 2, 0, 1, 2, 1],
   },
   {
     name: 'Jordan',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan&backgroundColor=c0aede',
+    avatar: '/api/uploads?path=images/avatars/marcus-avatar.jpg',
     bio: 'Gym rat by day, gamer by night. Pizza is my love language 🍕',
     answers: [0, 1, 3, 3, 1, 0, 1, 3],
   },
   {
     name: 'Aria',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aria&backgroundColor=ffd5dc',
+    avatar: '/api/uploads?path=images/avatars/luna-avatar.jpg',
     bio: 'Wanderlust soul. Make music, not war 🎵✈️',
     answers: [2, 0, 0, 0, 2, 3, 2, 0],
   },
   {
     name: 'Kai',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kai&backgroundColor=d1f4d1',
+    avatar: '/api/uploads?path=images/avatars/kai-avatar.jpg',
     bio: 'Tech nerd with a sneaker obsession. Can cook a mean ramen 🍜',
     answers: [1, 2, 1, 3, 3, 2, 1, 2],
   },
@@ -320,11 +320,11 @@ export default function FirstImpressionGame({
     callbacks.completeGame(score, isWinner);
 
     if (accuracy >= 75) {
-      callbacks.showToast(`Amazing! ${accuracy}% accuracy! You really know people! 🔮`, { duration: 3000 });
+      callbacks.showToast(`Amazing! ${accuracy}% accuracy! You really know people! 🔮`, { duration: 1500 });
     } else if (accuracy >= 50) {
-      callbacks.showToast(`Not bad! ${accuracy}% accuracy. Keep reading people! 👀`, { duration: 3000 });
+      callbacks.showToast(`Not bad! ${accuracy}% accuracy. Keep reading people! 👀`, { duration: 1500 });
     } else {
-      callbacks.showToast(`${accuracy}% accuracy. Maybe stick to being mysterious? 😏`, { duration: 3000 });
+      callbacks.showToast(`${accuracy}% accuracy. Maybe stick to being mysterious? 😏`, { duration: 1500 });
     }
 
     onClose();

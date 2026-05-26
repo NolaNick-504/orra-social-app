@@ -4,6 +4,7 @@ import { useAuraStore, type NavView } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { useNotifications, useChats } from '@/lib/api-hooks';
 import { resolveImageUrl } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 // Server-side logout that properly clears Secure cookies
 // Client-side document.cookie deletion fails for Secure cookies behind HTTPS proxy
 async function fastLogout() {
@@ -42,7 +43,7 @@ import {
   X,
   Radio,
 } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 const desktopNavItems: { view: NavView; label: string; icon: React.ElementType; badge?: string }[] = [
   { view: 'home', label: 'Home', icon: Home },
@@ -61,8 +62,19 @@ const desktopNavItems: { view: NavView; label: string; icon: React.ElementType; 
 export function Sidebar() {
   const { currentView, setView, toggleCreatePost, auraTokens, customNotifications, unreadMessages, setViewingUser, navVisible, setNavVisible, isLiveActive, showGoLiveSetup } = useAuraStore();
   const currentUser = useCurrentUser();
+  const queryClient = useQueryClient();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const lastScrollY = useRef(0);
+
+  // Handler: scroll to top + refetch feed when tapping Home while already on home
+  const handleHomePress = useCallback(() => {
+    if (currentView === 'home') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      queryClient.invalidateQueries({ queryKey: ['posts', 'infinite'] });
+    } else {
+      setView('home');
+    }
+  }, [currentView, setView, queryClient]);
 
   // Scroll detection for mobile bottom nav hide/show
   useEffect(() => {
@@ -120,14 +132,7 @@ export function Sidebar() {
             return (
               <button
                 key={item.view}
-                onClick={() => {
-                  if (item.view === 'home' && currentView === 'home') {
-                    window.scrollTo(0, 0);
-                    window.dispatchEvent(new CustomEvent('orra-scroll-to-top'));
-                  } else {
-                    setView(item.view);
-                  }
-                }}
+                onClick={() => item.view === 'home' ? handleHomePress() : setView(item.view)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative ${
                   isActive
                     ? 'bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 text-white border border-violet-500/30'
@@ -211,14 +216,7 @@ export function Sidebar() {
         <div className="flex items-center justify-around px-1 py-1">
           {/* Home */}
           <button
-            onClick={() => {
-              if (currentView === 'home') {
-                window.scrollTo(0, 0);
-                window.dispatchEvent(new CustomEvent('orra-scroll-to-top'));
-              } else {
-                setView('home');
-              }
-            }}
+            onClick={handleHomePress}
             className={`relative flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all ${
               currentView === 'home' ? 'text-violet-400' : 'text-slate-500'
             }`}
@@ -316,15 +314,7 @@ export function Sidebar() {
                 return (
                   <button
                     key={item.view}
-                    onClick={() => {
-                      if (item.view === 'home' && currentView === 'home') {
-                        window.scrollTo(0, 0);
-                        window.dispatchEvent(new CustomEvent('orra-scroll-to-top'));
-                      } else {
-                        setView(item.view);
-                      }
-                      setMobileMenuOpen(false);
-                    }}
+                    onClick={() => { setView(item.view); setMobileMenuOpen(false); }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                       isActive
                         ? 'bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 text-white border border-violet-500/30'

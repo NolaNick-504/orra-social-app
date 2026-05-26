@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readFile, writeFile, mkdir, existsSync, readdir, unlink } from 'fs/promises';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs';
 import path from 'path';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -48,28 +48,28 @@ export async function POST() {
       console.warn('WAL checkpoint before backup failed (non-fatal):', e.message);
     }
 
-    const dbData = await readFile(dbPath);
+    const dbData = readFileSync(dbPath);
 
     // Backup to /home/sync/ — this persists across container rebuilds
     const syncDir = '/home/sync';
     const backupDir = path.join(syncDir, 'orra-db-backup');
     if (!existsSync(backupDir)) {
-      await mkdir(backupDir, { recursive: true });
+      mkdirSync(backupDir, { recursive: true });
     }
 
     // Save with timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
     const backupPath = path.join(backupDir, `orra-${timestamp}.db`);
 
-    await writeFile(backupPath, dbData);
+    writeFileSync(backupPath, dbData);
 
     // Also save as "latest" — always overwrite
     const latestPath = path.join(backupDir, 'latest.db');
-    await writeFile(latestPath, dbData);
+    writeFileSync(latestPath, dbData);
 
     // Clean up old backups (keep last 5)
     try {
-      const files = (await readdir(backupDir))
+      const files = readdirSync(backupDir)
         .filter(f => f.startsWith('orra-') && f.endsWith('.db'))
         .sort()
         .reverse(); // newest first
@@ -77,7 +77,7 @@ export async function POST() {
       // Keep latest.db + 5 timestamped backups
       const toDelete = files.slice(6);
       for (const f of toDelete) {
-        try { await unlink(path.join(backupDir, f)); } catch {}
+        try { unlinkSync(path.join(backupDir, f)); } catch {}
       }
     } catch {}
 

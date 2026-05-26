@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUserId } from "@/lib/auth-helpers";
-import { db } from "@/lib/db";
+import { db, awardXPAndTokens } from "@/lib/db";
 
 // GET /api/chats/[chatId]/messages - Get messages for a chat (paginated)
 export async function GET(
@@ -164,13 +164,7 @@ export async function POST(
         },
       });
 
-      await db.user.update({
-        where: { id: userId },
-        data: {
-          auraTokens: { increment: 1 },
-          auraXP: { increment: 2 },
-        },
-      });
+      await awardXPAndTokens(userId, 1, 2);
 
       tokensAwarded = 1;
       xpAwarded = 2;

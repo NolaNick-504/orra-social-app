@@ -55,7 +55,7 @@ const MOCK_FITS: FitItem[] = [
   {
     id: 'fit1',
     userName: 'Zara',
-    userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Zara&backgroundColor=b6e3f4',
+    userAvatar: '/api/uploads?path=images/avatars/zara-avatar.jpg',
     userHandle: '@zara_style',
     theme: 'Streetwear',
     caption: 'Oversized everything + chunky kicks 👟',
@@ -66,7 +66,7 @@ const MOCK_FITS: FitItem[] = [
   {
     id: 'fit2',
     userName: 'Marcus',
-    userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus&backgroundColor=c0aede',
+    userAvatar: '/api/uploads?path=images/avatars/marcus-avatar.jpg',
     userHandle: '@marc_fit',
     theme: 'Night Out',
     caption: 'All black everything. You already know 🖤',
@@ -77,7 +77,7 @@ const MOCK_FITS: FitItem[] = [
   {
     id: 'fit3',
     userName: 'Luna',
-    userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna&backgroundColor=ffd5dc',
+    userAvatar: '/api/uploads?path=images/avatars/luna-avatar.jpg',
     userHandle: '@luna_drip',
     theme: 'Vintage Drip',
     caption: 'Thrifting is my cardio 🎀',
@@ -88,7 +88,7 @@ const MOCK_FITS: FitItem[] = [
   {
     id: 'fit4',
     userName: 'Kai',
-    userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kai&backgroundColor=d1f4d1',
+    userAvatar: '/api/uploads?path=images/avatars/kai-avatar.jpg',
     userHandle: '@kai_closet',
     theme: 'Casual Friday',
     caption: 'Business on top, party on the bottom 😎',
@@ -99,7 +99,7 @@ const MOCK_FITS: FitItem[] = [
   {
     id: 'fit5',
     userName: 'Nia',
-    userAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Nia&backgroundColor=ffd5dc',
+    userAvatar: '/api/uploads?path=images/avatars/nova-avatar.jpg',
     userHandle: '@nia_vibes',
     theme: 'Festival Vibes',
     caption: 'Sequins and cowboy boots ✨🤠',
@@ -110,11 +110,11 @@ const MOCK_FITS: FitItem[] = [
 ];
 
 const LEADERBOARD_DATA = [
-  { rank: 1, name: 'Nia', handle: '@nia_vibes', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Nia&backgroundColor=ffd5dc', avgScore: 9.2, theme: 'Festival Vibes', badge: '👑 Fit God' },
-  { rank: 2, name: 'Marcus', handle: '@marc_fit', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus&backgroundColor=c0aede', avgScore: 8.1, theme: 'Night Out', badge: '🔥 Hot Fit' },
-  { rank: 3, name: 'Kai', handle: '@kai_closet', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kai&backgroundColor=d1f4d1', avgScore: 7.9, theme: 'Casual Friday', badge: '✨ Stylish' },
-  { rank: 4, name: 'Zara', handle: '@zara_style', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Zara&backgroundColor=b6e3f4', avgScore: 7.4, theme: 'Streetwear', badge: '👀 Solid' },
-  { rank: 5, name: 'Luna', handle: '@luna_drip', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Luna&backgroundColor=ffd5dc', avgScore: 6.8, theme: 'Vintage Drip', badge: '💫 Unique' },
+  { rank: 1, name: 'Nia', handle: '@nia_vibes', avatar: '/api/uploads?path=images/avatars/nova-avatar.jpg', avgScore: 9.2, theme: 'Festival Vibes', badge: '👑 Fit God' },
+  { rank: 2, name: 'Marcus', handle: '@marc_fit', avatar: '/api/uploads?path=images/avatars/marcus-avatar.jpg', avgScore: 8.1, theme: 'Night Out', badge: '🔥 Hot Fit' },
+  { rank: 3, name: 'Kai', handle: '@kai_closet', avatar: '/api/uploads?path=images/avatars/kai-avatar.jpg', avgScore: 7.9, theme: 'Casual Friday', badge: '✨ Stylish' },
+  { rank: 4, name: 'Zara', handle: '@zara_style', avatar: '/api/uploads?path=images/avatars/zara-avatar.jpg', avgScore: 7.4, theme: 'Streetwear', badge: '👀 Solid' },
+  { rank: 5, name: 'Luna', handle: '@luna_drip', avatar: '/api/uploads?path=images/avatars/luna-avatar.jpg', avgScore: 6.8, theme: 'Vintage Drip', badge: '💫 Unique' },
 ];
 
 const TOTAL_FITS_TO_RATE = 5;
@@ -326,14 +326,14 @@ export default function RateMyFitGame({
 
   const handleSubmitFit = () => {
     if (!submitTheme || !submitCaption.trim()) {
-      callbacks.showToast('Pick a theme and write a caption!', { duration: 2000 });
+      callbacks.showToast('Pick a theme and write a caption!', { duration: 1500 });
       return;
     }
 
     setSubmittedFits((prev) => [...prev, { theme: submitTheme, caption: submitCaption.trim() }]);
     callbacks.earnTokens(3, 'Rate My Fit - Submit');
     callbacks.addXP(5);
-    callbacks.showToast('Your fit is live! +3 ORRA +5 XP 🔥', { duration: 2500 });
+    callbacks.showToast('Your fit is live! +3 ORRA +5 XP 🔥', { duration: 1500 });
     setSubmitTheme('');
     setSubmitCaption('');
     setPhase('submit-success');

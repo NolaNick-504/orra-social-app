@@ -78,6 +78,12 @@ export function StoryViewer() {
       if (!markedRef.current.has(storyId)) {
         markedRef.current.add(storyId);
         markStoryViewed(storyId);
+        // Persist viewed status to the API
+        fetch('/api/stories', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storyId }),
+        }).catch(() => {});
       }
     }
     // Reset marked set when viewer closes

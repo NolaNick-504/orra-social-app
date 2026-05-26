@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
-import { db } from '@/lib/db';
+import { db, awardXPAndTokens } from '@/lib/db';
 import { sanitizeText, validateLength, CONTENT_LIMITS } from '@/lib/sanitize';
 
 export const dynamic = 'force-dynamic';
@@ -34,7 +34,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: true, data: takes });
   } catch (error) {
     console.error('Get hot takes error:', error);
-    return NextResponse.json({ success: false, error: 'Failed to get hot takes' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Failed to get hot takes';
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
 
@@ -104,30 +105,37 @@ export async function POST(req: NextRequest) {
         data: { takeId, voterId: auth.userId!, vote }
       });
 
-      // Update take counts
-      const newWVotes = take.wVotes + (vote === 'W' ? 1 : 0);
-      const newLVotes = take.lVotes + (vote === 'L' ? 1 : 0);
-      const newTotal = newWVotes + newLVotes;
+      // Update take counts atomically using increment (avoids race conditions)
+      const isVoteW = vote === 'W';
+      const [updatedTake] = await db.$transaction([
+        db.hotTake.update({
+          where: { id: takeId },
+          data: {
+            wVotes: { increment: isVoteW ? 1 : 0 },
+            lVotes: { increment: isVoteW ? 0 : 1 },
+            totalVotes: { increment: 1 },
+          },
+        }),
+      ]);
+
+      // Recalculate ratio and check nuclear status in a second update
+      const newWVotes = updatedTake.wVotes;
+      const newLVotes = updatedTake.lVotes;
+      const newTotal = updatedTake.totalVotes;
       const newWRatio = newTotal > 0 ? newWVotes / newTotal : 0;
       const isNuclear = newWRatio >= 0.9 && newTotal >= 30;
 
       await db.hotTake.update({
         where: { id: takeId },
         data: {
-          wVotes: newWVotes,
-          lVotes: newLVotes,
-          totalVotes: newTotal,
           wRatio: newWRatio,
           isNuclear,
           status: newTotal >= 30 ? 'finalized' : 'active',
         }
       });
 
-      // Award voter 1 token
-      await db.user.update({
-        where: { id: auth.userId! },
-        data: { auraTokens: { increment: 1 }, auraXP: { increment: 1 } },
-      });
+      // Award voter 1 token + 1 XP
+      await awardXPAndTokens(auth.userId!, 1, 1);
 
       return NextResponse.json({ 
         success: true, 

@@ -11,7 +11,7 @@ export const currentUser = {
   posts: 342,
   coverImage: '/api/uploads?path=images/profile-cover.png',
   location: '',
-  website: 'orra.link/alexriv',
+  website: 'orra.app/alexriv',
   joinDate: 'March 2025',
   badges: ['Early Adopter', 'Dance Champion', 'Top Creator'],
 };

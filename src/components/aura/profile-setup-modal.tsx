@@ -461,7 +461,7 @@ export function ProfileSetupModal() {
                       type="text"
                       value={website}
                       onChange={(e) => setWebsite(e.target.value)}
-                      placeholder="orra.link/yourname"
+                      placeholder="orra.app/yourname"
                       className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition-all"
                     />
                   </div>

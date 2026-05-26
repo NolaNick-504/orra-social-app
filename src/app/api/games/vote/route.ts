@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
-import { db, serializedTransaction } from '@/lib/db';
+import { db, serializedTransaction, awardXPAndTokens } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,14 +69,11 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Award voter 1 token atomically
-      await tx.user.update({
-        where: { id: auth.userId! },
-        data: { auraTokens: { increment: 1 }, auraXP: { increment: 1 } },
-      });
-
       return newVote;
     });
+
+    // Award voter 1 token + 1 XP (outside transaction — awardXPAndTokens has its own write queue)
+    await awardXPAndTokens(auth.userId!, 1, 1);
 
     return NextResponse.json({ success: true, data: vote });
   } catch (error) {

@@ -3,42 +3,35 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 /**
- * KeepAliveProvider — prevents the FC container from freezing.
+ * KeepAliveProvider — prevents the platform container from freezing
+ * and auto-recovers when the server goes down and comes back.
  *
- * HOW IT WORKS:
- * Pings /api/health every 5 seconds. These pings go through the FC proxy
- * (browser → FC load balancer → Caddy → Node), which counts as external
- * traffic and keeps the container alive.
+ * Root cause: The app runs on Alibaba Cloud Function Compute, which
+ * freezes the container after ~3-5 minutes of inactivity. When frozen,
+ * the platform proxy returns 404/502 and the Next.js server stops.
  *
- * KEY DESIGN PRINCIPLES:
- * 1. NEVER stop the main ping interval — pings are what keep the container alive
- * 2. NO abort timeout on pings — let the browser handle timeouts naturally
- * 3. Require 3+ consecutive failures before showing reconnect overlay
- * 4. Recovery does NOT do a full page reload — just invalidates React Query cache
- *    so the app refreshes its data without losing the current UI state
- *
- * PREVIOUS BUG (the one causing all the "Reconnecting..." screens):
- * - Old code had a 3-second AbortController timeout on pings
- * - If the server was even slightly slow, the ping would abort → counted as failure
- * - On ONE failed ping, recovery mode started
- * - Recovery mode STOPPED all pings → container froze → death spiral
- *
- * ALSO IMPORTANT: This client-side ping is the BACKUP to the server-side
- * self-ping (in server.js). The server-side ping is more reliable because
- * it runs even when the browser is closed. But this client-side ping
- * provides immediate feedback to the user.
+ * How this fixes it:
+ * 1. Pings /api/health every 10 seconds to keep the container alive
+ * 2. Detects when the server goes down (platform proxy 404/502/network error)
+ * 3. Shows a "Reconnecting..." overlay while the server is down
+ * 4. Auto-reloads the page once the server comes back
+ * 5. Handles browser tab visibility changes (resume pings when tab becomes visible)
  */
 
-const PING_INTERVAL = 5_000;     // 5 seconds — ping often enough that FC never sees inactivity
-const FAIL_THRESHOLD = 3;        // Need this many consecutive failures before showing overlay
-const RECONNECT_CHECK = 3_000;   // 3 seconds between reconnect checks (parallel to main ping)
+const PING_INTERVAL = 10_000; // 10 seconds — must be less than platform idle timeout (~3-5 min)
+const PING_TIMEOUT = 5_000;   // 5 second timeout for each ping
+const MAX_FAST_RETRIES = 5;    // After detecting server down, retry this many times quickly
+const FAST_RETRY_DELAY = 3_000; // 3 seconds between fast retries
+const SLOW_RETRY_DELAY = 15_000; // 15 seconds between slow retries (after fast retries exhausted)
 
 type ServerStatus = 'healthy' | 'down' | 'recovering';
 
 export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
   const statusRef = useRef<ServerStatus>('healthy');
   const [, forceUpdate] = useState(0);
-  const consecutiveFailsRef = useRef(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const retryCountRef = useRef(0);
+  const lastHealthyRef = useRef(Date.now());
   const isRecoveringRef = useRef(false);
 
   const setStatus = useCallback((status: ServerStatus) => {
@@ -48,158 +41,184 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Simple ping — NO abort controller, NO timeout.
   const ping = useCallback(async (): Promise<boolean> => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), PING_TIMEOUT);
+
       const res = await fetch('/api/health', {
+        signal: controller.signal,
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache',
         },
       });
-      return res.ok;
+
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        // Check if this is a real Next.js response (has X-Powered-By header)
+        // vs a platform proxy 404 that still returns 200 for some paths
+        return true;
+      }
+
+      // 404, 502, 503, etc — server is down
+      return false;
     } catch {
+      // Network error, timeout, abort — server is unreachable
       return false;
     }
   }, []);
 
-  // Recovery — runs IN PARALLEL with the main ping loop.
-  // The main ping loop NEVER stops, even during recovery.
-  // On recovery: just dismiss the overlay. React Query will auto-refetch
-  // stale data on the next render cycle. No full page reload needed.
-  const startRecovery = useCallback(async () => {
+  const recoverServer = useCallback(async () => {
     if (isRecoveringRef.current) return;
     isRecoveringRef.current = true;
     setStatus('recovering');
+    retryCountRef.current = 0;
 
-    console.warn('ORRA: Server appears down, starting recovery (pings continue in background)...');
+    console.warn('ORRA: Server appears down, starting recovery...');
 
-    // Keep trying until server comes back
-    while (isRecoveringRef.current) {
-      await new Promise(r => setTimeout(r, RECONNECT_CHECK));
+    // Fast retries first
+    for (let i = 0; i < MAX_FAST_RETRIES; i++) {
+      retryCountRef.current = i + 1;
+      await new Promise(r => setTimeout(r, FAST_RETRY_DELAY));
+
       const ok = await ping();
       if (ok) {
-        console.warn('ORRA: Server is back!');
+        console.warn('ORRA: Server is back! (fast retry', i + 1, ')');
         isRecoveringRef.current = false;
-        consecutiveFailsRef.current = 0;
+        lastHealthyRef.current = Date.now();
         setStatus('healthy');
 
-        // Instead of a full page reload, just dispatch a custom event
-        // that React Query listeners can use to invalidate their caches.
-        // This is much less disruptive than window.location.replace().
-        try {
-          window.dispatchEvent(new CustomEvent('orra-server-recovered'));
-        } catch {}
-
-        // If the page is showing error state (e.g., ErrorBoundary caught something),
-        // a gentle reload is needed. But only if there's visible error content.
-        const bodyText = document.body?.innerText || '';
-        const hasErrorUI = (
-          bodyText.includes('Something went wrong') ||
-          bodyText.includes('Page Not Found')
-        );
-        if (hasErrorUI) {
-          window.location.replace('/?_cb=' + Date.now());
-        }
+        // Server is back — reload to get fresh app state
+        window.location.replace('/?_cb=' + Date.now());
         return;
       }
     }
+
+    // Slow retries — keep trying every 15 seconds
+    console.warn('ORRA: Fast retries exhausted, switching to slow retries');
+    const slowRetry = async () => {
+      while (isRecoveringRef.current) {
+        await new Promise(r => setTimeout(r, SLOW_RETRY_DELAY));
+        retryCountRef.current++;
+
+        const ok = await ping();
+        if (ok) {
+          console.warn('ORRA: Server is back! (slow retry', retryCountRef.current, ')');
+          isRecoveringRef.current = false;
+          lastHealthyRef.current = Date.now();
+          setStatus('healthy');
+
+          // Server is back — reload to get fresh app state
+          window.location.replace('/?_cb=' + Date.now());
+          return;
+        }
+      }
+    };
+    slowRetry();
   }, [ping, setStatus]);
 
-  // MAIN KEEP-ALIVE LOOP — this is the most critical part.
-  // It NEVER stops. It pings every 5 seconds regardless of server status.
-  // These pings go through the FC proxy → keep the container alive.
-  useEffect(() => {
-    let cancelled = false;
+  // NOTE: Database backup is handled server-side by aura-daemon.py and dev.sh
+  // (every 5 minutes). Client-side backup was removed because:
+  // 1. The /api/db-backup endpoint now requires admin authentication (POST)
+  // 2. Server-side backup is more reliable (doesn't depend on browser being open)
+  // 3. It avoids the security risk of an unauthenticated backup endpoint
 
+  // Main keep-alive loop
+  useEffect(() => {
     const doPing = async () => {
-      if (cancelled) return;
+      if (isRecoveringRef.current) return; // Don't ping during recovery
 
       const ok = await ping();
-      if (cancelled) return;
-
       if (ok) {
-        consecutiveFailsRef.current = 0;
-        if (isRecoveringRef.current) {
-          isRecoveringRef.current = false;
-          setStatus('healthy');
-        } else if (statusRef.current !== 'healthy') {
-          setStatus('healthy');
-        }
+        lastHealthyRef.current = Date.now();
+        setStatus('healthy');
       } else {
-        consecutiveFailsRef.current++;
-        if (consecutiveFailsRef.current >= FAIL_THRESHOLD) {
+        const timeSinceHealthy = Date.now() - lastHealthyRef.current;
+        // Only start recovery if we've been down for more than 5 seconds
+        // (to avoid false positives from one bad ping)
+        if (timeSinceHealthy > 5000 || retryCountRef.current > 0) {
+          recoverServer();
+        } else {
+          // Mark as down but don't recover yet — might be transient
+          lastHealthyRef.current = 0; // Force next ping to trigger recovery
           setStatus('down');
-          if (!isRecoveringRef.current) {
-            startRecovery();
-          }
         }
       }
     };
 
-    // First ping immediately
+    // Initial ping
     doPing();
 
-    // CRITICAL: This interval NEVER stops. Even during recovery.
-    const id = setInterval(doPing, PING_INTERVAL);
+    // Set up interval
+    intervalRef.current = setInterval(doPing, PING_INTERVAL);
 
     return () => {
-      cancelled = true;
-      clearInterval(id);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [ping, startRecovery, setStatus]);
+  }, [ping, recoverServer, setStatus]);
 
-  // Handle tab visibility — check immediately when tab becomes visible
+  // Handle tab visibility — resume pings when tab becomes visible
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        const check = async () => {
+        // Tab is visible again — check server immediately
+        const checkAndRecover = async () => {
+          if (isRecoveringRef.current) return;
+
           const ok = await ping();
           if (ok) {
-            consecutiveFailsRef.current = 0;
-            if (statusRef.current !== 'healthy') {
-              setStatus('healthy');
-            }
-            // Check if page shows error state but server is healthy
+            lastHealthyRef.current = Date.now();
+            setStatus('healthy');
+
+            // Check if the page is showing an error/not-found state
+            // If so, reload to get fresh content
             const bodyText = document.body?.innerText || '';
             if (
               bodyText.includes('Page Not Found') ||
               bodyText.includes('Something went wrong') ||
-              bodyText.includes('404')
+              bodyText.includes('404') ||
+              bodyText.includes('Reconnecting')
             ) {
+              console.warn('ORRA: Page shows error state but server is healthy — reloading');
               window.location.replace('/?_cb=' + Date.now());
             }
           } else {
-            consecutiveFailsRef.current++;
-            if (!isRecoveringRef.current) {
-              startRecovery();
-            }
+            recoverServer();
           }
         };
-        check();
+        checkAndRecover();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [ping, startRecovery, setStatus]);
+  }, [ping, recoverServer, setStatus]);
 
   // Handle online/offline events
   useEffect(() => {
     const handleOnline = () => {
-      console.warn('ORRA: Network back online, checking server...');
-      setTimeout(async () => {
+      console.warn('ORRA: Network came back online, checking server...');
+      const check = async () => {
         const ok = await ping();
         if (ok) {
-          consecutiveFailsRef.current = 0;
+          lastHealthyRef.current = Date.now();
           setStatus('healthy');
+          // Reload to recover from any error state
+          window.location.replace('/?_cb=' + Date.now());
+        } else {
+          recoverServer();
         }
-      }, 1000);
+      };
+      // Small delay to let network stabilize
+      setTimeout(check, 1000);
     };
 
     const handleOffline = () => {
       console.warn('ORRA: Network went offline');
+      setStatus('down');
     };
 
     window.addEventListener('online', handleOnline);
@@ -208,9 +227,9 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [ping, setStatus]);
+  }, [ping, recoverServer, setStatus]);
 
-  // Show recovery overlay only when server has been down for multiple checks
+  // Show recovery overlay when server is down
   const status = statusRef.current;
 
   return (
@@ -237,21 +256,14 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
                 }}
               />
             </div>
-            {consecutiveFailsRef.current > FAIL_THRESHOLD && (
+            {retryCountRef.current > 0 && (
               <p className="text-slate-600 text-xs mt-3">
-                Attempt {consecutiveFailsRef.current - FAIL_THRESHOLD}
+                Attempt {retryCountRef.current}
               </p>
             )}
             <button
-              onClick={async () => {
-                try {
-                  const res = await fetch('/?_cb=' + Date.now(), { cache: 'no-store' });
-                  if (res.ok) {
-                    window.location.replace('/?_cb=' + Date.now());
-                  }
-                } catch {
-                  // Will keep retrying via main loop
-                }
+              onClick={() => {
+                window.location.replace('/?_cb=' + Date.now());
               }}
               className="mt-4 px-5 py-2 rounded-xl bg-white/10 text-white/70 text-xs hover:bg-white/20 transition-colors"
             >

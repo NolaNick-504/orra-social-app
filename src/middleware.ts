@@ -1,24 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// Ensure SQLite PRAGMAs are set before any route handler runs.
-// Without this, the first few requests after server start can hit
-// SQLITE_BUSY errors because WAL mode and busy_timeout aren't set yet.
-let dbReadyPromise: Promise<void> | null = null;
-
-async function ensureDbReady() {
-  if (!dbReadyPromise) {
-    // Dynamically import to avoid circular deps at build time
-    const { dbReady } = await import('@/lib/db');
-    dbReadyPromise = dbReady;
-  }
-  await dbReadyPromise;
-}
-
-export async function middleware(request: NextRequest) {
-  // Ensure DB is ready before handling any request
-  await ensureDbReady();
-
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. Service Worker — MUST NEVER be cached

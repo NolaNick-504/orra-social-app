@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, awardXPAndTokens } from '@/lib/db';
 import { getAuthUserId } from '@/lib/auth-helpers';
 
 export async function POST(
@@ -56,22 +56,10 @@ export async function POST(
       tokensAwarded = 5;
       xpAwarded = 10;
 
-      const user = await db.user.findUnique({ where: { id: userId } });
-      if (user) {
-        const newXP = user.auraXP + xpAwarded;
-        const levelUp = newXP >= 1000;
-        await db.user.update({
-          where: { id: userId },
-          data: {
-            auraTokens: user.auraTokens + tokensAwarded,
-            auraXP: levelUp ? newXP - 1000 : newXP,
-            auraLevel: levelUp ? user.auraLevel + 1 : user.auraLevel,
-          },
-        });
-        await db.tokenAction.create({
-          data: { userId, action: 'hub_join', targetId: hubId, tokensEarned: tokensAwarded, xpEarned: xpAwarded },
-        });
-      }
+      await db.tokenAction.create({
+        data: { userId, action: 'hub_join', targetId: hubId, tokensEarned: tokensAwarded, xpEarned: xpAwarded },
+      });
+      await awardXPAndTokens(userId, tokensAwarded, xpAwarded);
     }
 
     return NextResponse.json({
