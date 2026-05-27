@@ -48,3 +48,25 @@ Stage Summary:
 - Cache bust updated to force browser refresh
 - User may need to hard-refresh (Ctrl+Shift+R) or clear browser cache on Samsung Internet
 - VLM API was consistently timing out - could not visually compare screenshots
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix profile appearance and server keep-alive issues
+
+Work Log:
+- Analyzed user's uploaded screenshots using OCR - both show "Waking Up ORRA" / "Reconnecting" screens
+- Identified that the container keeps going to sleep despite internal pings
+- Found that pings from inside container go through platform's internal network (73ms response) and don't count as external traffic
+- Fixed avatar upload path: removed invalid /home/public from PUBLIC_DIRS (was causing EACCES permission error)
+- Increased keep-alive ping frequency from 10s to 5s
+- Added multi-path public URL pinging to simulate real user traffic
+- Made service worker wake-up retries faster (3s initial, 2s between retries instead of 5s/4s)
+- Rebuilt app and restarted server
+- Pushed all changes to GitHub
+
+Stage Summary:
+- Profile page renders correctly when server is up (verified via browser automation)
+- Server keep-alive has fundamental limitation: internal pings don't prevent container sleep
+- Avatar upload EACCES error fixed
+- Wake-up experience improved with faster retries
+- Container requires external traffic to stay alive (platform limitation)
