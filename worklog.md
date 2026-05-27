@@ -24,3 +24,27 @@ Stage Summary:
 - The public URL request goes through the platform's load balancer, so it counts as real traffic
 - Server should now stay alive indefinitely
 - All changes committed: e5f6dd7
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Fix profile not matching user's screenshot
+
+Work Log:
+- Analyzed user's uploaded screenshot using OCR (VLM API was down/timing out)
+- OCR confirmed screenshot shows correct profile: Nick Joseph, @nickorraceo, Founder, all badges, QR code
+- Found second screenshot from same day showing broken profile (ORRA User, Bronze Tier)
+- Verified database has correct founder profile data
+- Verified API returns correct data
+- Verified browser renders profile correctly with all elements
+- Issue likely caused by browser cache showing stale data
+- Bumped IMAGE_CACHE_VERSION from v2025.05.23-3 to v2026.05.28-1
+- Rebuilt app with new cache version
+- Restarted server
+
+Stage Summary:
+- Database and API are serving correct profile data
+- All profile elements render correctly (cover, avatar, name, badges, QR code, stats, etc.)
+- Cache bust updated to force browser refresh
+- User may need to hard-refresh (Ctrl+Shift+R) or clear browser cache on Samsung Internet
+- VLM API was consistently timing out - could not visually compare screenshots
