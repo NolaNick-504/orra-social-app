@@ -213,27 +213,139 @@ fi
 
 log "Starting server..."
 
-# Simple, reliable supervisor loop
-# - Starts the server
-# - If it crashes, restarts after 3 seconds
-# - Backs up DB every 2 minutes
-# - Pings keep-alive every 10 seconds
+# =============================================================================
+# PRE-START CHECKS — Verify node_modules and .next are ready before starting
+# =============================================================================
+
+# Wait for node_modules to be available (the platform may wipe it on container restart)
+MAX_WAIT=120  # Wait up to 2 minutes for node_modules
+WAITED=0
+while [ ! -d "$PROJECT_DIR/node_modules/next" ] || [ ! -f "$PROJECT_DIR/node_modules/next/package.json" ]; do
+  if [ $WAITED -eq 0 ]; then
+    log "node_modules not ready — waiting... (will run npm install if needed)"
+  fi
+  
+  # Try running npm install if node_modules is missing
+  if [ $WAITED -eq 5 ] || [ $WAITED -eq 30 ] || [ $WAITED -eq 60 ]; then
+    log "Running npm install (attempt at ${WAITED}s)..."
+    cd "$PROJECT_DIR" && npm install --production 2>&1 | tail -3 | tee -a "$LOG_FILE"
+  fi
+  
+  sleep 5
+  WAITED=$((WAITED + 5))
+  
+  if [ $WAITED -ge $MAX_WAIT ]; then
+    log "FATAL: node_modules still not available after ${MAX_WAIT}s — cannot start server"
+    log "Will keep retrying..."
+    WAITED=0  # Reset and keep trying
+  fi
+done
+
+if [ $WAITED -gt 0 ]; then
+  log "node_modules ready after ${WAITED}s"
+else
+  log "node_modules OK"
+fi
+
+# Wait for .next build to be available
+MAX_WAIT=120
+WAITED=0
+while [ ! -f "$PROJECT_DIR/.next/BUILD_ID" ]; do
+  if [ $WAITED -eq 0 ]; then
+    log ".next build not found — checking cache..."
+  fi
+  
+  # Try to restore from build cache
+  if [ $WAITED -eq 0 ]; then
+    python3 "$PROJECT_DIR/.zscripts/build-preserver.py" --restore 2>/dev/null || true
+  fi
+  
+  # If still no build, run next build
+  if [ $WAITED -eq 10 ]; then
+    log "Running next build..."
+    cd "$PROJECT_DIR" && npx next build --webpack 2>&1 | tail -5 | tee -a "$LOG_FILE"
+    python3 "$PROJECT_DIR/.zscripts/build-preserver.py" --sync 2>/dev/null || true
+  fi
+  
+  sleep 5
+  WAITED=$((WAITED + 5))
+  
+  if [ $WAITED -ge $MAX_WAIT ]; then
+    log "FATAL: .next build still not available after ${MAX_WAIT}s"
+    WAITED=0
+  fi
+done
+
+if [ $WAITED -gt 0 ]; then
+  log ".next build ready after ${WAITED}s"
+else
+  log ".next build OK"
+fi
+
+# =============================================================================
+# SUPERVISOR LOOP — with exponential backoff and crash protection
+# =============================================================================
 
 LAST_BACKUP=$(date +%s)
+CONSECUTIVE_CRASHES=0  # Track crash count for backoff
+MAX_FAST_CRASHES=5     # After this many fast crashes, enter cooldown
+COOLDOWN_SECONDS=60    # Cooldown period after crash loop
 
 while true; do
+  # Kill any zombie processes on port 3000 before starting
+  ZOMBIE_PID=$(lsof -ti:3000 2>/dev/null || true)
+  if [ -n "$ZOMBIE_PID" ]; then
+    log "Killing zombie process on port 3000 (PID: $ZOMBIE_PID)"
+    kill -9 $ZOMBIE_PID 2>/dev/null || true
+    sleep 1
+  fi
+  
   node server.js 2>>"$LOG_FILE" &
   SERVER_PID=$!
-  log "Server started (PID: $SERVER_PID)"
-
-  # Wait for server to become ready
-  for i in 1 2 3 4 5 6 7 8 9 10; do
-    if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null | grep -q "200"; then
-      log "Server is UP (${i}s)"
+  
+  # Wait for server to become ready (up to 20 seconds)
+  SERVER_READY=false
+  for i in $(seq 1 20); do
+    if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health 2>/dev/null | grep -q "200"; then
+      SERVER_READY=true
+      log "Server is UP (${i}s) PID: $SERVER_PID"
+      CONSECUTIVE_CRASHES=0  # Reset crash counter on successful start
       break
     fi
     sleep 1
   done
+  
+  if [ "$SERVER_READY" = false ]; then
+    # Server started but never became ready — likely a crash during init
+    wait $SERVER_PID 2>/dev/null
+    EXIT_CODE=$?
+    CONSECUTIVE_CRASHES=$((CONSECUTIVE_CRASHES + 1))
+    log "Server PID $SERVER_PID failed to become ready (exit: $EXIT_CODE) — crash #$CONSECUTIVE_CRASHES"
+    
+    # Exponential backoff on repeated crashes
+    if [ $CONSECUTIVE_CRASHES -ge $MAX_FAST_CRASHES ]; then
+      log "⚠ $CONSECUTIVE_CRASHES consecutive crashes — entering ${COOLDOWN_SECONDS}s cooldown"
+      log "⚠ This usually means node_modules or .next is broken. Will try to fix..."
+      
+      # Try to fix common issues during cooldown
+      if [ ! -d "$PROJECT_DIR/node_modules/next" ]; then
+        log "Fixing: Running npm install..."
+        cd "$PROJECT_DIR" && npm install --production 2>&1 | tail -3 | tee -a "$LOG_FILE"
+      fi
+      
+      if [ ! -f "$PROJECT_DIR/.next/BUILD_ID" ]; then
+        log "Fixing: Running next build..."
+        cd "$PROJECT_DIR" && npx next build --webpack 2>&1 | tail -3 | tee -a "$LOG_FILE"
+        python3 "$PROJECT_DIR/.zscripts/build-preserver.py" --sync 2>/dev/null || true
+      fi
+      
+      sleep $COOLDOWN_SECONDS
+      CONSECUTIVE_CRASHES=0  # Reset after cooldown
+    else
+      sleep 5  # Short delay between crashes
+    fi
+    continue
+  fi
 
   # Wait for server to die, doing periodic tasks
   while kill -0 $SERVER_PID 2>/dev/null; do
@@ -249,9 +361,6 @@ while true; do
     
     # ============================================================
     # KEEP-ALIVE PINGS — THE MOST CRITICAL PART!
-    # The platform freezes containers after ~3-5 min of no traffic.
-    # Localhost pings do NOT count as external traffic.
-    # We MUST ping the PUBLIC URL to keep the container alive!
     # ============================================================
     
     # 1. Ping localhost:3000 (keeps Node process responsive)
@@ -261,11 +370,6 @@ while true; do
     curl -s -o /dev/null http://localhost:81/api/health 2>/dev/null || true
     
     # 3. ★★★ PING THE PUBLIC URL — THIS IS WHAT KEEPS THE CONTAINER ALIVE! ★★★
-    #    This request goes out to the internet, through the platform's
-    #    load balancer, and back to our container. The platform counts
-    #    this as real external traffic and won't freeze the container!
-    
-    # Always re-read the public URL from discovered-url.txt in case it changed
     if [ -z "$ORRA_PUBLIC_URL" ] && [ -f "$PROJECT_DIR/discovered-url.txt" ]; then
       ORRA_PUBLIC_URL=$(cat "$PROJECT_DIR/discovered-url.txt" 2>/dev/null | tr -d '[:space:]')
     fi
@@ -273,24 +377,24 @@ while true; do
     if [ -n "$ORRA_PUBLIC_URL" ]; then
       PUB_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 "$ORRA_PUBLIC_URL/api/health" 2>/dev/null || echo "000")
       if [ "$PUB_STATUS" = "200" ]; then
-        : # All good — container is alive and responding!
+        : # All good
       else
-        log "⚠ Public URL ping returned $PUB_STATUS — trying to rediscover..."
-        # Try to rediscover the URL
-        if [ -f "$PROJECT_DIR/discovered-url.txt" ]; then
-          NEW_URL=$(cat "$PROJECT_DIR/discovered-url.txt" 2>/dev/null | tr -d '[:space:]')
-          if [ -n "$NEW_URL" ] && [ "$NEW_URL" != "$ORRA_PUBLIC_URL" ]; then
-            ORRA_PUBLIC_URL="$NEW_URL"
-            log "Rediscovered public URL: $ORRA_PUBLIC_URL"
-          fi
-        fi
+        log "⚠ Public URL ping returned $PUB_STATUS"
       fi
     fi
     
     sleep 10
   done
 
-  # Server died — restart after brief pause
-  log "Server PID $SERVER_PID died — restarting in 3s..."
-  sleep 3
+  # Server died after being healthy — this is a real crash, not a startup failure
+  CONSECUTIVE_CRASHES=$((CONSECUTIVE_CRASHES + 1))
+  log "Server PID $SERVER_PID died after being healthy — crash #$CONSECUTIVE_CRASHES"
+  
+  if [ $CONSECUTIVE_CRASHES -ge $MAX_FAST_CRASHES ]; then
+    log "⚠ Entering ${COOLDOWN_SECONDS}s cooldown after $CONSECUTIVE_CRASHES crashes"
+    sleep $COOLDOWN_SECONDS
+    CONSECUTIVE_CRASHES=0
+  else
+    sleep 5
+  fi
 done
