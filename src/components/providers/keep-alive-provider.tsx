@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 /**
- * KeepAliveProvider — prevents the platform container from freezing
+ * KeepAliveProvider v2 — Prevents the platform container from freezing
  * and auto-recovers when the server goes down and comes back.
  *
  * Root cause: The app runs on Alibaba Cloud Function Compute, which
@@ -16,14 +16,12 @@ import { useEffect, useRef, useCallback, useState } from 'react';
  * 3. Shows a "Reconnecting..." overlay while the server is down
  * 4. Auto-reloads the page once the server comes back
  * 5. Handles browser tab visibility changes (resume pings when tab becomes visible)
+ * 6. INDEFINITE retries — never gives up until the server comes back
  */
 
-const PING_INTERVAL = 15_000; // 15 seconds — less aggressive but still under platform idle timeout
-const PING_TIMEOUT = 10_000;   // 10 second timeout for each ping
-const MAX_FAST_RETRIES = 5;    // After detecting server down, retry this many times quickly
-const FAST_RETRY_DELAY = 3_000; // 3 seconds between fast retries
-const SLOW_RETRY_DELAY = 10_000; // 10 seconds between slow retries
-const GRACE_PERIOD = 15_000;   // 15 seconds before showing the reconnect overlay (avoids blips)
+const PING_INTERVAL = 10_000; // 10 seconds — aggressive enough to prevent idle freeze
+const PING_TIMEOUT = 8_000;   // 8 second timeout for each ping
+const GRACE_PERIOD = 10_000;  // 10 seconds before showing the reconnect overlay
 
 type ServerStatus = 'healthy' | 'down' | 'recovering';
 
@@ -34,7 +32,7 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
   const retryCountRef = useRef(0);
   const lastHealthyRef = useRef(Date.now());
   const isRecoveringRef = useRef(false);
-  const downSinceRef = useRef<number | null>(null); // Track when server went down
+  const downSinceRef = useRef<number | null>(null);
 
   const setStatus = useCallback((status: ServerStatus) => {
     if (statusRef.current !== status) {
@@ -60,15 +58,17 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(timeoutId);
 
       if (res.ok) {
-        // Check if this is a real Next.js response (has X-Powered-By header)
-        // vs a platform proxy 404 that still returns 200 for some paths
-        return true;
+        // Verify it's a real JSON response from our server, not a platform proxy
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+        if (ct.includes('application/json')) {
+          return true;
+        }
+        // Got HTML or something else — might be platform error
+        return false;
       }
 
-      // 404, 502, 503, etc — server is down
       return false;
     } catch {
-      // Network error, timeout, abort — server is unreachable
       return false;
     }
   }, []);
@@ -81,35 +81,21 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
 
     console.warn('ORRA: Server appears down, starting recovery...');
 
-    // Fast retries first
-    for (let i = 0; i < MAX_FAST_RETRIES; i++) {
-      retryCountRef.current = i + 1;
-      await new Promise(r => setTimeout(r, FAST_RETRY_DELAY));
-
-      const ok = await ping();
-      if (ok) {
-        console.warn('ORRA: Server is back! (fast retry', i + 1, ')');
-        isRecoveringRef.current = false;
-        lastHealthyRef.current = Date.now();
-        downSinceRef.current = null;
-        setStatus('healthy');
-
-        // Server is back — reload to get fresh app state
-        window.location.replace('/?_cb=' + Date.now());
-        return;
-      }
-    }
-
-    // Slow retries — keep trying every 15 seconds
-    console.warn('ORRA: Fast retries exhausted, switching to slow retries');
-    const slowRetry = async () => {
+    // INDEFINITE retry loop — never give up
+    const retryLoop = async () => {
       while (isRecoveringRef.current) {
-        await new Promise(r => setTimeout(r, SLOW_RETRY_DELAY));
         retryCountRef.current++;
+
+        // Exponential backoff: 2s, 2s, 3s, 3s, 5s, 5s, 5s, ...
+        const delay = retryCountRef.current <= 2 ? 2000
+                    : retryCountRef.current <= 4 ? 3000
+                    : 5000;
+
+        await new Promise(r => setTimeout(r, delay));
 
         const ok = await ping();
         if (ok) {
-          console.warn('ORRA: Server is back! (slow retry', retryCountRef.current, ')');
+          console.warn('ORRA: Server is back! (retry', retryCountRef.current, ')');
           isRecoveringRef.current = false;
           lastHealthyRef.current = Date.now();
           downSinceRef.current = null;
@@ -121,14 +107,8 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
         }
       }
     };
-    slowRetry();
+    retryLoop();
   }, [ping, setStatus]);
-
-  // NOTE: Database backup is handled server-side by aura-daemon.py and dev.sh
-  // (every 5 minutes). Client-side backup was removed because:
-  // 1. The /api/db-backup endpoint now requires admin authentication (POST)
-  // 2. Server-side backup is more reliable (doesn't depend on browser being open)
-  // 3. It avoids the security risk of an unauthenticated backup endpoint
 
   // Main keep-alive loop
   useEffect(() => {
@@ -146,13 +126,11 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
           downSinceRef.current = Date.now();
         }
         const downDuration = Date.now() - downSinceRef.current;
-        
+
         // Only start recovery if we've been down for more than the grace period
-        // This avoids showing the reconnect screen for brief blips
         if (downDuration > GRACE_PERIOD || retryCountRef.current > 0) {
           recoverServer();
         } else {
-          // Mark as down but don't recover yet — might be transient
           setStatus('down');
         }
       }
@@ -169,11 +147,11 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
     };
   }, [ping, recoverServer, setStatus]);
 
-  // Handle tab visibility — resume pings when tab becomes visible
+  // Handle tab visibility — IMMEDIATE check when tab becomes visible
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        // Tab is visible again — check server immediately
+        // Tab is visible again — check server IMMEDIATELY
         const checkAndRecover = async () => {
           if (isRecoveringRef.current) return;
 
@@ -183,18 +161,22 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
             setStatus('healthy');
 
             // Check if the page is showing an error/not-found state
-            // If so, reload to get fresh content
             const bodyText = document.body?.innerText || '';
             if (
               bodyText.includes('Page Not Found') ||
               bodyText.includes('Something went wrong') ||
               bodyText.includes('404') ||
-              bodyText.includes('Reconnecting')
+              bodyText.includes('Reconnecting') ||
+              bodyText.includes('Waking Up')
             ) {
               console.warn('ORRA: Page shows error state but server is healthy — reloading');
               window.location.replace('/?_cb=' + Date.now());
             }
           } else {
+            // Server unreachable — start recovery
+            if (!downSinceRef.current) {
+              downSinceRef.current = Date.now();
+            }
             recoverServer();
           }
         };
@@ -215,13 +197,11 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
         if (ok) {
           lastHealthyRef.current = Date.now();
           setStatus('healthy');
-          // Reload to recover from any error state
           window.location.replace('/?_cb=' + Date.now());
         } else {
           recoverServer();
         }
       };
-      // Small delay to let network stabilize
       setTimeout(check, 1000);
     };
 
@@ -276,7 +256,7 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
               onClick={() => {
                 window.location.replace('/?_cb=' + Date.now());
               }}
-              className="mt-4 px-5 py-2 rounded-xl bg-white/10 text-white/70 text-xs hover:bg-white/20 transition-colors"
+              className="mt-4 px-5 py-2 rounded-xl bg-white/10 text-white/70 text-xs hover:bg-white/20 transition-colors active:scale-95"
             >
               Try now
             </button>

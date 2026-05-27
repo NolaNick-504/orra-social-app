@@ -350,7 +350,7 @@ while true; do
   # Wait for server to die, doing periodic tasks
   while kill -0 $SERVER_PID 2>/dev/null; do
     NOW=$(date +%s)
-    
+
     # Backup DB every 2 minutes
     if [ $((NOW - LAST_BACKUP)) -gt 120 ]; then
       node -e "try { const Database = require('better-sqlite3'); const db = new Database('$DB_FILE'); db.pragma('wal_checkpoint(TRUNCATE)'); db.close(); } catch(e) {}" 2>/dev/null || true
@@ -358,22 +358,22 @@ while true; do
       cp "$DB_FILE" /home/sync/orra-db-backup/latest.db 2>/dev/null || true
       LAST_BACKUP=$NOW
     fi
-    
+
     # ============================================================
     # KEEP-ALIVE PINGS — THE MOST CRITICAL PART!
     # ============================================================
-    
+
     # 1. Ping localhost:3000 (keeps Node process responsive)
     curl -s -o /dev/null http://localhost:3000/api/health 2>/dev/null || true
-    
+
     # 2. Ping localhost:81 (keeps Caddy proxy warm)
     curl -s -o /dev/null http://localhost:81/api/health 2>/dev/null || true
-    
+
     # 3. ★★★ PING THE PUBLIC URL — THIS IS WHAT KEEPS THE CONTAINER ALIVE! ★★★
     if [ -z "$ORRA_PUBLIC_URL" ] && [ -f "$PROJECT_DIR/discovered-url.txt" ]; then
       ORRA_PUBLIC_URL=$(cat "$PROJECT_DIR/discovered-url.txt" 2>/dev/null | tr -d '[:space:]')
     fi
-    
+
     if [ -n "$ORRA_PUBLIC_URL" ]; then
       PUB_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 "$ORRA_PUBLIC_URL/api/health" 2>/dev/null || echo "000")
       if [ "$PUB_STATUS" = "200" ]; then
@@ -382,7 +382,30 @@ while true; do
         log "⚠ Public URL ping returned $PUB_STATUS"
       fi
     fi
-    
+
+    # 4. ★★★ MONITOR & AUTO-RESTART EXTERNAL KEEPALIVE ★★★
+    #    If the external keepalive process dies, restart it automatically
+    if [ -f "$PROJECT_DIR/external-keepalive.pid" ]; then
+      KA_PID=$(cat "$PROJECT_DIR/external-keepalive.pid" 2>/dev/null)
+      if [ -n "$KA_PID" ] && ! kill -0 "$KA_PID" 2>/dev/null; then
+        log "⚠ External keepalive (PID $KA_PID) is dead — restarting!"
+        rm -f "$PROJECT_DIR/external-keepalive.pid"
+        if [ -n "$ORRA_PUBLIC_URL" ] && [ -f "$PROJECT_DIR/external-keepalive.sh" ]; then
+          nohup "$PROJECT_DIR/external-keepalive.sh" >> "$PROJECT_DIR/external-keepalive.log" 2>&1 &
+          log "★ External keepalive restarted (PID: $!)"
+        fi
+      fi
+    else
+      # No PID file — external keepalive was never started or died without PID file
+      if [ -n "$ORRA_PUBLIC_URL" ] && [ -f "$PROJECT_DIR/external-keepalive.sh" ]; then
+        # Check if it's already running
+        if ! pgrep -f "external-keepalive.sh" > /dev/null 2>&1; then
+          nohup "$PROJECT_DIR/external-keepalive.sh" >> "$PROJECT_DIR/external-keepalive.log" 2>&1 &
+          log "★ External keepalive started (PID: $!)"
+        fi
+      fi
+    fi
+
     sleep 10
   done
 
