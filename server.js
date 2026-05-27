@@ -57,19 +57,22 @@ function selfPing() {
 
 // ============================================================
 // DATABASE RESILIENCE
-// Automatically repairs corrupted SQLite databases
+// Only logs database status — NEVER auto-resets the database.
+// The database is precious user data and should only be reset
+// manually via: bash orra-start.sh rebuild
 // ============================================================
 function checkDatabase() {
   try {
     if (!existsSync(DB_PATH)) {
-      console.log('[DB] Database file missing — will be created by Prisma');
+      console.log('[DB] WARNING: Database file missing — will be created by Prisma on first request');
       return;
     }
 
     const stat = require('fs').statSync(DB_PATH);
     if (stat.size < 10000) {
-      console.log('[DB] Database file too small (' + stat.size + ' bytes) — resetting and seeding');
-      repairDatabase();
+      console.log('[DB] WARNING: Database file is very small (' + stat.size + ' bytes) — may need manual reseed');
+      console.log('[DB] Run: cd /home/z/my-project && npx prisma db push --force-reset && bun prisma/seed.ts');
+      // DO NOT auto-repair — this destroys user data!
       return;
     }
 
@@ -79,39 +82,8 @@ function checkDatabase() {
   }
 }
 
-function repairDatabase() {
-  try {
-    // Backup the corrupted DB first
-    if (existsSync(DB_PATH)) {
-      if (!existsSync(BACKUP_DIR)) mkdirSync(BACKUP_DIR, { recursive: true });
-      const ts = new Date().toISOString().replace(/[:.]/g, '-');
-      const backupPath = path.join(BACKUP_DIR, `corrupt-${ts}.db`);
-      try {
-        require('fs').copyFileSync(DB_PATH, backupPath);
-        console.log(`[DB] Corrupted DB backed up to ${backupPath}`);
-      } catch {}
-    }
-
-    // Reset and reseed
-    console.log('[DB] Running prisma db push --force-reset...');
-    execSync('npx prisma db push --force-reset --accept-data-loss 2>&1', {
-      cwd: PROJECT_ROOT,
-      timeout: 30000,
-      stdio: 'pipe',
-    });
-
-    console.log('[DB] Running prisma db seed...');
-    execSync('npx prisma db seed 2>&1', {
-      cwd: PROJECT_ROOT,
-      timeout: 60000,
-      stdio: 'pipe',
-    });
-
-    console.log('[DB] Database repaired and seeded');
-  } catch (e) {
-    console.error('[DB] Repair failed:', e.message);
-  }
-}
+// repairDatabase() is DISABLED — it destroys user data!
+// Only use manually: cd /home/z/my-project && npx prisma db push --force-reset && bun prisma/seed.ts
 
 // ============================================================
 // PERIODIC DATABASE BACKUP

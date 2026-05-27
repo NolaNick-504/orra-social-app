@@ -10,22 +10,23 @@ export async function register() {
       const BASE_URL = process.env.ORRA_URL || 'http://localhost:3000';
       const API_KEY = process.env.NEXTAUTH_SECRET || 'orra-super-secret-key-2025-production';
 
-      // Auto-seed the database if needed (ensures re-login works after container restarts)
+      // Auto-seed ONLY if database has zero users (empty DB)
+      // NEVER force-reset — that destroys user data!
       setTimeout(async () => {
         try {
           const seedRes = await fetch(`${BASE_URL}/api/seed-check?key=${API_KEY}`);
           const seedData = await seedRes.json();
-          if (seedData.needsSeed) {
-            console.log('[instrumentation] Database needs seeding — running seed...');
+          if (seedData.needsSeed && seedData.userCount === 0) {
+            console.log('[instrumentation] Database is empty — seeding (NO force-reset)...');
             const { execSync } = require('child_process');
-            execSync('npx prisma db push --accept-data-loss 2>/dev/null && npx prisma db seed 2>/dev/null', {
+            execSync('npx prisma db push 2>/dev/null && bun prisma/seed.ts 2>/dev/null', {
               cwd: '/home/z/my-project',
-              timeout: 60000,
+              timeout: 120000,
               stdio: 'pipe',
             });
             console.log('[instrumentation] Database seeded successfully');
           } else {
-            console.log('[instrumentation] Database already seeded — skipping');
+            console.log(`[instrumentation] Database has ${seedData.userCount || '?'} users — skipping seed`);
           }
         } catch (err: any) {
           console.error(`[instrumentation] Seed check error: ${err.message}`);

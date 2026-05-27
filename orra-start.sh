@@ -153,35 +153,22 @@ start_server() {
     fi
     
     # ---------------------------------------------------------------
-    # Step 4: Check and repair database
+    # Step 4: Check database (NEVER auto-reset — that destroys user data!)
     # ---------------------------------------------------------------
     log "Step 4: Checking database..."
     if [ -f "db/custom.db" ]; then
         DB_SIZE=$(stat -c%s "db/custom.db" 2>/dev/null || echo "0")
         if [ "${DB_SIZE}" -lt 10000 ]; then
-            warn "Database too small (${DB_SIZE} bytes) — resetting and seeding..."
-            npx prisma db push --force-reset --accept-data-loss 2>&1 | tail -3
-            npx prisma db seed 2>&1 | tail -3
+            warn "Database too small (${DB_SIZE} bytes) — needs manual reseed!"
+            warn "Run: npx prisma db push --force-reset && bun prisma/seed.ts"
         else
-            # Quick integrity check
-            if command -v sqlite3 &>/dev/null; then
-                INTEGRITY=$(sqlite3 "db/custom.db" "PRAGMA integrity_check;" 2>/dev/null || echo "error")
-                if [ "${INTEGRITY}" = "ok" ]; then
-                    ok "Database integrity OK (${DB_SIZE} bytes)"
-                else
-                    warn "Database corrupted — resetting..."
-                    npx prisma db push --force-reset --accept-data-loss 2>&1 | tail -3
-                    npx prisma db seed 2>&1 | tail -3
-                fi
-            else
-                ok "Database exists (${DB_SIZE} bytes)"
-            fi
+            ok "Database exists (${DB_SIZE} bytes)"
         fi
     else
-        warn "Database missing — creating..."
+        warn "Database missing — creating fresh..."
         mkdir -p db
         npx prisma db push 2>&1 | tail -3
-        npx prisma db seed 2>&1 | tail -3
+        bun prisma/seed.ts 2>&1 | tail -3
     fi
     
     # ---------------------------------------------------------------
