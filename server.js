@@ -1,8 +1,9 @@
 const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
-const { existsSync, readFileSync } = require('fs');
+const { existsSync, readFileSync, writeFileSync, mkdirSync } = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const port = parseInt(process.env.PORT || '3000', 10);
 const app = next({ dev: false });
@@ -10,9 +11,146 @@ const handle = app.getRequestHandler();
 
 // Build the project root path
 const PROJECT_ROOT = '/home/z/my-project';
+const DB_PATH = path.join(PROJECT_ROOT, 'db', 'custom.db');
+const BACKUP_DIR = path.join(PROJECT_ROOT, 'db', 'backups');
 
+// ============================================================
+// SELF-PING KEEP-ALIVE
+// Pings the PUBLIC URL every 2 minutes to prevent the container
+// from being frozen by the hosting platform.
+// Also pings localhost as a fallback.
+// ============================================================
+const SELF_PING_INTERVAL = 120000; // 2 minutes
+const PUBLIC_URL = process.env.ORRA_PUBLIC_URL || '';
+
+function selfPing() {
+  // Ping localhost first (always works)
+  try {
+    const req = require('http').get(`http://127.0.0.1:${port}/api/health`, { timeout: 5000 }, (res) => {
+      if (res.statusCode === 200) {
+        console.log(`[KEEPALIVE] Self-ping OK (${new Date().toISOString()})`);
+      }
+      res.resume();
+    });
+    req.on('error', () => {});
+    req.on('timeout', () => { req.destroy(); });
+  } catch {}
+
+  // Also ping the public URL if set (keeps the container alive on the platform)
+  if (PUBLIC_URL && PUBLIC_URL.startsWith('http')) {
+    try {
+      const publicUrl = new URL('/api/health', PUBLIC_URL);
+      const httpModule = publicUrl.protocol === 'https:' ? require('https') : require('http');
+      const req = httpModule.get(publicUrl.toString(), { timeout: 10000 }, (res) => {
+        if (res.statusCode === 200) {
+          console.log(`[KEEPALIVE] Public URL ping OK`);
+        }
+        res.resume();
+      });
+      req.on('error', (e) => {
+        console.log(`[KEEPALIVE] Public URL ping failed: ${e.message}`);
+      });
+      req.on('timeout', () => { req.destroy(); });
+    } catch {}
+  }
+}
+
+// ============================================================
+// DATABASE RESILIENCE
+// Automatically repairs corrupted SQLite databases
+// ============================================================
+function checkDatabase() {
+  try {
+    if (!existsSync(DB_PATH)) {
+      console.log('[DB] Database file missing — will be created by Prisma');
+      return;
+    }
+
+    const stat = require('fs').statSync(DB_PATH);
+    if (stat.size < 10000) {
+      console.log('[DB] Database file too small (' + stat.size + ' bytes) — resetting and seeding');
+      repairDatabase();
+      return;
+    }
+
+    console.log('[DB] Database exists (' + stat.size + ' bytes) — OK');
+  } catch (e) {
+    console.log('[DB] Database check error:', e.message);
+  }
+}
+
+function repairDatabase() {
+  try {
+    // Backup the corrupted DB first
+    if (existsSync(DB_PATH)) {
+      if (!existsSync(BACKUP_DIR)) mkdirSync(BACKUP_DIR, { recursive: true });
+      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupPath = path.join(BACKUP_DIR, `corrupt-${ts}.db`);
+      try {
+        require('fs').copyFileSync(DB_PATH, backupPath);
+        console.log(`[DB] Corrupted DB backed up to ${backupPath}`);
+      } catch {}
+    }
+
+    // Reset and reseed
+    console.log('[DB] Running prisma db push --force-reset...');
+    execSync('npx prisma db push --force-reset --accept-data-loss 2>&1', {
+      cwd: PROJECT_ROOT,
+      timeout: 30000,
+      stdio: 'pipe',
+    });
+
+    console.log('[DB] Running prisma db seed...');
+    execSync('npx prisma db seed 2>&1', {
+      cwd: PROJECT_ROOT,
+      timeout: 60000,
+      stdio: 'pipe',
+    });
+
+    console.log('[DB] Database repaired and seeded');
+  } catch (e) {
+    console.error('[DB] Repair failed:', e.message);
+  }
+}
+
+// ============================================================
+// PERIODIC DATABASE BACKUP
+// ============================================================
+let lastBackupTime = 0;
+const BACKUP_INTERVAL = 300000; // 5 minutes
+
+function backupDatabase() {
+  try {
+    if (!existsSync(DB_PATH)) return;
+    if (!existsSync(BACKUP_DIR)) mkdirSync(BACKUP_DIR, { recursive: true });
+
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupPath = path.join(BACKUP_DIR, `auto-${ts}.db`);
+    require('fs').copyFileSync(DB_PATH, backupPath);
+
+    // Keep only last 5 backups
+    const backups = require('fs').readdirSync(BACKUP_DIR)
+      .filter(f => f.startsWith('auto-'))
+      .sort();
+    while (backups.length > 5) {
+      require('fs').unlinkSync(path.join(BACKUP_DIR, backups.shift()));
+    }
+
+    console.log(`[DB] Backup created: auto-${ts}.db`);
+    lastBackupTime = Date.now();
+  } catch (e) {
+    console.error('[DB] Backup failed:', e.message);
+  }
+}
+
+// ============================================================
+// START THE SERVER
+// ============================================================
 app.prepare().then(() => {
-  createServer((req, res) => {
+  // Check database on startup
+  checkDatabase();
+
+  const server = createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
     const { pathname } = parsedUrl;
 
@@ -20,9 +158,6 @@ app.prepare().then(() => {
     // route and return HTML with status 200. The browser then tries to parse the
     // HTML as JavaScript, causing a crash cascade. This is the #1 cause of the
     // "Something went wrong" error after idle timeouts.
-    //
-    // Fix: For /_next/static/chunks/*.js and /_next/static/css/*.css requests,
-    // check if the file exists. If it does, serve it normally. If not, return 404.
     const chunkMatch = pathname && pathname.match(/^\/_next\/static\/(chunks|css)\/(.+\.(js|css|map))$/);
     if (chunkMatch) {
       const subDir = chunkMatch[1]; // 'chunks' or 'css'
@@ -81,7 +216,67 @@ app.prepare().then(() => {
     }
 
     handle(req, res, parsedUrl);
-  }).listen(port, () => {
-    console.log(`> ORRA Server running on http://localhost:${port}`);
   });
+
+  server.listen(port, '0.0.0.0', () => {
+    console.log(`> ORRA Server running on http://0.0.0.0:${port}`);
+    console.log(`> Public URL: ${PUBLIC_URL || 'not set'}`);
+    console.log(`> Self-ping interval: ${SELF_PING_INTERVAL / 1000}s`);
+    console.log(`> Database: ${DB_PATH}`);
+    console.log(`> Started at: ${new Date().toISOString()}`);
+
+    // Start self-ping keep-alive
+    setTimeout(() => {
+      selfPing(); // Initial ping after 30s
+    }, 30000);
+    setInterval(selfPing, SELF_PING_INTERVAL);
+
+    // Start periodic backups
+    setInterval(backupDatabase, BACKUP_INTERVAL);
+    // First backup after 1 minute
+    setTimeout(backupDatabase, 60000);
+  });
+
+  // Handle server errors gracefully
+  server.on('error', (error) => {
+    console.error('[SERVER] Error:', error.message);
+    if (error.code === 'EADDRINUSE') {
+      console.error(`[SERVER] Port ${port} is already in use. Exiting.`);
+      process.exit(1);
+    }
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('[SERVER] SIGTERM received — shutting down gracefully');
+    server.close(() => {
+      console.log('[SERVER] Server closed');
+      process.exit(0);
+    });
+    // Force exit after 10s if graceful shutdown hangs
+    setTimeout(() => {
+      console.log('[SERVER] Forced shutdown after timeout');
+      process.exit(0);
+    }, 10000);
+  });
+
+  process.on('SIGINT', () => {
+    console.log('[SERVER] SIGINT received — shutting down');
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(0), 5000);
+  });
+
+  // Catch uncaught errors to prevent crashes
+  process.on('uncaughtException', (error) => {
+    console.error('[SERVER] Uncaught exception:', error.message);
+    // Don't exit — try to keep the server running
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    console.error('[SERVER] Unhandled rejection:', reason);
+    // Don't exit — try to keep the server running
+  });
+}).catch((error) => {
+  console.error('[SERVER] Failed to start:', error);
+  process.exit(1);
 });
