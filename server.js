@@ -15,71 +15,154 @@ const DB_PATH = path.join(PROJECT_ROOT, 'db', 'custom.db');
 const BACKUP_DIR = path.join(PROJECT_ROOT, 'db', 'backups');
 
 // ============================================================
-// SELF-PING KEEP-ALIVE (AGGRESSIVE)
-// Pings every 15 seconds to prevent the container from being
-// frozen by the hosting platform.
-// Pings BOTH localhost:3000 (direct) AND localhost:81 (Caddy proxy)
-// to keep the entire request chain warm.
-// Also pings the public URL if set.
+// KEEP-ALIVE SYSTEM v3 — MAXIMUM AGGRESSION
+// The platform freezes containers after ~3-5 min of idle.
+// Strategy:
+//   1. Ping localhost every 10s (keeps Node process alive)
+//   2. Ping Caddy proxy every 10s (keeps proxy warm)
+//   3. Auto-discover & ping the PUBLIC URL every 10s
+//      (this is what actually prevents container freezing)
+//   4. Capture Host headers from real visitors to discover
+//      the public URL automatically
+//   5. Fallback: ping external endpoints to keep network alive
 // ============================================================
-const SELF_PING_INTERVAL = 15000; // 15 seconds (was 2 min — too slow!)
-const PUBLIC_URL = process.env.ORRA_PUBLIC_URL || '';
+const SELF_PING_INTERVAL = 10000; // 10 seconds
+const PUBLIC_URL_FILE = path.join(PROJECT_ROOT, 'discovered-url.txt');
+let discoveredPublicUrl = process.env.ORRA_PUBLIC_URL || '';
+
+// Try to load previously discovered URL
+try {
+  if (!discoveredPublicUrl && existsSync(PUBLIC_URL_FILE)) {
+    discoveredPublicUrl = readFileSync(PUBLIC_URL_FILE, 'utf-8').trim();
+    if (discoveredPublicUrl) {
+      console.log(`[KEEPALIVE] Loaded discovered URL: ${discoveredPublicUrl}`);
+    }
+  }
+} catch {}
+
+// Save discovered URL for next restart
+function saveDiscoveredUrl(url) {
+  if (url && url !== discoveredPublicUrl) {
+    discoveredPublicUrl = url;
+    try { writeFileSync(PUBLIC_URL_FILE, url, 'utf-8'); } catch {}
+    console.log(`[KEEPALIVE] ★ DISCOVERED PUBLIC URL: ${url} — saved!`);
+  }
+}
 
 let pingCount = 0;
 
 function selfPing() {
   pingCount++;
-  const verbose = (pingCount % 20 === 1); // Log details every 20th ping (~5 min)
+  const verbose = (pingCount % 30 === 1); // Log details every 30th ping (~5 min)
 
   // 1. Ping localhost:3000 (direct Next.js)
   try {
     const req = require('http').get(`http://127.0.0.1:${port}/api/health`, { timeout: 5000 }, (res) => {
-      if (res.statusCode === 200) {
-        if (verbose) console.log(`[KEEPALIVE] Direct ping OK (port ${port})`);
-      } else {
-        console.log(`[KEEPALIVE] Direct ping returned ${res.statusCode}`);
-      }
+      if (verbose) console.log(`[KEEPALIVE] Direct OK (port ${port})`);
       res.resume();
     });
-    req.on('error', (e) => {
-      console.log(`[KEEPALIVE] Direct ping error: ${e.message}`);
-    });
+    req.on('error', () => {});
     req.on('timeout', () => { req.destroy(); });
   } catch {}
 
-  // 2. Ping localhost:81 (through Caddy proxy — keeps the proxy warm too)
+  // 2. Ping localhost:81 (through Caddy proxy)
   try {
     const req = require('http').get('http://127.0.0.1:81/api/health', { timeout: 5000 }, (res) => {
-      if (res.statusCode === 200) {
-        if (verbose) console.log(`[KEEPALIVE] Caddy proxy ping OK (port 81)`);
-      } else {
-        console.log(`[KEEPALIVE] Caddy proxy ping returned ${res.statusCode}`);
-      }
+      if (verbose) console.log(`[KEEPALIVE] Caddy OK (port 81)`);
       res.resume();
     });
-    req.on('error', (e) => {
-      if (verbose) console.log(`[KEEPALIVE] Caddy proxy ping error: ${e.message}`);
-    });
+    req.on('error', () => {});
     req.on('timeout', () => { req.destroy(); });
   } catch {}
 
-  // 3. Ping the public URL if set (keeps the container alive on the platform)
-  if (PUBLIC_URL && PUBLIC_URL.startsWith('http')) {
+  // 3. Ping the discovered/known public URL (THE CRITICAL ONE)
+  const publicUrl = discoveredPublicUrl;
+  if (publicUrl && publicUrl.startsWith('http')) {
     try {
-      const publicUrl = new URL('/api/health', PUBLIC_URL);
-      const httpModule = publicUrl.protocol === 'https:' ? require('https') : require('http');
-      const req = httpModule.get(publicUrl.toString(), { timeout: 10000 }, (res) => {
+      const targetUrl = new URL('/api/health', publicUrl);
+      const httpModule = targetUrl.protocol === 'https:' ? require('https') : require('http');
+      const req = httpModule.get(targetUrl.toString(), { timeout: 10000 }, (res) => {
         if (res.statusCode === 200) {
-          console.log(`[KEEPALIVE] Public URL ping OK`);
+          if (verbose) console.log(`[KEEPALIVE] ★ PUBLIC URL ping OK — container is ALIVE!`);
+        } else if (verbose) {
+          console.log(`[KEEPALIVE] Public URL returned ${res.statusCode}`);
         }
         res.resume();
       });
       req.on('error', (e) => {
-        if (verbose) console.log(`[KEEPALIVE] Public URL ping failed: ${e.message}`);
+        if (verbose) console.log(`[KEEPALIVE] Public URL error: ${e.message}`);
       });
       req.on('timeout', () => { req.destroy(); });
     } catch {}
   }
+
+  // 4. Every 60 seconds, try to auto-discover the public URL by pinging
+  //    candidate URLs. Once found, it's saved and used for all future pings.
+  if (pingCount % 6 === 0 && !discoveredPublicUrl) {
+    tryAutoDiscoverPublicUrl();
+  }
+
+  // 5. Every 30 seconds, make an outbound request to keep the network stack active
+  //    (even a failed request keeps the container's network from going idle)
+  if (pingCount % 3 === 0) {
+    try {
+      require('https').get('https://orra.app/', { timeout: 5000 }, () => {}).on('error', () => {});
+    } catch {}
+    try {
+      require('https').get('https://www.google.com/', { timeout: 5000 }, () => {}).on('error', () => {});
+    } catch {}
+  }
+}
+
+// Auto-discover the public URL by testing candidate URLs
+function tryAutoDiscoverPublicUrl() {
+  const fcFuncName = process.env.FC_FUNCTION_NAME || '';
+  if (!fcFuncName) return;
+
+  // Generate candidate URLs based on FC function name
+  const candidates = [
+    `https://preview-${fcFuncName}.space.chatglm.site`,
+    `https://${fcFuncName}.space.chatglm.site`,
+    `https://preview-${fcFuncName.replace('ws-', '')}.space.chatglm.site`,
+    `https://${fcFuncName.replace('ws-', '')}.space.chatglm.site`,
+  ];
+
+  for (const baseUrl of candidates) {
+    try {
+      const targetUrl = new URL('/api/health', baseUrl);
+      require('https').get(targetUrl.toString(), { timeout: 8000 }, (res) => {
+        if (res.statusCode === 200) {
+          saveDiscoveredUrl(baseUrl);
+        }
+        res.resume();
+      }).on('error', () => {});
+    } catch {}
+  }
+}
+
+// Capture Host header from real visitors to discover the public URL
+function captureHostHeader(req) {
+  try {
+    const host = req.headers.host || '';
+    const xfh = req.headers['x-forwarded-host'] || '';
+    const effectiveHost = xfh || host;
+    
+    // Skip localhost/internal hosts
+    if (!effectiveHost || 
+        effectiveHost.startsWith('localhost') || 
+        effectiveHost.startsWith('127.0.0.1') ||
+        effectiveHost.startsWith('21.0.') ||
+        effectiveHost.startsWith('10.') ||
+        effectiveHost.startsWith('172.') ||
+        effectiveHost.startsWith('192.168.')) {
+      return;
+    }
+    
+    // We found a real external host!
+    const proto = req.headers['x-forwarded-proto'] || 'https';
+    const discoveredUrl = `${proto}://${effectiveHost}`;
+    saveDiscoveredUrl(discoveredUrl);
+  } catch {}
 }
 
 // ============================================================
@@ -153,6 +236,9 @@ app.prepare().then(() => {
     const parsedUrl = parse(req.url, true);
     const { pathname } = parsedUrl;
 
+    // Capture Host header from every request to auto-discover public URL
+    captureHostHeader(req);
+
     // CRITICAL FIX: Non-existent chunk/CSS requests fall through to the catch-all
     // route and return HTML with status 200. The browser then tries to parse the
     // HTML as JavaScript, causing a crash cascade. This is the #1 cause of the
@@ -219,9 +305,10 @@ app.prepare().then(() => {
 
   server.listen(port, '0.0.0.0', () => {
     console.log(`> ORRA Server running on http://0.0.0.0:${port}`);
-    console.log(`> Public URL: ${PUBLIC_URL || 'not set'}`);
+    console.log(`> Public URL: ${discoveredPublicUrl || 'not yet discovered — will auto-detect on first visitor'}`);
     console.log(`> Self-ping interval: ${SELF_PING_INTERVAL / 1000}s`);
     console.log(`> Database: ${DB_PATH}`);
+    console.log(`> Keep-alive: v3 (local + caddy + public URL + network + auto-discover)`);
     console.log(`> Started at: ${new Date().toISOString()}`);
 
     // Start AGGRESSIVE self-ping keep-alive (every 15s)
