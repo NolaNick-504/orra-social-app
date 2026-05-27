@@ -1,159 +1,50 @@
-# ORRA Social App - Worklog
+# ORRA Worklog
 
 ---
 Task ID: 1
-Agent: Main
-Task: Fix server crash - node_modules was missing
+Agent: Main Agent
+Task: Fix server reliability and prevent data loss
 
 Work Log:
-- Discovered node_modules was completely empty causing "Cannot find module 'next'" error
-- Ran npm install to restore all 881 packages
-- Ran prisma generate to create Prisma client
-- Ran next build to create production build
-- Started server successfully (HTTP 200)
-
-Stage Summary:
-- Server is running again after node_modules restoration
-- Build completed successfully
-
----
-Task ID: 2
-Agent: Main + subagent
-Task: Fix profile data persistence - seed was overwriting user changes
-
-Work Log:
-- Identified that seed.ts used `upsert` which overwrites existing user data on every seed run
-- Changed seed pattern from `findFirst + create` to `create + try/catch P2002` for users, posts, and comments
-- Updated all bot coverImages from `/images/profile-cover.jpg` to individual paths like `/images/covers/bot01.jpg`
-- Updated founder coverImage to `/images/covers/founder.jpg`
-
-Stage Summary:
-- Seed will now NEVER overwrite existing user profile data
-- If a user already exists, the create fails with P2002 unique constraint error which is caught and logged
-- All 26 users now have individual cover images in the seed data
-
----
-Task ID: 3
-Agent: Main
-Task: Add matching photos for new posts
-
-Work Log:
-- Generated 12 AI images for previously text-only posts using z-ai-generate CLI
-- Updated seed.ts to add images to 12 posts (p01b, p01d, p02b, p09b, p10b, p16c, p17b, p20b, p21b, p22b, p23a, p0founder3)
-- Updated existing database records with the new images
-- All new images verified accessible via API
-
-New images generated:
-- nurse-hand-holding.jpg (nurse with patient)
-- succulent-collection.jpg (plant collection)
-- madden-gaming.jpg (gaming on TV)
-- bedroom-studio-late.jpg (late night music production)
-- art-block-canvas.jpg (artist with blank canvas)
-- self-care-rest.jpg (rest and wellness)
-- professor-encouragement.jpg (student and professor)
-- single-mom-love.jpg (mother and children)
-- architecture-internship.jpg (celebrating internship)
-- retired-teacher-letter.jpg (retired teacher reading letter)
-- firefighter-return.jpg (firefighter returning from call)
-- orra-milestone.jpg (ORRA 1000 users celebration)
-
-Stage Summary:
-- 12 new AI-generated images added to public/images/posts/
-- Both seed.ts and live database updated with new image references
-- Posts changed from type 'text' to type 'image'
-
----
-Task ID: 4-9
-Agent: Subagents
-Task: Fix feed, duplicates, scroll, remove edit cover
-
-Work Log:
-- Removed refetchInterval from useInfinitePosts to restore infinite scroll
-- Added deduplication logic in PulseFeed using Map with composite keys
-- Added scroll-to-top + query invalidation on Home button press in sidebar
-- Removed "Edit Cover" button from profile.tsx
-- Removed cover image editing section from edit-profile-modal.tsx
-
-Stage Summary:
-- Infinite scroll now works properly without periodic refetch resetting pages
-- Duplicate posts eliminated with Map-based deduplication
-- Home button scrolls to top and refreshes feed
-- Edit cover feature completely removed
-
----
-Task ID: 10
-Agent: Main
-Task: Oracle Cloud deployment setup - create setup script and guide
-
-Work Log:
-- Analyzed screenshot showing user on Oracle Cloud creating compute instance
-- Created comprehensive oracle-cloud-setup.sh script with 14 steps
-- Pushed setup script to GitHub (cleaned large backup files from git history first)
-- Script handles: Node.js install, app clone, build, PM2, Nginx, SSL, backups, firewall
-
-Stage Summary:
-- oracle-cloud-setup.sh created and pushed to GitHub
-- Git history cleaned of 100MB+ backup files
-- Script will auto-configure everything on the Oracle Cloud VM
-- SQLite database on real VM = persistent storage (solves profile reverting issue)
----
-Task ID: 1
-Agent: Main
-Task: Fix profile page reverting and login issues
-
-Work Log:
-- Analyzed user screenshot showing profile should display "Nicholas" with level 50
-- Found founder seed data had name "Nick Orraceo" and level 51
-- Updated seed.ts: name → "Nicholas", auraLevel → 50, kept coverImage as /images/covers/founder.jpg
-- Discovered demo account emails were WRONG: auth-page.tsx used zara@orra.app, jay@orra.app etc. but seed data uses bot13@orra.app, bot14@orra.app
-- Fixed all demo account emails and names to match actual seed data
-- Replaced non-existent "Jessica Art" and "Luna Sky" with "Luna Kim" and "Elena Vasquez"
-- Re-seeded database with corrected data
-- Verified login works for founder (password: Weareone504) and demo accounts (password: password123)
+- Investigated all 6+ competing startup scripts (supervisor.sh, watchdog.sh, start-production.sh, etc.)
+- Found critical issue: npm start was broken (pointed to non-existent .zscripts/dev.sh)
+- Found 7 different NEXTAUTH_SECRET values across scripts causing JWT validation failures
+- Found auto-repair functions in server.js and instrumentation.ts that were force-resetting the database on restart
+- Fixed server.js: Added self-ping keep-alive (pings localhost + public URL every 2 min)
+- Fixed server.js: Added periodic database backup (every 5 min, keeps last 5)
+- Fixed server.js: REMOVED auto-repairDatabase() function that was wiping user data
+- Fixed instrumentation.ts: Changed to only seed when userCount === 0, no more --force-reset --accept-data-loss
+- Fixed package.json: npm start now correctly runs "node server.js" instead of broken .zscripts/dev.sh
+- Created unified orra-start.sh: One script to replace all 6+ competing scripts
+- Created Dockerfile for future deployment to any cloud platform
+- orra-start.sh: Never auto-resets database, only warns when DB looks small
+- Reseeded database after accidental reset (26 users, 140 posts, all data restored)
 - Pushed all changes to GitHub
 
 Stage Summary:
-- Founder profile now seeds as "Nicholas" level 50
-- Demo account login buttons now work (emails match DB)
-- Cover image unchanged per user request
-- Changes pushed to GitHub main branch
+- Server is running with PM2 on port 3000, Caddy on port 81
+- Self-ping keep-alive working (every 2 min)
+- Database backup working (every 5 min)
+- Auto-database-reset mechanisms completely removed to prevent data loss
+- User needs to log in again: nickjoseph8087@gmail.com / Weareone504
+- Database has 26 users, 140 posts, 90 comments, 110 likes, 88 follows
+
 ---
 Task ID: 2
-Agent: Main
-Task: Make founder profile never change across restarts/re-seeds
+Agent: Main Agent
+Task: Research hosting solutions for permanent deployment
 
 Work Log:
-- Added founder-profile-backup.json file that persists in git
-- Added auto-backup on profile edit (PUT /api/users/profile)
-- Added auto-backup on every /api/me call for founder
-- Modified seed script to read backup BEFORE creating founder user
-- Added pre-wipe backup in FORCE_WIPE mode (backs up from DB before deleting)
-- Backup contains: name, handle, avatar, coverImage, bio, location, website, profileSong, auraTokens, auraLevel, auraXP, badges
-- Tested: FORCE_WIPE + re-seed correctly restores "Nick Joseph", level 50, custom avatar
-- Fixed TS operator precedence errors (mixing || and ??)
-- Fixed demo account emails to use bot##@orra.app format
+- Researched 10+ hosting platforms for Next.js + SQLite deployment
+- Oracle Cloud Always Free (best option: 4 ARM cores, 24GB RAM, 200GB storage, forever free)
+- Fly.io (good PaaS option, requires credit card)
+- Railway ($5/month hobby plan)
+- Vercel incompatible (no persistent filesystem)
+- Google Cloud Run incompatible (no persistent disk)
+- External keep-alive (cron-job.org, UptimeRobot) can help with current container
 
 Stage Summary:
-- Founder profile now persists across container restarts and re-seeding
-- Auto-backup happens on every profile edit and every /api/me load
-- Backup file tracked in git for cross-deployment persistence
-- All changes pushed to GitHub main branch
----
-Task ID: 3
-Agent: Main
-Task: Fix profile save login flash + update bot profile songs
-
-Work Log:
-- Diagnosed: NextAuth update() call after profile save briefly sets status to 'unauthenticated', causing the auth page to flash
-- Added wasAuthenticated guard in page.tsx: once authenticated, the app stays visible even during session refresh
-- Added 1-second debounce on unauthenticated store reset in app-wrapper.tsx
-- Updated ORRA_SONGS array from 5 to 16 songs (added 11 Suno songs)
-- Assigned personality-matched songs to all 25 bots (e.g., nurses→Cloud Nine, gamers→Gremlin Mode, fashion→Unbothered Queen)
-- Added seed step 13 that always updates bot profile songs (even if users already exist)
-- Founder song is never overwritten by the song update step
-
-Stage Summary:
-- Profile save no longer flashes the login page
-- All 25 bots have unique personality-matched profile songs
-- 16 total songs now in the seed library
-- Changes pushed to GitHub
+- User cannot set up Oracle Cloud from phone
+- Current container is a dev preview that freezes after 3-5 min idle
+- Best path: User creates Oracle Cloud account on a computer, then everything can be deployed from CLI
+- Temporary fix: Self-ping keep-alive in server.js + external ping service
