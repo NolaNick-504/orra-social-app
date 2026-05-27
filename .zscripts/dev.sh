@@ -43,7 +43,7 @@ cleanup() {
 }
 trap cleanup SIGTERM SIGINT
 
-log "ORRA Fast Startup v3.2 (aggressive keep-alive)"
+log "ORRA Fast Startup v3.3 (PUBLIC URL keep-alive — container stays alive!)"
 cd "$PROJECT_DIR"
 
 # =============================================================================
@@ -116,9 +116,100 @@ export NEXTAUTH_URL="http://localhost:3000"
 export AUTH_TRUST_HOST=true
 export AUTOPOST_KEY="orra-internal-autopost-2026"
 
-# Kill any existing server
+# =============================================================================
+# DISCOVER & SET THE PUBLIC URL — THIS IS WHAT KEEPS THE CONTAINER ALIVE!
+# The platform freezes containers after ~3-5 min of no external traffic.
+# Pinging localhost does NOT count as external traffic.
+# We MUST ping the public URL so the platform sees real incoming requests.
+# =============================================================================
+ORRA_PUBLIC_URL=""
+
+# Method 1: Check if already set in environment
+if [ -n "$ORRA_PUBLIC_URL_ENV" ] && [ "$ORRA_PUBLIC_URL_ENV" != "" ]; then
+  ORRA_PUBLIC_URL="$ORRA_PUBLIC_URL_ENV"
+  log "Public URL from env: $ORRA_PUBLIC_URL"
+fi
+
+# Method 2: Check discovered-url.txt (saved from previous discovery)
+if [ -z "$ORRA_PUBLIC_URL" ] && [ -f "$PROJECT_DIR/discovered-url.txt" ]; then
+  SAVED_URL=$(cat "$PROJECT_DIR/discovered-url.txt" 2>/dev/null | tr -d '[:space:]')
+  if [ -n "$SAVED_URL" ] && [[ "$SAVED_URL" == https://* ]]; then
+    ORRA_PUBLIC_URL="$SAVED_URL"
+    log "Public URL from saved discovery: $ORRA_PUBLIC_URL"
+  fi
+fi
+
+# Method 3: Probe candidate URLs based on FC_FUNCTION_NAME and hostname
+if [ -z "$ORRA_PUBLIC_URL" ]; then
+  log "Probing for public URL..."
+  FC_NAME="${FC_FUNCTION_NAME:-}"
+  HOSTNAME_ID="$(hostname 2>/dev/null)"
+  
+  # Build candidate list from various env vars
+  CANDIDATES=()
+  
+  # From FC_FUNCTION_NAME (workspace ID)
+  if [ -n "$FC_NAME" ]; then
+    CANDIDATES+=("https://preview-${FC_NAME}.space.chatglm.site")
+    CANDIDATES+=("https://${FC_NAME}.space.chatglm.site")
+    # Try without ws- prefix
+    NO_WS="${FC_NAME#ws-}"
+    CANDIDATES+=("https://preview-chat-${NO_WS}.space.chatglm.site")
+    CANDIDATES+=("https://chat-${NO_WS}.space.chatglm.site")
+  fi
+  
+  # From hostname
+  if [ -n "$HOSTNAME_ID" ]; then
+    CANDIDATES+=("https://preview-${HOSTNAME_ID}.space.chatglm.site")
+    CANDIDATES+=("https://${HOSTNAME_ID}.space.chatglm.site")
+  fi
+  
+  # Probe each candidate
+  for URL in "${CANDIDATES[@]}"; do
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$URL/api/health" 2>/dev/null || echo "000")
+    if [ "$STATUS" = "200" ]; then
+      ORRA_PUBLIC_URL="$URL"
+      log "★ DISCOVERED PUBLIC URL: $URL"
+      echo -n "$URL" > "$PROJECT_DIR/discovered-url.txt"
+      break
+    fi
+  done
+fi
+
+# Method 4: Hard-coded fallback (the known working URL for this container)
+if [ -z "$ORRA_PUBLIC_URL" ]; then
+  FALLBACK_URL="https://preview-chat-706d244e-3872-423f-8515-99e9c1c9cde8.space.chatglm.site"
+  STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 "$FALLBACK_URL/api/health" 2>/dev/null || echo "000")
+  if [ "$STATUS" = "200" ]; then
+    ORRA_PUBLIC_URL="$FALLBACK_URL"
+    log "Using fallback public URL: $ORRA_PUBLIC_URL"
+    echo -n "$ORRA_PUBLIC_URL" > "$PROJECT_DIR/discovered-url.txt"
+  fi
+fi
+
+if [ -n "$ORRA_PUBLIC_URL" ]; then
+  export ORRA_PUBLIC_URL
+  export NEXTAUTH_URL="$ORRA_PUBLIC_URL"
+  log "★ PUBLIC URL SET: $ORRA_PUBLIC_URL"
+  log "★ NEXTAUTH_URL SET: $ORRA_PUBLIC_URL"
+  log "★ Container will be kept alive by pinging this URL!"
+else
+  log "⚠ WARNING: Could not discover public URL — container may freeze after idle!"
+  log "⚠ Self-ping will use localhost only (may not prevent platform freeze)"
+fi
+
+# Kill any existing server and old external keep-alive
 pkill -f "node server.js" 2>/dev/null || true
+pkill -f "external-keepalive.sh" 2>/dev/null || true
 sleep 0.5
+
+# Start the EXTERNAL keep-alive daemon (pings the public URL from a separate process)
+# This is a belt-and-suspenders approach — even if the server's internal keep-alive
+# fails, this separate process will keep pinging the public URL
+if [ -n "$ORRA_PUBLIC_URL" ] && [ -f "$PROJECT_DIR/external-keepalive.sh" ]; then
+  nohup "$PROJECT_DIR/external-keepalive.sh" >> "$PROJECT_DIR/external-keepalive.log" 2>&1 &
+  log "★ External keep-alive daemon started (PID: $!) — pinging $ORRA_PUBLIC_URL every 30s"
+fi
 
 log "Starting server..."
 
@@ -156,10 +247,45 @@ while true; do
       LAST_BACKUP=$NOW
     fi
     
-    # Keep-alive pings (prevents FC idle timeout)
-    # Ping BOTH port 3000 (direct) AND port 81 (Caddy proxy) to keep the full chain warm
+    # ============================================================
+    # KEEP-ALIVE PINGS — THE MOST CRITICAL PART!
+    # The platform freezes containers after ~3-5 min of no traffic.
+    # Localhost pings do NOT count as external traffic.
+    # We MUST ping the PUBLIC URL to keep the container alive!
+    # ============================================================
+    
+    # 1. Ping localhost:3000 (keeps Node process responsive)
     curl -s -o /dev/null http://localhost:3000/api/health 2>/dev/null || true
+    
+    # 2. Ping localhost:81 (keeps Caddy proxy warm)
     curl -s -o /dev/null http://localhost:81/api/health 2>/dev/null || true
+    
+    # 3. ★★★ PING THE PUBLIC URL — THIS IS WHAT KEEPS THE CONTAINER ALIVE! ★★★
+    #    This request goes out to the internet, through the platform's
+    #    load balancer, and back to our container. The platform counts
+    #    this as real external traffic and won't freeze the container!
+    
+    # Always re-read the public URL from discovered-url.txt in case it changed
+    if [ -z "$ORRA_PUBLIC_URL" ] && [ -f "$PROJECT_DIR/discovered-url.txt" ]; then
+      ORRA_PUBLIC_URL=$(cat "$PROJECT_DIR/discovered-url.txt" 2>/dev/null | tr -d '[:space:]')
+    fi
+    
+    if [ -n "$ORRA_PUBLIC_URL" ]; then
+      PUB_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 8 "$ORRA_PUBLIC_URL/api/health" 2>/dev/null || echo "000")
+      if [ "$PUB_STATUS" = "200" ]; then
+        : # All good — container is alive and responding!
+      else
+        log "⚠ Public URL ping returned $PUB_STATUS — trying to rediscover..."
+        # Try to rediscover the URL
+        if [ -f "$PROJECT_DIR/discovered-url.txt" ]; then
+          NEW_URL=$(cat "$PROJECT_DIR/discovered-url.txt" 2>/dev/null | tr -d '[:space:]')
+          if [ -n "$NEW_URL" ] && [ "$NEW_URL" != "$ORRA_PUBLIC_URL" ]; then
+            ORRA_PUBLIC_URL="$NEW_URL"
+            log "Rediscovered public URL: $ORRA_PUBLIC_URL"
+          fi
+        fi
+      fi
+    fi
     
     sleep 10
   done

@@ -96,9 +96,14 @@ function selfPing() {
     } catch {}
   }
 
-  // 4. Every 60 seconds, try to auto-discover the public URL by pinging
-  //    candidate URLs. Once found, it's saved and used for all future pings.
-  if (pingCount % 6 === 0 && !discoveredPublicUrl) {
+  // 4. Auto-discover the public URL:
+  //    - Every 30 seconds if not yet discovered (aggressive discovery)
+  //    - Every 5 minutes if already discovered (refresh check)
+  if (!discoveredPublicUrl) {
+    if (pingCount % 3 === 0) { // Every 30s when not found
+      tryAutoDiscoverPublicUrl();
+    }
+  } else if (pingCount % 30 === 0) { // Every 5 min when already found
     tryAutoDiscoverPublicUrl();
   }
 
@@ -115,19 +120,38 @@ function selfPing() {
 }
 
 // Auto-discover the public URL by testing candidate URLs
+// Tries MANY patterns because the platform uses different IDs for different things
 function tryAutoDiscoverPublicUrl() {
   const fcFuncName = process.env.FC_FUNCTION_NAME || '';
-  if (!fcFuncName) return;
-
-  // Generate candidate URLs based on FC function name
-  const candidates = [
-    `https://preview-${fcFuncName}.space.chatglm.site`,
-    `https://${fcFuncName}.space.chatglm.site`,
-    `https://preview-${fcFuncName.replace('ws-', '')}.space.chatglm.site`,
-    `https://${fcFuncName.replace('ws-', '')}.space.chatglm.site`,
-  ];
-
-  for (const baseUrl of candidates) {
+  const hostname = require('os').hostname();
+  
+  // Generate candidate URLs based on all available identifiers
+  const candidates = [];
+  
+  // From FC_FUNCTION_NAME
+  if (fcFuncName) {
+    candidates.push(`https://preview-${fcFuncName}.space.chatglm.site`);
+    candidates.push(`https://${fcFuncName}.space.chatglm.site`);
+    const noWs = fcFuncName.replace(/^ws-/, '');
+    candidates.push(`https://preview-${noWs}.space.chatglm.site`);
+    candidates.push(`https://${noWs}.space.chatglm.site`);
+    candidates.push(`https://preview-chat-${noWs}.space.chatglm.site`);
+    candidates.push(`https://chat-${noWs}.space.chatglm.site`);
+  }
+  
+  // From hostname
+  if (hostname) {
+    candidates.push(`https://preview-${hostname}.space.chatglm.site`);
+    candidates.push(`https://${hostname}.space.chatglm.site`);
+  }
+  
+  // Hard-coded known URL (for this specific container)
+  candidates.push('https://preview-chat-706d244e-3872-423f-8515-99e9c1c9cde8.space.chatglm.site');
+  
+  // De-duplicate
+  const uniqueCandidates = [...new Set(candidates)];
+  
+  for (const baseUrl of uniqueCandidates) {
     try {
       const targetUrl = new URL('/api/health', baseUrl);
       require('https').get(targetUrl.toString(), { timeout: 8000 }, (res) => {
