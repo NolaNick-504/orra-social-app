@@ -18,11 +18,12 @@ import { useEffect, useRef, useCallback, useState } from 'react';
  * 5. Handles browser tab visibility changes (resume pings when tab becomes visible)
  */
 
-const PING_INTERVAL = 10_000; // 10 seconds — must be less than platform idle timeout (~3-5 min)
-const PING_TIMEOUT = 8_000;   // 8 second timeout for each ping (was 5s, increased for slower connections)
-const MAX_FAST_RETRIES = 8;    // After detecting server down, retry this many times quickly (was 5)
+const PING_INTERVAL = 15_000; // 15 seconds — less aggressive but still under platform idle timeout
+const PING_TIMEOUT = 10_000;   // 10 second timeout for each ping
+const MAX_FAST_RETRIES = 5;    // After detecting server down, retry this many times quickly
 const FAST_RETRY_DELAY = 3_000; // 3 seconds between fast retries
-const SLOW_RETRY_DELAY = 10_000; // 10 seconds between slow retries (was 15s, faster recovery)
+const SLOW_RETRY_DELAY = 10_000; // 10 seconds between slow retries
+const GRACE_PERIOD = 15_000;   // 15 seconds before showing the reconnect overlay (avoids blips)
 
 type ServerStatus = 'healthy' | 'down' | 'recovering';
 
@@ -33,6 +34,7 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
   const retryCountRef = useRef(0);
   const lastHealthyRef = useRef(Date.now());
   const isRecoveringRef = useRef(false);
+  const downSinceRef = useRef<number | null>(null); // Track when server went down
 
   const setStatus = useCallback((status: ServerStatus) => {
     if (statusRef.current !== status) {
@@ -89,6 +91,7 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
         console.warn('ORRA: Server is back! (fast retry', i + 1, ')');
         isRecoveringRef.current = false;
         lastHealthyRef.current = Date.now();
+        downSinceRef.current = null;
         setStatus('healthy');
 
         // Server is back — reload to get fresh app state
@@ -109,6 +112,7 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
           console.warn('ORRA: Server is back! (slow retry', retryCountRef.current, ')');
           isRecoveringRef.current = false;
           lastHealthyRef.current = Date.now();
+          downSinceRef.current = null;
           setStatus('healthy');
 
           // Server is back — reload to get fresh app state
@@ -134,16 +138,21 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
       const ok = await ping();
       if (ok) {
         lastHealthyRef.current = Date.now();
+        downSinceRef.current = null;
         setStatus('healthy');
       } else {
-        const timeSinceHealthy = Date.now() - lastHealthyRef.current;
-        // Only start recovery if we've been down for more than 5 seconds
-        // (to avoid false positives from one bad ping)
-        if (timeSinceHealthy > 5000 || retryCountRef.current > 0) {
+        // Track when we first detected the server was down
+        if (!downSinceRef.current) {
+          downSinceRef.current = Date.now();
+        }
+        const downDuration = Date.now() - downSinceRef.current;
+        
+        // Only start recovery if we've been down for more than the grace period
+        // This avoids showing the reconnect screen for brief blips
+        if (downDuration > GRACE_PERIOD || retryCountRef.current > 0) {
           recoverServer();
         } else {
           // Mark as down but don't recover yet — might be transient
-          lastHealthyRef.current = 0; // Force next ping to trigger recovery
           setStatus('down');
         }
       }
@@ -229,13 +238,15 @@ export function KeepAliveProvider({ children }: { children: React.ReactNode }) {
     };
   }, [ping, recoverServer, setStatus]);
 
-  // Show recovery overlay when server is down
+  // Show recovery overlay when server is down AND past grace period
   const status = statusRef.current;
+  const downDuration = downSinceRef.current ? Date.now() - downSinceRef.current : 0;
+  const showOverlay = (status === 'down' || status === 'recovering') && downDuration > GRACE_PERIOD;
 
   return (
     <>
       {children}
-      {(status === 'down' || status === 'recovering') && (
+      {showOverlay && (
         <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm flex items-center justify-center">
           <div className="text-center max-w-sm mx-auto p-6">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/30 mb-6 animate-pulse">
