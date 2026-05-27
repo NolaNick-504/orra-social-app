@@ -31,6 +31,11 @@ export function AuthPage() {
       const data = await res.json();
 
       if (data.success) {
+        // Save credentials to localStorage for auto-re-login after container restarts
+        try {
+          localStorage.setItem('orra-last-email', loginEmail);
+          localStorage.setItem('orra-last-password', loginPassword);
+        } catch {}
         // Session cookie has been set by the server — reload to hydrate
         return true;
       }
@@ -57,6 +62,8 @@ export function AuthPage() {
     if (success) {
       window.location.reload();
     } else {
+      // Clear saved credentials on failed login
+      try { localStorage.removeItem('orra-last-email'); localStorage.removeItem('orra-last-password'); } catch {}
       setLoading(false);
     }
   };

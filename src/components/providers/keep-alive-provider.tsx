@@ -19,10 +19,10 @@ import { useEffect, useRef, useCallback, useState } from 'react';
  */
 
 const PING_INTERVAL = 10_000; // 10 seconds — must be less than platform idle timeout (~3-5 min)
-const PING_TIMEOUT = 5_000;   // 5 second timeout for each ping
-const MAX_FAST_RETRIES = 5;    // After detecting server down, retry this many times quickly
+const PING_TIMEOUT = 8_000;   // 8 second timeout for each ping (was 5s, increased for slower connections)
+const MAX_FAST_RETRIES = 8;    // After detecting server down, retry this many times quickly (was 5)
 const FAST_RETRY_DELAY = 3_000; // 3 seconds between fast retries
-const SLOW_RETRY_DELAY = 15_000; // 15 seconds between slow retries (after fast retries exhausted)
+const SLOW_RETRY_DELAY = 10_000; // 10 seconds between slow retries (was 15s, faster recovery)
 
 type ServerStatus = 'healthy' | 'down' | 'recovering';
 

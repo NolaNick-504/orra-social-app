@@ -26,14 +26,14 @@ import { AppWrapper } from '@/components/aura/app-wrapper';
 import dynamic from 'next/dynamic';
 
 // Auto-reloading loading screen for dynamic imports
-// If a component takes more than 8 seconds to load (stale chunks, server down),
+// If a component takes more than 15 seconds to load (stale chunks, server down),
 // force a full page reload to get fresh HTML with correct chunk references.
 function LoadingScreen() {
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      console.warn('ORRA: Component still loading after 8s — forcing page reload');
+      console.warn('ORRA: Component still loading after 15s — forcing page reload');
       window.location.replace('/?_cb=' + Date.now());
-    }, 8000);
+    }, 15000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -439,6 +439,7 @@ export default function Home() {
   const { data: session, status } = useSession();
   const queryClient = getQueryClient();
   const [sessionTimedOut, setSessionTimedOut] = useState(false);
+  const [autoReloginAttempted, setAutoReloginAttempted] = useState(false);
 
   const isAuthenticated = status === 'authenticated' && session;
 
@@ -471,8 +472,10 @@ export default function Home() {
   // This prevents the UI from flickering to a loading screen during refetches.
   const initialCheckDone = status !== 'loading' || !!session || sessionTimedOut;
 
-  // Safety timeout: if session check takes longer than 2 seconds, proceed anyway.
-  // The app should NEVER show a blank screen for more than 2 seconds.
+  // Safety timeout: if session check takes longer than 5 seconds, proceed anyway.
+  // Extended from 2s to 5s to accommodate slower container restarts.
+  // The app should NEVER show a blank screen for more than 5 seconds.
+  // If we have a session cookie, treat as authenticated. If not, show auth page.
   useEffect(() => {
     if (status === 'loading' && !sessionTimedOut) {
       const timeout = setTimeout(() => {
@@ -480,13 +483,60 @@ export default function Home() {
           console.warn('ORRA: Session check timed out — proceeding');
           setSessionTimedOut(true);
         }
-      }, 2000);
+      }, 5000);
       return () => clearTimeout(timeout);
     }
   }, [status, sessionTimedOut]);
 
+  // Auto-re-login: When session becomes unauthenticated (e.g., after container restart),
+  // check localStorage for saved credentials and automatically try to re-login.
+  // This prevents users from being kicked to the login page when the server restarts.
+  useEffect(() => {
+    if (status !== 'unauthenticated' || autoReloginAttempted) return;
+
+    const attemptAutoRelogin = async () => {
+      try {
+        const savedEmail = localStorage.getItem('orra-last-email');
+        const savedPassword = localStorage.getItem('orra-last-password');
+
+        if (!savedEmail || !savedPassword) {
+          setAutoReloginAttempted(true);
+          return;
+        }
+
+        console.warn('ORRA: Session lost — attempting auto-re-login for', savedEmail);
+        setAutoReloginAttempted(true);
+
+        // Try to re-login with saved credentials
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: savedEmail, password: savedPassword }),
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          console.warn('ORRA: Auto-re-login successful — reloading');
+          // Small delay to let the session cookie propagate
+          setTimeout(() => window.location.reload(), 300);
+        } else {
+          console.warn('ORRA: Auto-re-login failed — clearing saved credentials');
+          localStorage.removeItem('orra-last-email');
+          localStorage.removeItem('orra-last-password');
+        }
+      } catch (err) {
+        console.warn('ORRA: Auto-re-login error:', err);
+        // Network error — server might still be waking up, don't clear credentials
+        // The user will see the login page and can try again
+      }
+    };
+
+    attemptAutoRelogin();
+  }, [status, autoReloginAttempted]);
+
   // If the initial session check hasn't completed yet, show the ORRA logo
-  // spinner — but ONLY for a maximum of 2 seconds. After that, we proceed.
+  // spinner — but ONLY for a maximum of 5 seconds. After that, we proceed.
+  // Safety: if stuck for 15 seconds, force a full page reload.
   if (!initialCheckDone) {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center">
