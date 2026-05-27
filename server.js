@@ -26,7 +26,7 @@ const BACKUP_DIR = path.join(PROJECT_ROOT, 'db', 'backups');
 //      the public URL automatically
 //   5. Fallback: ping external endpoints to keep network alive
 // ============================================================
-const SELF_PING_INTERVAL = 10000; // 10 seconds
+const SELF_PING_INTERVAL = 5000; // 5 seconds — aggressive keep-alive
 const PUBLIC_URL_FILE = path.join(PROJECT_ROOT, 'discovered-url.txt');
 let discoveredPublicUrl = process.env.ORRA_PUBLIC_URL || '';
 
@@ -107,7 +107,7 @@ function selfPing() {
     tryAutoDiscoverPublicUrl();
   }
 
-  // 5. Every 30 seconds, make an outbound request to keep the network stack active
+  // 5. Every 15 seconds, make an outbound request to keep the network stack active
   //    (even a failed request keeps the container's network from going idle)
   if (pingCount % 3 === 0) {
     try {
@@ -116,6 +116,19 @@ function selfPing() {
     try {
       require('https').get('https://www.google.com/', { timeout: 5000 }, () => {}).on('error', () => {});
     } catch {}
+  }
+  
+  // 6. Every 30 seconds, ping MULTIPLE paths on the public URL to simulate real user traffic
+  //    Different paths make it look like real browsing, not just a health check
+  if (pingCount % 6 === 0 && discoveredPublicUrl) {
+    const userPaths = ['/api/health', '/api/status', '/'];
+    for (const p of userPaths) {
+      try {
+        const targetUrl = new URL(p, discoveredPublicUrl);
+        const httpModule = targetUrl.protocol === 'https:' ? require('https') : require('http');
+        httpModule.get(targetUrl.toString(), { timeout: 8000 }, () => {}).on('error', () => {});
+      } catch {}
+    }
   }
 }
 

@@ -33,7 +33,7 @@ const WAKING_UP_HTML = `<!DOCTYPE html>
     <h2>Waking Up ORRA</h2>
     <p class="subtitle">The server is starting up. This takes a few seconds...</p>
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-    <p class="countdown" id="countdown">Retrying in 5s...</p>
+    <p class="countdown" id="countdown">Retrying in 3s...</p>
     <p class="attempts" id="attempts"></p>
   </div>
   <script>
@@ -49,7 +49,7 @@ const WAKING_UP_HTML = `<!DOCTYPE html>
         attemptsEl.textContent = 'Attempt ' + attempt + ' of ' + maxAttempts;
         progressEl.style.width = Math.min((attempt / maxAttempts) * 100, 95) + '%';
 
-        var countdown = 5;
+        var countdown = 3; // Faster retry — 3 seconds instead of 5
         var targetUrl = window.location.href;
 
         function tick() {
@@ -65,7 +65,7 @@ const WAKING_UP_HTML = `<!DOCTYPE html>
                   window.location.replace(targetUrl.split('?')[0] + '?_cb=' + Date.now());
                 } else if (res.status === 403 || res.status === 502 || res.status === 503) {
                   // Platform proxy error — server still starting
-                  countdown = 4;
+                  countdown = 2; // Faster retry
                   tick();
                 } else {
                   // Unexpected response — try to read it
@@ -74,7 +74,7 @@ const WAKING_UP_HTML = `<!DOCTYPE html>
                       var json = JSON.parse(text);
                       if (json.error && (json.error.includes('inactive') || json.error.includes('sandbox'))) {
                         // Still inactive — retry
-                        countdown = 4;
+                        countdown = 2; // Faster retry
                         tick();
                       } else {
                         // Some other error — just reload the page normally
@@ -90,7 +90,7 @@ const WAKING_UP_HTML = `<!DOCTYPE html>
               .catch(function() {
                 // Network error — server not up yet, retry
                 if (attempt < maxAttempts) {
-                  countdown = 4;
+                  countdown = 2; // Faster retry
                   tick();
                 } else {
                   countdownEl.textContent = 'Taking longer than expected. Tap to retry.';
@@ -111,8 +111,8 @@ const WAKING_UP_HTML = `<!DOCTYPE html>
         tick();
       }
 
-      // Start first attempt after a short delay
-      setTimeout(tryConnect, 1000);
+      // Start first attempt quickly
+      setTimeout(tryConnect, 500);
     })();
   </script>
 </body>
