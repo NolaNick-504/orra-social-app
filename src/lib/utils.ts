@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Cache-bust version for avatar/profile images — bump this to force browsers to re-fetch images
-const IMAGE_CACHE_VERSION = 'v2025.05.23-3';
+const IMAGE_CACHE_VERSION = 'v2026.05.28-1';
 
 /**
  * Convert /images/ and /uploads/ paths to API-served paths for standalone mode compatibility.
