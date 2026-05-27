@@ -154,7 +154,11 @@ function captureHostHeader(req) {
         effectiveHost.startsWith('21.0.') ||
         effectiveHost.startsWith('10.') ||
         effectiveHost.startsWith('172.') ||
-        effectiveHost.startsWith('192.168.')) {
+        effectiveHost.startsWith('192.168.') ||
+        effectiveHost.includes('vpc.') ||
+        effectiveHost.includes('fcapp.run') ||
+        effectiveHost.includes('.fc.aliyuncs.com') ||
+        effectiveHost.includes('internal')) {
       return;
     }
     
