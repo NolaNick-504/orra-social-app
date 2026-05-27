@@ -48,25 +48,51 @@ Stage Summary:
 - Cache bust updated to force browser refresh
 - User may need to hard-refresh (Ctrl+Shift+R) or clear browser cache on Samsung Internet
 - VLM API was consistently timing out - could not visually compare screenshots
+
 ---
-Task ID: 1
+Task ID: 3
 Agent: Main Agent
-Task: Fix profile appearance and server keep-alive issues
+Task: Fix indefinite container freeze - user stuck on "Waking Up" screen
 
 Work Log:
-- Analyzed user's uploaded screenshots using OCR - both show "Waking Up ORRA" / "Reconnecting" screens
-- Identified that the container keeps going to sleep despite internal pings
-- Found that pings from inside container go through platform's internal network (73ms response) and don't count as external traffic
-- Fixed avatar upload path: removed invalid /home/public from PUBLIC_DIRS (was causing EACCES permission error)
-- Increased keep-alive ping frequency from 10s to 5s
-- Added multi-path public URL pinging to simulate real user traffic
-- Made service worker wake-up retries faster (3s initial, 2s between retries instead of 5s/4s)
+- Analyzed user's complaint: keeps getting stuck on error screen, has to come to this chat to wake up the app
+- Identified multiple root causes:
+  1. External keepalive process was DEAD - not running at all
+  2. Service Worker v7 only tried 20 reconnects then gave up
+  3. error.tsx only tried 1 auto-reload then showed manual button
+  4. KeepAliveProvider had finite retries
+  5. Server keeps dying silently (platform freezes container, killing all processes)
+- Upgraded Service Worker to v8:
+  - INDEFINITE retries (never gives up)
+  - Uses /api/health for reliable server detection
+  - Visibility change auto-retry (switching tabs triggers immediate check)
+  - "Tap here to try now" button always visible
+  - Animated progress bar instead of static counter
+- Rewrote error.tsx with infinite retry loop:
+  - Checks /api/health before reloading
+  - Auto-recovers on visibility change and online events
+  - Clear "Reconnecting..." status with attempt counter
+- Upgraded KeepAliveProvider to v2:
+  - INDEFINITE retries (never gives up)
+  - Faster ping interval (10s instead of 15s)
+  - Better JSON response validation
+  - Detects "Waking Up" text on page and auto-reloads
+- Upgraded external-keepalive.sh to v3:
+  - PID file for supervisor monitoring
+  - Heartbeat timestamp file
+  - Consecutive fail tracking
+  - Also pings Caddy proxy
+- Updated supervisor (dev.sh) to monitor and auto-restart external keepalive:
+  - Checks PID file every 10s
+  - Restarts keepalive if process dies
 - Rebuilt app and restarted server
-- Pushed all changes to GitHub
+- Committed and pushed all changes to GitHub (87a7ed3)
 
 Stage Summary:
-- Profile page renders correctly when server is up (verified via browser automation)
-- Server keep-alive has fundamental limitation: internal pings don't prevent container sleep
-- Avatar upload EACCES error fixed
-- Wake-up experience improved with faster retries
-- Container requires external traffic to stay alive (platform limitation)
+- Core issue: Platform freezes container when no external traffic arrives
+- External keepalive was dead - process kept dying with container
+- Client-side recovery was limited (20 retries max) - now INFINITE
+- All recovery systems now retry indefinitely
+- External keepalive now monitored and auto-restarted by supervisor
+- User should never be permanently stuck on "Waking Up" screen again
+- Container may still freeze, but app will auto-recover when it thaws
