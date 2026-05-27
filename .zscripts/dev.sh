@@ -43,7 +43,7 @@ cleanup() {
 }
 trap cleanup SIGTERM SIGINT
 
-log "ORRA Fast Startup v3.1"
+log "ORRA Fast Startup v3.2 (aggressive keep-alive)"
 cd "$PROJECT_DIR"
 
 # =============================================================================
@@ -156,8 +156,10 @@ while true; do
       LAST_BACKUP=$NOW
     fi
     
-    # Keep-alive ping every 10 seconds (prevents FC idle timeout)
-    curl -s -o /dev/null http://localhost:3000/api/build-id 2>/dev/null || true
+    # Keep-alive pings (prevents FC idle timeout)
+    # Ping BOTH port 3000 (direct) AND port 81 (Caddy proxy) to keep the full chain warm
+    curl -s -o /dev/null http://localhost:3000/api/health 2>/dev/null || true
+    curl -s -o /dev/null http://localhost:81/api/health 2>/dev/null || true
     
     sleep 10
   done

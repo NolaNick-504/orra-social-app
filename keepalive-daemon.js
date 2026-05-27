@@ -58,29 +58,25 @@ function restartServer() {
     try { execSync('pkill -f "node server.js" 2>/dev/null || true', { timeout: 5000 }); } catch {}
     try { execSync('pkill -f "next start" 2>/dev/null || true', { timeout: 5000 }); } catch {}
     
-    // Step 2: Check if database is healthy
+    // Step 2: Check if database is healthy (NEVER auto-force-reset — that destroys user data!)
+    // The database was accidentally wiped by auto-reset code before. NEVER auto-reset.
     try {
       const dbPath = path.join(PROJECT_DIR, 'db/custom.db');
       if (fs.existsSync(dbPath)) {
         const stat = fs.statSync(dbPath);
         if (stat.size < 1000) {
-          log('⚠️ Database file is too small — reseeding...');
-          execSync('cd ' + PROJECT_DIR + ' && npx prisma db push --force-reset 2>&1', { timeout: 30000 });
-          execSync('cd ' + PROJECT_DIR + ' && npx prisma db seed 2>&1', { timeout: 60000 });
+          log('⚠️ WARNING: Database file is very small (' + stat.size + ' bytes)');
+          log('⚠️ MANUAL FIX NEEDED: Run: npx prisma db push --force-reset && npx prisma db seed');
+          // DO NOT auto-repair — this destroys user data!
         }
       } else {
-        log('⚠️ Database file missing — creating...');
-        execSync('cd ' + PROJECT_DIR + ' && npx prisma db push 2>&1', { timeout: 30000 });
-        execSync('cd ' + PROJECT_DIR + ' && npx prisma db seed 2>&1', { timeout: 60000 });
+        log('⚠️ WARNING: Database file missing');
+        log('⚠️ MANUAL FIX NEEDED: Run: npx prisma db push && npx prisma db seed');
+        // DO NOT auto-repair — just warn
       }
     } catch (e) {
       log('⚠️ Database check failed: ' + e.message);
-      try {
-        execSync('cd ' + PROJECT_DIR + ' && npx prisma db push --force-reset 2>&1', { timeout: 30000 });
-        execSync('cd ' + PROJECT_DIR + ' && npx prisma db seed 2>&1', { timeout: 60000 });
-      } catch (e2) {
-        log('❌ Database recovery failed: ' + e2.message);
-      }
+      // DO NOT auto-force-reset — that wipes all data!
     }
     
     // Step 3: Check if build exists

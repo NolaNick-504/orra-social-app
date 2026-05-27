@@ -15,28 +15,55 @@ const DB_PATH = path.join(PROJECT_ROOT, 'db', 'custom.db');
 const BACKUP_DIR = path.join(PROJECT_ROOT, 'db', 'backups');
 
 // ============================================================
-// SELF-PING KEEP-ALIVE
-// Pings the PUBLIC URL every 2 minutes to prevent the container
-// from being frozen by the hosting platform.
-// Also pings localhost as a fallback.
+// SELF-PING KEEP-ALIVE (AGGRESSIVE)
+// Pings every 15 seconds to prevent the container from being
+// frozen by the hosting platform.
+// Pings BOTH localhost:3000 (direct) AND localhost:81 (Caddy proxy)
+// to keep the entire request chain warm.
+// Also pings the public URL if set.
 // ============================================================
-const SELF_PING_INTERVAL = 120000; // 2 minutes
+const SELF_PING_INTERVAL = 15000; // 15 seconds (was 2 min — too slow!)
 const PUBLIC_URL = process.env.ORRA_PUBLIC_URL || '';
 
+let pingCount = 0;
+
 function selfPing() {
-  // Ping localhost first (always works)
+  pingCount++;
+  const verbose = (pingCount % 20 === 1); // Log details every 20th ping (~5 min)
+
+  // 1. Ping localhost:3000 (direct Next.js)
   try {
     const req = require('http').get(`http://127.0.0.1:${port}/api/health`, { timeout: 5000 }, (res) => {
       if (res.statusCode === 200) {
-        console.log(`[KEEPALIVE] Self-ping OK (${new Date().toISOString()})`);
+        if (verbose) console.log(`[KEEPALIVE] Direct ping OK (port ${port})`);
+      } else {
+        console.log(`[KEEPALIVE] Direct ping returned ${res.statusCode}`);
       }
       res.resume();
     });
-    req.on('error', () => {});
+    req.on('error', (e) => {
+      console.log(`[KEEPALIVE] Direct ping error: ${e.message}`);
+    });
     req.on('timeout', () => { req.destroy(); });
   } catch {}
 
-  // Also ping the public URL if set (keeps the container alive on the platform)
+  // 2. Ping localhost:81 (through Caddy proxy — keeps the proxy warm too)
+  try {
+    const req = require('http').get('http://127.0.0.1:81/api/health', { timeout: 5000 }, (res) => {
+      if (res.statusCode === 200) {
+        if (verbose) console.log(`[KEEPALIVE] Caddy proxy ping OK (port 81)`);
+      } else {
+        console.log(`[KEEPALIVE] Caddy proxy ping returned ${res.statusCode}`);
+      }
+      res.resume();
+    });
+    req.on('error', (e) => {
+      if (verbose) console.log(`[KEEPALIVE] Caddy proxy ping error: ${e.message}`);
+    });
+    req.on('timeout', () => { req.destroy(); });
+  } catch {}
+
+  // 3. Ping the public URL if set (keeps the container alive on the platform)
   if (PUBLIC_URL && PUBLIC_URL.startsWith('http')) {
     try {
       const publicUrl = new URL('/api/health', PUBLIC_URL);
@@ -48,7 +75,7 @@ function selfPing() {
         res.resume();
       });
       req.on('error', (e) => {
-        console.log(`[KEEPALIVE] Public URL ping failed: ${e.message}`);
+        if (verbose) console.log(`[KEEPALIVE] Public URL ping failed: ${e.message}`);
       });
       req.on('timeout', () => { req.destroy(); });
     } catch {}
@@ -197,10 +224,8 @@ app.prepare().then(() => {
     console.log(`> Database: ${DB_PATH}`);
     console.log(`> Started at: ${new Date().toISOString()}`);
 
-    // Start self-ping keep-alive
-    setTimeout(() => {
-      selfPing(); // Initial ping after 30s
-    }, 30000);
+    // Start AGGRESSIVE self-ping keep-alive (every 15s)
+    selfPing(); // Initial ping immediately
     setInterval(selfPing, SELF_PING_INTERVAL);
 
     // Start periodic backups

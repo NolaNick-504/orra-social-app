@@ -165,6 +165,20 @@ self.addEventListener('fetch', (event) => {
             return response;
           }
 
+          // 404 from the platform proxy (plain text "404 page not found")
+          // This happens when the container is frozen/sleeping
+          if (response.status === 404 || response.status === 502 || response.status === 503) {
+            console.log('[SW v7] Platform returned', response.status, '— container likely frozen, showing waking-up page');
+            return new Response(WAKING_UP_HTML, {
+              status: 200,
+              headers: {
+                'Content-Type': 'text/html; charset=utf-8',
+                'X-ORRA-Wake-Up': '1',
+                'Cache-Control': 'no-store',
+              },
+            });
+          }
+
           // Got a non-HTML response (likely platform error JSON like "sandbox is inactive")
           // Clone and read the body to check
           return response.clone().text().then((body) => {
@@ -190,9 +204,10 @@ self.addEventListener('fetch', (event) => {
                 });
               }
             } catch (e) {
-              // Not valid JSON — could be a plain text error or something else
-              if (body.includes('inactive') || body.includes('sandbox') || body.includes('error')) {
-                console.log('[SW v7] Platform text error detected — showing waking-up page');
+              // Not valid JSON — could be a plain text error from the platform proxy
+              // Common errors: "404 page not found", "sandbox is inactive", etc.
+              if (body.includes('inactive') || body.includes('sandbox') || body.includes('error') || body.includes('not found') || body.includes('404')) {
+                console.log('[SW v7] Platform text error detected:', body.substring(0, 50), '— showing waking-up page');
                 return new Response(WAKING_UP_HTML, {
                   status: 200,
                   headers: {
