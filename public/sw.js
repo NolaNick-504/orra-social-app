@@ -1,12 +1,15 @@
-// ORRA Service Worker v8 - Indefinite Recovery
+// ORRA Service Worker v9 - Recovery Bypass
 // - Detects "sandbox is inactive" / platform proxy errors on navigation
 // - Shows "Waking up..." page with INDEFINITE auto-retry
-// - Auto-reloads when the server comes back
-// - Cache-first for /_next/static/ chunks (content-hashed, safe to cache)
-// - Network-first for API calls and HTML pages
-// - NEVER caches error responses or "sandbox is inactive" JSON
-const STATIC_CACHE = 'orra-static-v8';
-const IMAGE_CACHE = 'orra-images-v8';
+// - ★ CRITICAL FIX: Uses cookie bypass to avoid re-intercepting recovery navigations
+// - When the waking-up page confirms server is alive, it sets a cookie
+//   that tells this SW to pass through navigation requests without intercepting
+// - This prevents the infinite loop where SW keeps showing the waking-up page
+const STATIC_CACHE = 'orra-static-v9';
+const IMAGE_CACHE = 'orra-images-v9';
+
+// The bypass cookie name — when present, SW passes through all navigation
+const BYPASS_COOKIE = 'orra_sw_bypass';
 
 // HTML page shown when the sandbox/platform is cold-starting
 const WAKING_UP_HTML = `<!DOCTYPE html>
@@ -21,56 +24,93 @@ const WAKING_UP_HTML = `<!DOCTYPE html>
     .logo { width: 72px; height: 72px; border-radius: 20px; background: linear-gradient(135deg, #7c3aed, #d946ef); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 28px; font-weight: bold; color: white; animation: logoPulse 2s ease-in-out infinite; box-shadow: 0 0 40px rgba(124,58,237,0.3); }
     @keyframes logoPulse { 0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(124,58,237,0.3); } 50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(124,58,237,0.5); } }
     h2 { color: white; font-size: 22px; margin: 0 0 8px; font-weight: 700; }
-    .subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
+    .subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 20px; line-height: 1.4; }
     .progress-bar { width: 200px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; margin: 0 auto 12px; overflow: hidden; }
     .progress-fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #d946ef); border-radius: 2px; animation: progressSweep 3s ease-in-out infinite; }
     @keyframes progressSweep { 0% { width: 10%; margin-left: 0; } 50% { width: 70%; margin-left: 15%; } 100% { width: 10%; margin-left: 90%; } }
-    .countdown { color: #64748b; font-size: 12px; }
-    .attempts { color: #475569; font-size: 11px; margin-top: 8px; }
+    .countdown { color: #64748b; font-size: 12px; margin-top: 4px; }
     .tap-hint { color: #7c3aed; font-size: 13px; margin-top: 16px; cursor: pointer; padding: 8px 16px; border: 1px solid rgba(124,58,237,0.3); border-radius: 12px; display: inline-block; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
     .tap-hint:hover, .tap-hint:active { background: rgba(124,58,237,0.15); border-color: rgba(124,58,237,0.5); }
+    .status { color: #475569; font-size: 11px; margin-top: 6px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="logo">O</div>
-    <h2>Waking Up ORRA</h2>
-    <p class="subtitle">The server is starting up. This takes a few seconds...</p>
+    <h2 id="title">Waking Up ORRA</h2>
+    <p class="subtitle" id="subtitle">The server is starting up. This takes a few seconds...</p>
     <div class="progress-bar"><div class="progress-fill"></div></div>
     <p class="countdown" id="countdown">Connecting...</p>
-    <p class="attempts" id="attempts"></p>
-    <div class="tap-hint" id="tapRetry" onclick="manualRetry()">Tap here to try now</div>
+    <p class="status" id="status"></p>
+    <div class="tap-hint" onclick="manualRetry()">Tap here to try now</div>
   </div>
   <script>
     (function() {
       var attempt = 0;
+      var titleEl = document.getElementById('title');
+      var subtitleEl = document.getElementById('subtitle');
       var countdownEl = document.getElementById('countdown');
-      var attemptsEl = document.getElementById('attempts');
+      var statusEl = document.getElementById('status');
 
       function tryConnect() {
         attempt++;
-        attemptsEl.textContent = 'Attempt ' + attempt;
-        countdownEl.textContent = 'Connecting...';
+        statusEl.textContent = 'Attempt ' + attempt;
+        countdownEl.textContent = 'Checking server...';
 
-        var targetUrl = window.location.href.split('?')[0].split('#')[0];
-
-        // Use /api/health to check if server is alive (lightweight, won't trigger SW intercept issues)
+        // STEP 1: Check if server is alive via /api/health
         fetch('/api/health', { cache: 'no-store', headers: { 'X-Wake-Up': '1' } })
           .then(function(res) {
             if (res.ok) {
               var ct = (res.headers.get('content-type') || '').toLowerCase();
               if (ct.includes('application/json')) {
-                // Server is alive! Redirect to the actual page
-                countdownEl.textContent = 'Connected! Loading ORRA...';
-                window.location.replace(targetUrl + '?_cb=' + Date.now());
+                // Server health check passed!
+                // STEP 2: Now verify the actual HTML page loads too
+                countdownEl.textContent = 'Server is up! Loading page...';
+                subtitleEl.textContent = 'Almost there...';
+                verifyPageLoads();
                 return;
               }
             }
-            // Server responded but not healthy — retry
+            // Server not healthy yet
             scheduleRetry();
           })
           .catch(function() {
-            // Network error — server not up yet, retry
+            // Network error — server not up yet
+            scheduleRetry();
+          });
+      }
+
+      function verifyPageLoads() {
+        var targetUrl = window.location.href.split('?')[0].split('#')[0];
+        // Try to fetch the actual HTML page (not just the health endpoint)
+        // This ensures the page rendering is working, not just the API
+        fetch(targetUrl, { cache: 'no-store', headers: { 'X-Wake-Up': '1' } })
+          .then(function(res) {
+            var ct = (res.headers.get('content-type') || '').toLowerCase();
+            if (res.ok && (ct.includes('text/html') || ct.includes('document'))) {
+              // ★★★ THE KEY FIX ★★★
+              // Set a BYPASS COOKIE before navigating.
+              // The service worker checks for this cookie and will NOT intercept
+              // the navigation request. This prevents the infinite loop where
+              // the SW keeps showing the waking-up page on recovery.
+              document.cookie = 'orra_sw_bypass=1; path=/; max-age=30; SameSite=Lax';
+              countdownEl.textContent = 'Connected! Loading ORRA...';
+              titleEl.textContent = 'Almost Ready!';
+              subtitleEl.textContent = '';
+              // Short delay to ensure cookie is saved
+              setTimeout(function() {
+                window.location.replace(targetUrl + '?_cb=' + Date.now());
+              }, 300);
+            } else {
+              // Health check passed but page doesn't load properly yet
+              // The server might still be initializing — retry
+              statusEl.textContent = 'Server up but page not ready yet (attempt ' + attempt + ')';
+              scheduleRetry();
+            }
+          })
+          .catch(function() {
+            // Page fetch failed even though health check passed
+            statusEl.textContent = 'Page still loading (attempt ' + attempt + ')';
             scheduleRetry();
           });
       }
@@ -81,6 +121,10 @@ const WAKING_UP_HTML = `<!DOCTYPE html>
         if (attempt <= 2) delay = 2000;
         else if (attempt <= 4) delay = 3000;
         else delay = 5000;
+
+        // After many attempts, increase delay to avoid hammering
+        if (attempt > 20) delay = 10000;
+        if (attempt > 50) delay = 15000;
 
         var remaining = Math.ceil(delay / 1000);
         function tick() {
@@ -109,6 +153,7 @@ const WAKING_UP_HTML = `<!DOCTYPE html>
       document.addEventListener('visibilitychange', function() {
         if (!document.hidden) {
           attempt = 0;
+          countdownEl.textContent = 'Connecting...';
           tryConnect();
         }
       });
@@ -135,10 +180,10 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Check if a response body looks like a platform error (JSON with sandbox error)
-function isPlatformErrorResponse(response) {
-  const contentType = (response.headers.get('content-type') || '').toLowerCase();
-  return contentType.includes('application/json') || contentType.includes('text/plain');
+// Check if the request has the bypass cookie (set by the waking-up page before recovery)
+function hasBypassCookie(request) {
+  const cookieHeader = request.headers.get('cookie') || '';
+  return cookieHeader.includes('orra_sw_bypass=1');
 }
 
 self.addEventListener('fetch', (event) => {
@@ -151,6 +196,17 @@ self.addEventListener('fetch', (event) => {
 
   // NAVIGATION REQUESTS — Handle sandbox inactive / cold starts
   if (event.request.mode === 'navigate') {
+    // ★★★ CRITICAL FIX ★★★
+    // If the waking-up page set the bypass cookie, pass through WITHOUT intercepting.
+    // This prevents the infinite loop where SW keeps showing the waking-up page
+    // on recovery navigation. The cookie is set for 30 seconds, so after the page
+    // loads successfully and the app initializes, it clears the cookie.
+    if (hasBypassCookie(event.request)) {
+      console.log('[SW v9] Bypass cookie detected — passing through navigation without intercept');
+      // Don't call event.respondWith() — let the browser handle it natively
+      return;
+    }
+
     event.respondWith(
       fetch(event.request)
         .then((response) => {
@@ -159,14 +215,14 @@ self.addEventListener('fetch', (event) => {
           const isHTML = contentType.includes('text/html') || contentType.includes('document');
 
           if (response.ok && isHTML) {
-            // Normal HTML page — pass through
+            // Normal HTML page — pass through and clear any stale bypass cookie
             return response;
           }
 
           // 404 from the platform proxy (plain text "404 page not found")
           // This happens when the container is frozen/sleeping
           if (response.status === 404 || response.status === 502 || response.status === 503) {
-            console.log('[SW v8] Platform returned', response.status, '— container likely frozen, showing waking-up page');
+            console.log('[SW v9] Platform returned', response.status, '— showing waking-up page');
             return new Response(WAKING_UP_HTML, {
               status: 200,
               headers: {
@@ -178,11 +234,9 @@ self.addEventListener('fetch', (event) => {
           }
 
           // Got a non-HTML response (likely platform error JSON like "sandbox is inactive")
-          // Clone and read the body to check
           return response.clone().text().then((body) => {
             try {
               const json = JSON.parse(body);
-              // Platform errors: "sandbox is inactive", "container starting", etc.
               if (json.error && (
                 json.error.includes('inactive') ||
                 json.error.includes('sandbox') ||
@@ -191,7 +245,7 @@ self.addEventListener('fetch', (event) => {
                 json.error.includes('timeout') ||
                 json.error.includes('container')
               )) {
-                console.log('[SW v8] Platform error detected:', json.error, '— showing waking-up page');
+                console.log('[SW v9] Platform error detected:', json.error, '— showing waking-up page');
                 return new Response(WAKING_UP_HTML, {
                   status: 200,
                   headers: {
@@ -202,9 +256,8 @@ self.addEventListener('fetch', (event) => {
                 });
               }
             } catch (e) {
-              // Not valid JSON — could be a plain text error from the platform proxy
               if (body.includes('inactive') || body.includes('sandbox') || body.includes('error') || body.includes('not found') || body.includes('404')) {
-                console.log('[SW v8] Platform text error detected:', body.substring(0, 50), '— showing waking-up page');
+                console.log('[SW v9] Platform text error detected:', body.substring(0, 50), '— showing waking-up page');
                 return new Response(WAKING_UP_HTML, {
                   status: 200,
                   headers: {
@@ -221,8 +274,7 @@ self.addEventListener('fetch', (event) => {
           });
         })
         .catch(() => {
-          // Network error — server is down or unreachable
-          console.log('[SW v8] Network error on navigation — showing waking-up page');
+          console.log('[SW v9] Network error on navigation — showing waking-up page');
           return new Response(WAKING_UP_HTML, {
             status: 200,
             headers: {
@@ -241,10 +293,8 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // Check for platform error in API response
           if (response.status === 200) {
             const contentType = (response.headers.get('content-type') || '').toLowerCase();
-            // If API returns JSON, check for sandbox errors
             if (contentType.includes('application/json')) {
               return response.clone().text().then((body) => {
                 try {
@@ -254,14 +304,12 @@ self.addEventListener('fetch', (event) => {
                     json.error.includes('sandbox') ||
                     json.error.includes('container')
                   )) {
-                    // Platform intercepted the API call — return 503 so client retries
                     return new Response(JSON.stringify({ ok: false, error: 'sandbox_inactive', retry: true }), {
                       status: 503,
                       headers: { 'Content-Type': 'application/json', 'X-ORRA-Sandbox': 'inactive' },
                     });
                   }
                 } catch (e) {}
-                // Normal API response — return as-is
                 return new Response(body, {
                   status: response.status,
                   statusText: response.statusText,

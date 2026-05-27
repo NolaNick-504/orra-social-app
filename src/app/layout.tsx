@@ -63,9 +63,14 @@ export default function RootLayout({
             // 1. REGISTER SERVICE WORKER for cold-start resilience
             //    This SW detects "sandbox is inactive" errors and shows a
             //    "Waking up..." page with auto-retry instead of raw JSON.
+            // ★ Clear the SW bypass cookie on app load (set by waking-up page)
+            // This cookie tells the service worker NOT to intercept navigation
+            // It must be cleared after the app loads so the SW works normally again
+            try { document.cookie = 'orra_sw_bypass=; path=/; max-age=0'; } catch(e) {}
+
             if ('serviceWorker' in navigator) {
               navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(reg) {
-                console.log('ORRA: Service Worker v7 registered for cold-start protection');
+                console.log('ORRA: Service Worker v9 registered for cold-start protection');
                 // Force update check
                 reg.update();
               }).catch(function(err) {
@@ -77,8 +82,8 @@ export default function RootLayout({
             if ('caches' in window) {
               caches.keys().then(function(names) {
                 for (var i = 0; i < names.length; i++) {
-                  // Only keep our current caches (orra-static-v7, orra-images-v7)
-                  if (!names[i].includes('v7')) {
+                  // Only keep our current caches (orra-static-v9, orra-images-v9)
+                  if (!names[i].includes('v9')) {
                     caches.delete(names[i]);
                   }
                 }
