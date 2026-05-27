@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-05-27T17:22:57.552Z",
+  "timestamp": "2026-05-27T18:05:24.673Z",
   "data": {
     "id": "founder",
     "name": "Nick Joseph",
     "email": "nickjoseph8087@gmail.com",
     "handle": "@nickorraceo",
-    "avatar": "/images/avatars/bots/founder-avatar.jpg",
+    "avatar": "/api/uploads?file=avatar-founder-3b68675a.jpg",
     "coverImage": "/images/covers/founder.jpg",
     "bio": "Founder of ORRA — building the next-gen social universe where creativity meets connection. Turning vision into reality, one pulse at a time. New Orleans born, worldwide impact.",
     "location": "New Orleans, LA",

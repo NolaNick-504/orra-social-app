@@ -54,7 +54,6 @@ export const dynamic = 'force-dynamic';
 // Resolve public directories: standalone mode runs from .next/standalone/
 const PUBLIC_DIRS = [
   path.join(process.cwd(), 'public'),
-  path.resolve(process.cwd(), '..', '..', 'public'),
 ];
 
 /**
