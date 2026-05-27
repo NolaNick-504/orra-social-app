@@ -446,10 +446,20 @@ export default function Home() {
   // Track if the user was EVER authenticated this session.
   // This prevents NextAuth's update() call from briefly setting status
   // to 'unauthenticated' (during session refresh), which would flash the login page.
-  // Once authenticated, we stay showing the app unless the user explicitly signs out.
-  const [wasAuthenticated, setWasAuthenticated] = useState(false);
+  // Once authenticated, we stay showing the app unless the user explicitly signs out
+  // OR the session is unauthenticated for more than 15 seconds (handled in app-wrapper.tsx).
+  // We also persist this in sessionStorage so it survives page reloads within the same tab.
+  const [wasAuthenticated, setWasAuthenticated] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try { return sessionStorage.getItem('orra-was-auth') === 'true'; } catch { return false; }
+    }
+    return false;
+  });
   useEffect(() => {
-    if (isAuthenticated) setWasAuthenticated(true);
+    if (isAuthenticated) {
+      setWasAuthenticated(true);
+      try { sessionStorage.setItem('orra-was-auth', 'true'); } catch {}
+    }
   }, [isAuthenticated]);
 
   // Check if a session cookie exists — this tells us the user might be authenticated
@@ -472,9 +482,9 @@ export default function Home() {
   // This prevents the UI from flickering to a loading screen during refetches.
   const initialCheckDone = status !== 'loading' || !!session || sessionTimedOut;
 
-  // Safety timeout: if session check takes longer than 5 seconds, proceed anyway.
-  // Extended from 2s to 5s to accommodate slower container restarts.
-  // The app should NEVER show a blank screen for more than 5 seconds.
+  // Safety timeout: if session check takes longer than 10 seconds, proceed anyway.
+  // Extended from 5s to 10s to accommodate slower container restarts.
+  // The app should NEVER show a blank screen for more than 10 seconds.
   // If we have a session cookie, treat as authenticated. If not, show auth page.
   useEffect(() => {
     if (status === 'loading' && !sessionTimedOut) {
@@ -483,7 +493,7 @@ export default function Home() {
           console.warn('ORRA: Session check timed out — proceeding');
           setSessionTimedOut(true);
         }
-      }, 5000);
+      }, 10000);
       return () => clearTimeout(timeout);
     }
   }, [status, sessionTimedOut]);
