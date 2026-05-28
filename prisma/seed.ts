@@ -79,8 +79,8 @@ const mockUsers = [
     email: 'nickjoseph8087@gmail.com',
     name: 'Nick Joseph',
     handle: '@nickorraceo',
-    avatar: '/images/avatars/bots/founder-avatar.jpg',
-    coverImage: '/images/covers/founder.jpg',
+    avatar: '/api/uploads?path=images/avatars/founder-avatar-saved.jpg',
+    coverImage: '/api/uploads?path=images/covers/founder-cover-saved.jpg',
     bio: 'Founder of ORRA — building the next-gen social universe where creativity meets connection. Turning vision into reality, one pulse at a time. New Orleans born, worldwide impact.',
     location: 'New Orleans, LA',
     website: 'orra.app',
@@ -2950,6 +2950,30 @@ async function main() {
       artist: founderData.profileSongArtist || u.profileSong?.artist || ORRA_SONGS[0].artist,
     } : (u.profileSong ?? ORRA_SONGS[0]);
 
+    // Migrate founder avatar/cover from ephemeral uploads/ to persistent images/ paths
+    // The uploads/ directory gets wiped on container restart, causing profile images to disappear.
+    const migrateFounderImages = (avatar: string | undefined, coverImage: string | undefined) => {
+      const result: { avatar?: string; coverImage?: string } = {};
+      if (avatar && avatar.includes('/api/uploads?file=')) {
+        result.avatar = '/api/uploads?path=images/avatars/founder-avatar-saved.jpg';
+      }
+      if (coverImage && coverImage.includes('/api/uploads?file=')) {
+        result.coverImage = '/api/uploads?path=images/covers/founder-cover-saved.jpg';
+      }
+      // Also migrate old-style /images/ paths that don't go through the API
+      if (avatar && avatar.startsWith('/images/avatars/')) {
+        result.avatar = '/api/uploads?path=images/avatars/founder-avatar-saved.jpg';
+      }
+      if (coverImage && coverImage.startsWith('/images/covers/')) {
+        result.coverImage = '/api/uploads?path=images/covers/founder-cover-saved.jpg';
+      }
+      return result;
+    };
+
+    const avatarVal = founderData?.avatar || u.avatar;
+    const coverVal = founderData?.coverImage || (u.coverImage ?? '/images/profile-cover.jpg');
+    const migrated = u.id === 'founder' ? migrateFounderImages(avatarVal, coverVal) : {};
+
     try {
       await prisma.user.create({
         data: {
@@ -2958,8 +2982,8 @@ async function main() {
           name: founderData?.name || u.name,
           handle: founderData?.handle || u.handle,
           password: u.id === 'founder' ? founderPassword : hashedPassword,
-          avatar: founderData?.avatar || u.avatar,
-          coverImage: founderData?.coverImage || (u.coverImage ?? '/images/profile-cover.jpg'),
+          avatar: migrated.avatar || avatarVal,
+          coverImage: migrated.coverImage || coverVal,
           bio: founderData?.bio || (u.bio ?? ''),
           location: founderData?.location || (u.location ?? ''),
           website: founderData?.website || (u.website ?? ''),
@@ -2980,9 +3004,24 @@ async function main() {
       if (founderData) {
         console.log(`👑 Founder profile restored from backup (name: ${founderData.name}, level: ${founderData.auraLevel})`);
       }
+      if (Object.keys(migrated).length > 0) {
+        console.log(`👑 Founder avatar/cover migrated to persistent paths:`, migrated);
+      }
     } catch (e: any) {
       if (e.code === 'P2002') {
         // User already exists — NEVER overwrite, preserve their profile data
+        // BUT: migrate founder avatar/cover if they still use ephemeral paths
+        if (u.id === 'founder' && Object.keys(migrated).length > 0) {
+          try {
+            await prisma.user.update({
+              where: { id: 'founder' },
+              data: migrated,
+            });
+            console.log(`👑 Founder existing profile migrated to persistent paths:`, migrated);
+          } catch (migrateErr) {
+            console.warn(`👑 Founder migration failed:`, migrateErr);
+          }
+        }
         console.log(`User ${u.id} already exists, skipping (preserving existing data)...`);
         counts.usersSkipped++;
       } else {

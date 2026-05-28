@@ -84,6 +84,29 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
+    // Auto-migrate founder avatar/cover URLs from ephemeral uploads/ to persistent images/
+    // The uploads/ directory gets wiped on container restart, causing profile images to disappear.
+    // The images/ directory is part of the git repo and survives restarts.
+    if (userId === 'founder') {
+      const needsUpdate: Record<string, string> = {};
+      if (user.avatar && user.avatar.includes('/api/uploads?file=')) {
+        needsUpdate.avatar = '/api/uploads?path=images/avatars/founder-avatar-saved.jpg';
+      }
+      if (user.coverImage && user.coverImage.includes('/api/uploads?file=')) {
+        needsUpdate.coverImage = '/api/uploads?path=images/covers/founder-cover-saved.jpg';
+      }
+      if (Object.keys(needsUpdate).length > 0) {
+        console.log('[FOUNDER MIGRATION] Migrating avatar/cover to persistent paths:', needsUpdate);
+        try {
+          await db.user.update({ where: { id: 'founder' }, data: needsUpdate });
+          if (needsUpdate.avatar) user.avatar = needsUpdate.avatar;
+          if (needsUpdate.coverImage) user.coverImage = needsUpdate.coverImage;
+        } catch (e) {
+          console.warn('[FOUNDER MIGRATION] Failed to migrate:', e);
+        }
+      }
+    }
+
     // Auto-backup founder profile on every /api/me call (fire-and-forget)
     // This ensures the backup always has the latest data
     if (userId === 'founder') {

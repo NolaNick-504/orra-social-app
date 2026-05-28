@@ -62,6 +62,10 @@ const PUBLIC_DIRS = [
  * 1. localStorage overflow on mobile (5MB limit)
  * 2. Avatar disappearing on refresh when localStorage is stripped
  * 3. Large DB entries
+ *
+ * For the founder account, images are also saved to public/images/ (which is
+ * persisted in git and survives container restarts), and the returned URL uses
+ * the /api/uploads?path= format instead of /api/uploads?file= format.
  */
 async function saveBase64AsFile(dataUrl: string, userId: string, type: 'avatar' | 'cover'): Promise<string> {
   // Parse the data URL: data:image/jpeg;base64,/9j/4AAQ...
@@ -71,38 +75,66 @@ async function saveBase64AsFile(dataUrl: string, userId: string, type: 'avatar' 
   }
 
   const base64Data = matches[2];
+  const isFounder = userId === 'founder' || userId.startsWith('founder');
 
-  // Sharp converts all images to JPEG for consistency and EXIF rotation
-  const hash = crypto.createHash('md5').update(userId + type + Date.now()).digest('hex').slice(0, 8);
-  const filename = `${type}-${userId.slice(0, 8)}-${hash}.jpg`;
+  // For founder: use a stable filename so the path never changes across saves
+  // This prevents the "profile keeps changing" issue where new hashes create new URLs
+  const filename = isFounder
+    ? `founder-${type}-saved.jpg`
+    : `${type}-${userId.slice(0, 8)}-${crypto.createHash('md5').update(userId + type + Date.now()).digest('hex').slice(0, 8)}.jpg`;
+
+  const buffer = Buffer.from(base64Data, 'base64');
+
+  // Process image with Sharp
+  const sharp = (await import('sharp')).default;
+  const pipeline = sharp(buffer).rotate().jpeg({ quality: 85 });
+  if (type === 'avatar') {
+    pipeline.resize(400, 400, { fit: 'cover' });
+  } else {
+    pipeline.resize({ width: 1200, withoutEnlargement: true });
+  }
+  const processedBuffer = await pipeline.toBuffer();
 
   // Save to all public directories (standalone + project root)
-  const buffer = Buffer.from(base64Data, 'base64');
-  let savedPath = '';
-
   for (const dir of PUBLIC_DIRS) {
+    // Save to uploads/ (ephemeral but needed for runtime)
     const uploadsDir = path.join(dir, 'uploads');
     try {
       if (!existsSync(uploadsDir)) {
         await mkdir(uploadsDir, { recursive: true });
       }
-      const filePath = path.join(uploadsDir, filename);
-      // Use Sharp to auto-rotate based on EXIF and convert to JPEG
-      const sharp = (await import('sharp')).default;
-      const pipeline = sharp(buffer).rotate().jpeg({ quality: 85 });
-      if (type === 'avatar') {
-        pipeline.resize(400, 400, { fit: 'cover' });
-      } else {
-        pipeline.resize({ width: 1200, withoutEnlargement: true });
-      }
-      await pipeline.toFile(filePath);
-      if (!savedPath) savedPath = filePath;
+      await writeFile(path.join(uploadsDir, filename), processedBuffer);
     } catch (err) {
-      console.warn(`Failed to save ${type} to ${dir}:`, err);
+      console.warn(`Failed to save ${type} to uploads in ${dir}:`, err);
+    }
+
+    // For founder: ALSO save to images/ directory which is persisted in git
+    // This ensures images survive container restarts and node_modules wipes
+    if (isFounder) {
+      const imagesDir = type === 'avatar'
+        ? path.join(dir, 'images', 'avatars')
+        : path.join(dir, 'images', 'covers');
+      try {
+        if (!existsSync(imagesDir)) {
+          await mkdir(imagesDir, { recursive: true });
+        }
+        await writeFile(path.join(imagesDir, filename), processedBuffer);
+        console.log(`[FOUNDER] ${type} saved to persistent images dir: ${imagesDir}`);
+      } catch (err) {
+        console.warn(`Failed to save founder ${type} to images dir ${dir}:`, err);
+      }
     }
   }
 
-  // Return the URL path for serving via /api/uploads?file=filename
+  // Return the URL path
+  // For founder: use /api/uploads?path= format pointing to the persistent images/ directory
+  // For others: use /api/uploads?file= format pointing to the uploads/ directory
+  if (isFounder) {
+    const imagesPath = type === 'avatar'
+      ? `images/avatars/${filename}`
+      : `images/covers/${filename}`;
+    return `/api/uploads?path=${imagesPath}`;
+  }
   return `/api/uploads?file=${filename}`;
 }
 
