@@ -96,3 +96,28 @@ Stage Summary:
 - External keepalive now monitored and auto-restarted by supervisor
 - User should never be permanently stuck on "Waking Up" screen again
 - Container may still freeze, but app will auto-recover when it thaws
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix founder profile picture and cover image persistence - they keep changing/disappearing on container restart
+
+Work Log:
+- Analyzed uploaded screenshot using OCR (VLM API was down) - confirmed bio text
+- Identified root cause: avatar/cover images were stored in public/uploads/ (ephemeral, wiped on restart)
+- Copied founder avatar and cover to permanent locations in public/images/
+- Updated DB to point to /api/uploads?path=images/avatars/founder-avatar-saved.jpg and /api/uploads?path=images/covers/founder-cover-saved.jpg
+- Updated saveBase64AsFile() in profile route to save founder images to BOTH uploads/ AND images/ directories
+- Added auto-migration in /api/me to convert old /api/uploads?file= URLs to /api/uploads?path= URLs
+- Added auto-migration in seed.ts for re-seed scenarios
+- Updated founder-profile-backup.json with persistent image paths
+- Updated seed.ts founder defaults to use persistent paths
+- Bumped SW to v8 to clear old image caches
+- Bumped image cache version to v2026.05.28-4
+- Bio matches screenshot: "Founder of ORRA — building the next-gen social universe where creativity meets connection. Turning vision into reality, one pulse at a time. New Orleans born, worldwide impact."
+- Rebuilt, restarted server, committed and pushed to GitHub
+
+Stage Summary:
+- Founder profile picture and cover now persist across container restarts
+- Images saved to public/images/ (git-tracked, persistent) instead of public/uploads/ (ephemeral)
+- Auto-migration ensures old URLs get fixed automatically
+- Server running and healthy at localhost:3000
