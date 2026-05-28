@@ -9,10 +9,12 @@ const port = parseInt(process.env.PORT || '3000', 10);
 const app = next({ dev: false });
 const handle = app.getRequestHandler();
 
-// Build the project root path
-const PROJECT_ROOT = '/home/z/my-project';
-const DB_PATH = path.join(PROJECT_ROOT, 'db', 'custom.db');
-const BACKUP_DIR = path.join(PROJECT_ROOT, 'db', 'backups');
+// Build the project root path — works on any server (AWS, local, etc.)
+const PROJECT_ROOT = process.env.PROJECT_ROOT || process.cwd();
+const DB_PATH = process.env.DATABASE_URL
+  ? process.env.DATABASE_URL.replace('file:', '')
+  : path.join(PROJECT_ROOT, 'db', 'custom.db');
+const BACKUP_DIR = path.join(path.dirname(DB_PATH), 'backups');
 
 // ============================================================
 // SELF-PING KEEP-ALIVE v3 — MAXIMUM AGGRESSION
@@ -66,10 +68,10 @@ function selfPing() {
     req.on('timeout', () => { req.destroy(); });
   } catch {}
 
-  // 2. Ping localhost:81 (through Caddy proxy)
+  // 2. Ping Nginx on port 80 (AWS EC2 uses Nginx, not Caddy)
   try {
-    const req = require('http').get('http://127.0.0.1:81/api/health', { timeout: 5000 }, (res) => {
-      if (verbose) console.log(`[KEEPALIVE] Caddy OK (port 81)`);
+    const req = require('http').get('http://127.0.0.1:80/api/health', { timeout: 5000 }, (res) => {
+      if (verbose) console.log(`[KEEPALIVE] Nginx OK (port 80)`);
       res.resume();
     });
     req.on('error', () => {});
@@ -108,7 +110,7 @@ function checkDatabase() {
     const stat = require('fs').statSync(DB_PATH);
     if (stat.size < 10000) {
       console.log('[DB] WARNING: Database file is very small (' + stat.size + ' bytes) — may need manual reseed');
-      console.log('[DB] Run: cd /home/z/my-project && npx prisma db push --force-reset && bun prisma/seed.ts');
+      console.log('[DB] Run: cd ' + PROJECT_ROOT + ' && npx prisma db push --force-reset && npx prisma db seed');
       // DO NOT auto-repair — this destroys user data!
       return;
     }
@@ -120,7 +122,7 @@ function checkDatabase() {
 }
 
 // repairDatabase() is DISABLED — it destroys user data!
-// Only use manually: cd /home/z/my-project && npx prisma db push --force-reset && bun prisma/seed.ts
+// Only use manually: cd <project_dir> && npx prisma db push --force-reset && npx prisma db seed
 
 // ============================================================
 // PERIODIC DATABASE BACKUP
@@ -167,7 +169,7 @@ app.prepare().then(() => {
     try {
       const host = req.headers['host'] || req.headers[':authority'] || '';
       const proto = req.headers['x-forwarded-proto'] || (req.headers[':scheme'] ? 'https' : 'http');
-      if (host && host.includes('space.chatglm.site') && !discoveredPublicUrl.includes(host)) {
+      if (host && !host.includes('localhost') && !host.includes('127.0.0.1') && !discoveredPublicUrl.includes(host)) {
         const newUrl = `${proto}://${host}`;
         saveDiscoveredUrl(newUrl);
       }
@@ -244,7 +246,7 @@ app.prepare().then(() => {
     console.log(`> Database: ${DB_PATH}`);
     console.log(`> Started at: ${new Date().toISOString()}`);
 
-    // Start AGGRESSIVE self-ping keep-alive (every 15s)
+    // Start self-ping keep-alive
     selfPing(); // Initial ping immediately
     setInterval(selfPing, SELF_PING_INTERVAL);
 
