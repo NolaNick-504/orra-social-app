@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-05-27T13:45:08.038Z",
+  "timestamp": "2026-05-28T04:12:10.332Z",
   "data": {
     "id": "founder",
     "name": "Nick Joseph",
     "email": "nickjoseph8087@gmail.com",
     "handle": "@nickorraceo",
-    "avatar": "/api/uploads?file=avatar-founder-0ba50504.jpg",
-    "coverImage": "/images/covers/founder.jpg",
-    "bio": "Founder of ORRA — building the next-gen social universe where creativity meets connection. Turning vision into reality, one pulse at a time. New Orleans born, worldwide impact.",
+    "avatar": "/api/uploads?file=avatar-founder-d5733e1f.jpg",
+    "coverImage": "/api/uploads?file=cover-founder-86fe6926.jpg",
+    "bio": "CEO & Founder of ORRA — building the next-gen social universe where creativity meets community. Visionary, innovator, and dreamer. New Orleans to the world. 💜",
     "location": "New Orleans, LA",
     "website": "orra.app",
     "profileSongUrl": "/music/orra/orra.mp3",
@@ -23,7 +23,7 @@
     "profileSetupComplete": true,
     "createdAt": "2026-05-27T12:57:10.028Z",
     "_count": {
-      "posts": 4,
+      "posts": 9,
       "follows": 25,
       "followers": 25
     }
