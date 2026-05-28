@@ -1,19 +1,31 @@
 #!/bin/bash
+# ORRA Auto-Recovery Startup Script
+# Handles missing node_modules by auto-reinstalling before starting
+
 cd /home/z/my-project
-export NODE_ENV=production
-export PORT=3000
-export HOSTNAME=0.0.0.0
-export DATABASE_URL="file:/home/z/my-project/db/custom.db"
-export NEXTAUTH_SECRET="orra-super-secret-key-2025-production"
-export NEXTAUTH_URL="http://localhost:3000"
-export AUTH_TRUST_HOST="true"
 
-# Copy static assets if they don't exist in standalone
-if [ ! -d "/home/z/my-project/.next/standalone/.next/static" ]; then
-  cp -rn /home/z/my-project/.next/static /home/z/my-project/.next/standalone/.next/ 2>/dev/null
-fi
-if [ ! -d "/home/z/my-project/.next/standalone/public" ]; then
-  cp -rn /home/z/my-project/public /home/z/my-project/.next/standalone/ 2>/dev/null
+echo "[ORRA-START] Checking environment..."
+
+# Check if node_modules exists and has the 'next' module
+if [ ! -d "node_modules" ] || [ ! -d "node_modules/next" ]; then
+  echo "[ORRA-START] node_modules missing or incomplete — reinstalling..."
+  npm install --prefer-offline --production=false 2>&1 | tail -3
+  echo "[ORRA-START] Reinstall complete"
 fi
 
-exec node .next/standalone/server.js
+# Check if .next build exists
+if [ ! -d ".next/server" ]; then
+  echo "[ORRA-START] Build missing — rebuilding..."
+  npm run build 2>&1 | tail -5
+  echo "[ORRA-START] Build complete"
+fi
+
+# Check if image directories exist
+if [ ! -d "public/images/live-thumbnails" ] || [ ! -d "public/images/profile-covers" ]; then
+  echo "[ORRA-START] Image directories missing — re-downloading..."
+  mkdir -p public/images/live-thumbnails public/images/profile-covers
+  node scripts/re-download-images.js 2>&1 | tail -5
+fi
+
+echo "[ORRA-START] Starting server..."
+NODE_ENV=production exec node server.js
