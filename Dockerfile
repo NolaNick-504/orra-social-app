@@ -1,59 +1,88 @@
 # =============================================================================
-# ORRA Social App - Dockerfile
-# =============================================================================
-# Build: docker build -t orra-social-app .
-# Run:   docker run -p 3000:3000 -v orra-data:/app/db orra-social-app
-#
-# This Dockerfile creates a production-ready container with:
-# - Node.js 20 LTS
-# - SQLite with persistent volume support
-# - Health check endpoint
-# - Auto-seeding on first run
+# ORRA Social App - Multi-Stage Docker Build
+# Next.js 16 + Prisma + SQLite + NextAuth
 # =============================================================================
 
-FROM node:20-slim
-
-# Install dependencies needed for better-sqlite3 and sharp
-RUN apt-get update && apt-get install -y \
-    python3 \
-    build-essential \
-    sqlite3 \
-    && rm -rf /var/lib/apt/lists/*
-
+# ---- Stage 1: Dependencies ----
+FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Copy package files first (for better caching)
+# Install dependencies required for native modules (SQLite, etc.)
+RUN apk add --no-cache libc6-compat openssl
+
+# Copy package manifests
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm install
+# Install all dependencies (including devDependencies for build)
+RUN npm ci
 
-# Copy the rest of the application
+# ---- Stage 2: Builder ----
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy source code
 COPY . .
 
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build the Next.js application
+# Run database seed (creates founder account and initial data)
+RUN npx prisma db seed || true
+
+# Build the Next.js application (outputs standalone by default in next.config)
 RUN npm run build
 
-# Create data directories
-RUN mkdir -p /app/db /app/public/uploads /app/logs
+# ---- Stage 3: Runner (Production) ----
+FROM node:20-alpine AS runner
+WORKDIR /app
 
-# Environment variables (override at runtime)
+# Install OpenSSL for Prisma runtime
+RUN apk add --no-cache openssl
+
+# Set production environment
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV DATABASE_URL=file:/app/db/custom.db
-ENV NEXTAUTH_SECRET=orra-super-secret-key-2025-production
-ENV NEXTAUTH_URL=http://localhost:3000
-ENV AUTH_TRUST_HOST=true
 
-# Expose port
+# Create a non-root user for security
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy the standalone Next.js output (includes node_modules subset)
+COPY --from=builder /app/.next/standalone ./
+
+# Copy static assets that aren't included in standalone
+COPY --from=builder /app/.next/static ./.next/static
+
+# Copy public directory with all assets
+COPY --from=builder /app/public ./public
+
+# Ensure image/music/upload directories exist (for volume mounts)
+RUN mkdir -p ./public/images ./public/uploads ./public/music
+
+# Copy Prisma schema and migrations for runtime
+COPY --from=builder /app/prisma ./prisma
+
+# Copy the database if it exists (will be overridden by volume mount in production)
+COPY --from=builder /app/prisma/dev.db ./prisma/dev.db 2>/dev/null || true
+
+# Set correct ownership
+RUN chown -R nextjs:nodejs /app
+
+# Switch to non-root user
+USER nextjs
+
+# Expose the application port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:3000/api/health || exit 1
+# Health check — confirms the app is responding
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
-# Start the server
+# Start the Next.js standalone server
 CMD ["node", "server.js"]

@@ -134,3 +134,4 @@ PROJECT_STATE.md
 test-results/
 backups/
 *.tar.gz
+.env.production
