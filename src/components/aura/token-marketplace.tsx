@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Zap, Crown, Sparkles, Rocket, Shield, Palette, Volume2,
   Megaphone, Gift, Star, Lock, Check, Coins, TrendingUp,
-  Flame, Moon, Cherry, Sun, Type
+  Flame, Moon, Flower2, Sun, PenLine
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -89,7 +89,7 @@ const SKIN_ITEMS: MarketplaceItem[] = [
     name: 'Cherry Blossom',
     description: 'Soft pink petals and gentle spring vibes for your profile',
     cost: 350,
-    icon: Cherry,
+    icon: Flower2,
     category: 'skin',
     apiCategory: 'Themes',
     gradient: 'from-pink-300 via-rose-200 to-purple-200',
@@ -287,7 +287,7 @@ const TITLE_ITEMS: MarketplaceItem[] = [
     name: 'Custom Title',
     description: 'Create a custom title that appears under your name on your profile',
     cost: 750,
-    icon: Type,
+    icon: PenLine,
     category: 'title',
     apiCategory: 'Titles',
     gradient: 'from-yellow-500 to-amber-600',
@@ -304,7 +304,7 @@ const CATEGORIES = [
   { id: 'effect', label: 'Effects', icon: Sparkles },
   { id: 'badge', label: 'Badges', icon: Shield },
   { id: 'boost', label: 'Boosts', icon: Rocket },
-  { id: 'title', label: 'Titles', icon: Type },
+  { id: 'title', label: 'Titles', icon: PenLine },
 ];
 
 // ============================================
