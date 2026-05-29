@@ -11,6 +11,10 @@ git reset --hard origin/main
 echo "Installing dependencies..."
 npm install --production=false 2>/dev/null
 
+# Clean build (remove old .next to prevent stale chunks)
+echo "Cleaning old build..."
+rm -rf .next
+
 # Build
 echo "Building app..."
 npm run build

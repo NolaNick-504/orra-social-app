@@ -9,8 +9,8 @@ const port = parseInt(process.env.PORT || '3000', 10);
 const app = next({ dev: false });
 const handle = app.getRequestHandler();
 
-// Build the project root path
-const PROJECT_ROOT = '/home/z/my-project';
+// Build the project root path — use __dirname so it works on any server
+const PROJECT_ROOT = __dirname;
 const DB_PATH = path.join(PROJECT_ROOT, 'db', 'custom.db');
 const BACKUP_DIR = path.join(PROJECT_ROOT, 'db', 'backups');
 
