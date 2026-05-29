@@ -14,6 +14,59 @@ const FOUNDER_ONLY_ITEMS = [
   'badge_crown',
 ];
 
+// Founder-only items that should auto-exist as purchases for the founder
+const FOUNDER_FREE_ITEMS = [
+  { itemId: 'skin_gold_founder', category: 'Themes', name: 'Gold Founder', cost: 0, selectedOption: 'gold' },
+  { itemId: 'effect_gold_glow', category: 'Effects', name: 'Gold Glow', cost: 0, selectedOption: 'gold' },
+  { itemId: 'badge_crown', category: 'Badges', name: 'Crown Badge', cost: 0, selectedOption: '' },
+];
+
+// Ensure founder has purchase records for exclusive items
+async function ensureFounderPurchases(userId: string, userEmail: string | null) {
+  if (userEmail !== FOUNDER_EMAIL) return;
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { activeTheme: true, activeNameEffect: true },
+  });
+
+  for (const item of FOUNDER_FREE_ITEMS) {
+    const existing = await db.purchase.findUnique({
+      where: { userId_itemId: { userId, itemId: item.itemId } },
+    });
+    if (!existing) {
+      // Only set isActive=true if this is the user's currently active theme/effect
+      let isActive = false;
+      if (item.category === 'Themes') {
+        isActive = !user?.activeTheme || user.activeTheme === item.itemId;
+      } else if (item.category === 'Effects') {
+        isActive = !user?.activeNameEffect || user.activeNameEffect === item.itemId;
+      } else if (item.category === 'Badges') {
+        isActive = true; // Badges are always active once purchased
+      }
+
+      await db.purchase.create({
+        data: {
+          userId,
+          itemId: item.itemId,
+          category: item.category,
+          name: item.name,
+          cost: item.cost,
+          isActive,
+          selectedOption: item.selectedOption,
+        },
+      });
+    }
+  }
+
+  // If founder's activeTheme/activeNameEffect is empty, default to gold
+  const updateData: Record<string, string> = {};
+  if (!user?.activeTheme) updateData.activeTheme = 'skin_gold_founder';
+  if (!user?.activeNameEffect) updateData.activeNameEffect = 'effect_gold_glow';
+  if (Object.keys(updateData).length > 0) {
+    await db.user.update({ where: { id: userId }, data: updateData });
+  }
+}
+
 // GET /api/purchases - List all purchases for current user
 export async function GET() {
   try {
@@ -33,10 +86,19 @@ export async function GET() {
       }),
     ]);
 
+    // Auto-seed founder purchases if missing
+    const purchaseCountBefore = purchases.length;
+    await ensureFounderPurchases(userId, user?.email || null);
+
+    // Re-fetch purchases if we seeded new items
+    const finalPurchases = (user?.email === FOUNDER_EMAIL)
+      ? await db.purchase.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } })
+      : purchases;
+
     return NextResponse.json({
       success: true,
       data: {
-        purchases: purchases.map(p => ({
+        purchases: finalPurchases.map(p => ({
           id: p.id,
           itemId: p.itemId,
           category: p.category,

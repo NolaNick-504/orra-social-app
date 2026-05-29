@@ -13,14 +13,13 @@ export async function GET(request: NextRequest) {
 
     const currentUserId = await getAuthUserId();
 
-    // Search users by name or handle
+    // Search users by name or handle (case-insensitive for SQLite)
     const users = await db.user.findMany({
       where: {
         OR: [
-          { name: { contains: q } },
-          { handle: { contains: q } },
+          { name: { contains: q, mode: 'insensitive' } },
+          { handle: { contains: q, mode: 'insensitive' } },
         ],
-        ...(currentUserId ? { id: { not: currentUserId } } : {}),
       },
       select: {
         id: true,
@@ -34,10 +33,10 @@ export async function GET(request: NextRequest) {
       take: 10,
     });
 
-    // Search posts by text content
+    // Search posts by text content (case-insensitive for SQLite)
     const posts = await db.post.findMany({
       where: {
-        text: { contains: q },
+        text: { contains: q, mode: 'insensitive' },
       },
       include: {
         author: {
