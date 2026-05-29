@@ -84,6 +84,18 @@ model User {
   reelHistory   ReelHistory[]
   purchases     Purchase[]
 
+  // Challenge/Game relations
+  challengeSessionsWon ChallengeSession[]
+  sentChallengeInvites ChallengeInvite[]  @relation("SentChallengeInvites")
+  receivedChallengeInvites ChallengeInvite[] @relation("ReceivedChallengeInvites")
+  challengeParticipants ChallengeParticipant[]
+  gamePlayer1 GameSession[] @relation("GamePlayer1")
+  gamePlayer2 GameSession[] @relation("GamePlayer2")
+  gameWinner GameSession[] @relation("GameWinner")
+  gameVotes GameVote[]
+  hotTakes HotTake[]
+  hotTakeVotes HotTakeVote[]
+
   // NextAuth
   accounts      Account[]
   sessions      Session[]
@@ -661,4 +673,180 @@ model Purchase {
   @@unique([userId, itemId])
   @@index([userId])
   @@index([userId, category])
+}
+
+// ============================================
+// CHALLENGE GAMES
+// ============================================
+
+model ChallengeGame {
+  id          String   @id @default(cuid())
+  type        String   @unique   // roast_battle, hot_take, etc.
+  name        String
+  description String
+  icon        String
+  color       String
+  tokenCost   Int      @default(0)
+  tokenReward Int      @default(0)
+  xpReward    Int      @default(0)
+  players     Int      @default(2)
+  active      Boolean  @default(true)
+  playsCount  Int      @default(0)
+
+  sessions    ChallengeSession[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
+  @@index([type])
+}
+
+model ChallengeSession {
+  id        String   @id @default(cuid())
+  gameId    String
+  status    String   @default("waiting") // waiting, active, completed, cancelled
+  maxPlayers Int     @default(2)
+
+  game      ChallengeGame  @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  participants ChallengeParticipant[]
+  invites   ChallengeInvite[]
+  winnerId  String?
+  winner    User?          @relation(fields: [winnerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([gameId])
+  @@index([status])
+  @@index([winnerId])
+}
+
+model ChallengeParticipant {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String
+  score     Int      @default(0)
+  joinedAt  DateTime @default(now())
+
+  session   ChallengeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model ChallengeInvite {
+  id         String   @id @default(cuid())
+  sessionId  String
+  senderId   String
+  receiverId String
+  status     String   @default("pending") // pending, accepted, declined, expired
+
+  session    ChallengeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender     User             @relation("SentChallengeInvites", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User             @relation("ReceivedChallengeInvites", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([sessionId])
+  @@index([senderId])
+  @@index([receiverId, status])
+}
+
+// ============================================
+// GAMES (HOT TAKE, MATCHMAKING, ETC.)
+// ============================================
+
+model GameSession {
+  id          String   @id @default(cuid())
+  type        String   // hot_take, rate_my_fit, truth_or_dare, etc.
+  status      String   @default("active") // active, completed, expired
+  player1Id   String
+  player2Id   String?
+  winnerId    String?
+  rounds      GameRound[]
+  votes       GameVote[]
+
+  player1     User     @relation("GamePlayer1", fields: [player1Id], references: [id], onDelete: Cascade)
+  player2     User?    @relation("GamePlayer2", fields: [player2Id], references: [id], onDelete: SetNull)
+  winner      User?    @relation("GameWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  expiresAt   DateTime?
+
+  @@index([player1Id])
+  @@index([player2Id])
+  @@index([status])
+  @@index([type])
+}
+
+model GameRound {
+  id          String   @id @default(cuid())
+  sessionId   String
+  roundNumber Int
+  prompt      String?
+  player1Answer String?
+  player2Answer String?
+  winnerId    String?
+
+  session     GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@index([sessionId])
+}
+
+model GameVote {
+  id          String   @id @default(cuid())
+  sessionId   String
+  voterId     String
+  voteFor     String   // player1 or player2
+  roundId     String?
+
+  session     GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  voter       User        @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@unique([sessionId, voterId, roundId])
+  @@index([sessionId])
+  @@index([voterId])
+}
+
+model HotTake {
+  id          String   @id @default(cuid())
+  authorId    String
+  text        String
+  status      String   @default("active") // active, completed, expired
+  wVotes      Int      @default(0)
+  lVotes      Int      @default(0)
+
+  author      User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  votes       HotTakeVote[]
+
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([authorId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model HotTakeVote {
+  id          String   @id @default(cuid())
+  takeId      String
+  voterId     String
+  vote        String   // "W" or "L"
+
+  take        HotTake  @relation(fields: [takeId], references: [id], onDelete: Cascade)
+  voter       User     @relation(fields: [voterId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@unique([takeId, voterId])
+  @@index([takeId])
+  @@index([voterId])
 }
