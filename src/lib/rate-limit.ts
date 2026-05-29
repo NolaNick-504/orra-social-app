@@ -23,6 +23,11 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
+/** Clear all rate limit entries (used by admin reset endpoint) */
+export function clearAllRateLimits() {
+  store.clear();
+}
+
 export interface RateLimitOptions {
   /** Maximum number of requests allowed in the window */
   limit: number;

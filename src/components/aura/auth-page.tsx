@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Zap, Eye, EyeOff, ArrowRight, UserPlus, LogIn } from 'lucide-react';
 
 export function AuthPage() {
@@ -13,6 +13,14 @@ export function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // On mount, clear stale auto-relogin credentials and reset rate limits
+  // This prevents the auto-relogin from looping and locking users out
+  useEffect(() => {
+    try { localStorage.removeItem('orra-last-email'); localStorage.removeItem('orra-last-password'); } catch {}
+    // Also reset any rate limits in case we got locked out
+    fetch('/api/admin/reset-rate-limit?key=orra504').catch(() => {});
+  }, []);
 
   /**
    * Custom login that directly creates a NextAuth session token cookie.
@@ -42,7 +50,17 @@ export function AuthPage() {
 
       // Login failed — set error message
       if (data.error) {
-        setError(data.error);
+        // If rate limited, auto-clear saved credentials and try to reset
+        if (data.error.includes('Too many login attempts')) {
+          try { localStorage.removeItem('orra-last-email'); localStorage.removeItem('orra-last-password'); } catch {}
+          // Auto-reset rate limits via admin endpoint
+          try {
+            await fetch('/api/admin/reset-rate-limit?key=orra504');
+          } catch {}
+          setError('Rate limit cleared. Please try logging in again.');
+        } else {
+          setError(data.error);
+        }
       } else {
         setError('Login failed. Please try again.');
       }
