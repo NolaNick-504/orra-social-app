@@ -67,7 +67,17 @@ export async function GET(request: NextRequest) {
       results.push('Fixed handle to @nickorraceo');
     }
 
-    // 6. Apply updates if needed
+    // 6. Ensure founder has gold skin and name effect (marketplace items)
+    if (!founder.activeTheme) {
+      updates.activeTheme = 'skin_gold_founder';
+      results.push('Set activeTheme = skin_gold_founder');
+    }
+    if (!founder.activeNameEffect) {
+      updates.activeNameEffect = 'effect_gold_glow';
+      results.push('Set activeNameEffect = effect_gold_glow');
+    }
+
+    // 7. Apply updates if needed
     if (Object.keys(updates).length > 0) {
       await db.user.update({
         where: { id: founder.id },
