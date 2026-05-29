@@ -8,8 +8,6 @@
 # Usage: bash /home/ubuntu/orra/aws/safe-deploy.sh
 # =============================================================================
 
-set -e
-
 APP_DIR="/home/ubuntu/orra"
 LOG_FILE="/home/ubuntu/orra/deploy-log.txt"
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
@@ -17,7 +15,7 @@ TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S")
 echo "[$TIMESTAMP] Safe deploy starting..." > "$LOG_FILE"
 
 # Step 1: STOP the server first to free memory for the build
-echo "[$TIMESTAMP] Stopping server to free memory..." >> "$LOG_FILE"
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Stopping server to free memory..." >> "$LOG_FILE"
 cd "$APP_DIR"
 pm2 stop orra-server 2>/dev/null || true
 
@@ -39,9 +37,10 @@ echo "[$(date +"%Y-%m-%d %H:%M:%S")] Building (server stopped, full RAM availabl
 rm -rf .next
 NODE_OPTIONS="--max-old-space-size=1536" npm run build 2>&1 | tail -10
 
-# Step 6: Start the server
+# Step 6: Delete old PM2 process (clean start)
 echo "[$(date +"%Y-%m-%d %H:%M:%S")] Starting server..." >> "$LOG_FILE"
-pm2 start orra-server 2>/dev/null || pm2 start server.js --name orra-server
+pm2 delete orra-server 2>/dev/null || true
+pm2 start server.js --name orra-server
 pm2 save
 
 echo "[$(date +"%Y-%m-%d %H:%M:%S")] Deploy complete!" >> "$LOG_FILE"
