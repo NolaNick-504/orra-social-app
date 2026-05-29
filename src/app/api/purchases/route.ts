@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { itemId, category, name, cost, selectedOption } = body;
 
-    if (!itemId || !category || !name || !cost) {
+    if (!itemId || !category || !name || cost === undefined || cost === null) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
