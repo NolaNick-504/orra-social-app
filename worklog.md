@@ -48,3 +48,28 @@ Stage Summary:
 - Current container is a dev preview that freezes after 3-5 min idle
 - Best path: User creates Oracle Cloud account on a computer, then everything can be deployed from CLI
 - Temporary fix: Self-ping keep-alive in server.js + external ping service
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix ORRA marketplace - diagnose and fix build errors, add marketplace profile display
+
+Work Log:
+- Cloned repo from GitHub and examined codebase
+- Found 2 build errors: `awardXPBackground` doesn't exist in `@/lib/db` (should be `awardXPAndTokens`) in likes/route.ts and reels/route.ts
+- Found cost=0 bug: `!cost` check in purchases API fails for founder-only items with cost=0
+- Found missing fields: /api/me didn't return activeTheme, activeNameEffect, customTitle
+- Found missing fields: CurrentUser type and useCurrentUser hook didn't include marketplace fields
+- Fixed all build errors and pushed to GitHub (auto-deploys)
+- Added marketplace skin gradient overlay on profile cover image
+- Added marketplace name effect CSS classes to profile username
+- Added custom title display under handle on profile
+- Tested all marketplace API flows: buy, toggle activate/deactivate, color options, founder exclusivity
+- Verified all core API endpoints work (health, auth, login, /api/me, /api/purchases, /api/posts, /api/hubs)
+
+Stage Summary:
+- Fixed build errors (awardXPBackground → awardXPAndTokens)
+- Fixed cost=0 validation bug for founder items
+- Added activeTheme/activeNameEffect/customTitle to /api/me response
+- Added marketplace skin/effect display on profile component
+- All marketplace features working: buy, toggle, color options, founder exclusivity
+- Server healthy at 18.118.22.101
