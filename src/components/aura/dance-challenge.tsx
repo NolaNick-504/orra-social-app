@@ -1,6 +1,7 @@
 'use client';
 
 import { pastChallenges } from '@/lib/data';
+import { timeAgo } from '@/lib/utils';
 import { Trophy, Medal, Heart, Play, Clock, ChevronDown, ChevronUp, Star, Crown, Award, Flame, Music, TrendingUp, TrendingDown, Minus, Zap, Film, Info, X, Share2, Check, Loader2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -591,7 +592,7 @@ export function DanceChallenge() {
                 <div key={entry.id} className="p-3 rounded-xl bg-white/5 border border-white/10">
                   <p className="text-sm text-slate-200">{entry.text}</p>
                   <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                    <span>{Math.floor((Date.now() - entry.createdAt) / 60000)}m ago</span>
+                    <span>{timeAgo(entry.createdAt)}</span>
                     <span className="text-amber-400 flex items-center gap-1"><Zap className="w-3 h-3" />+5 ORRA earned</span>
                     <Check className="w-3 h-3 text-emerald-400" />
                     <span className="text-emerald-400">Submitted</span>

@@ -47,11 +47,11 @@ function QRDisplayCard({
   const qrRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
-  // The QR data encodes the ORRA profile link
-  const qrData = `orra://profile/${userId}`;
+  // The QR data encodes the ORRA profile link using the actual server URL
+  const qrData = typeof window !== 'undefined' ? `${window.location.origin}/profile/${userId}` : `/profile/${userId}`;
 
   const handleCopyLink = useCallback(() => {
-    navigator.clipboard.writeText(`https://orra.app/profile/${userId}`).catch(() => {});
+    navigator.clipboard.writeText(`${window.location.origin}/profile/${userId}`).catch(() => {});
     setCopied(true);
     toast.success('Profile link copied!');
     setTimeout(() => setCopied(false), 2000);
@@ -252,10 +252,22 @@ function QRScanner({ onScan, onClose }: { onScan: (data: string) => void; onClos
           const results = await detector.detect(canvas);
           if (results.length > 0) {
             const value = results[0].rawValue;
-            if (value && value.startsWith('orra://profile/')) {
-              const id = value.replace('orra://profile/', '');
+            if (value) {
+              // Support both orra:// protocol and actual URLs
+              let profileId: string | null = null;
+              if (value.includes('orra://profile/')) {
+                profileId = value.replace('orra://profile/', '');
+              } else if (value.includes('/profile/')) {
+                profileId = value.split('/profile/').pop() || null;
+              }
+              if (profileId) {
+                stopScanner();
+                onScan(profileId);
+                return;
+              }
+              // For any other QR, just pass the value through
               stopScanner();
-              onScan(id);
+              onScan(value);
               return;
             }
           }

@@ -4,7 +4,7 @@ import React from 'react';
 
 import { useAuraStore } from '@/store/aura-store';
 import { useInfinitePosts, useCreatePost, useToggleLike, useToggleSave, useToggleRepost, useVotePoll, useCreateComment, useComments } from '@/lib/api-hooks';
-import { resolveImageUrl } from '@/lib/utils';
+import { resolveImageUrl, timeAgo } from '@/lib/utils';
 import { vibeLabels } from '@/lib/data';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { useQueryClient } from '@tanstack/react-query';
@@ -373,19 +373,7 @@ function AuraGlowAvatar({ src, alt, level, vibeTag, size = 'md' }: { src: string
   );
 }
 
-// Helper: format time ago from date string
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h`;
-  const diffDay = Math.floor(diffHr / 24);
-  return `${diffDay}d`;
-}
+// timeAgo is now imported from @/lib/utils
 
 // Poll Renderer Component
 function PollRenderer({ poll, postId }: { poll: { id: string; question: string; options: { id: string; text: string; voteCount: number; voted: boolean }[]; totalVotes: number; expiresAt: string }; postId: string }) {
@@ -631,9 +619,7 @@ function PostCommentsSection({ postId, currentUser, commentCount }: { postId: st
                   {/* Comment actions: Like (with reaction picker), Reply */}
                   <div className="flex items-center gap-3 mt-1 ml-1">
                     <p className="text-[10px] text-slate-600">
-                      {Math.floor((Date.now() - c.createdAt) / 60000) < 1
-                        ? 'Just now'
-                        : `${Math.floor((Date.now() - c.createdAt) / 60000)}m ago`}
+                      {timeAgo(c.createdAt)}
                     </p>
                     <div className="relative">
                       {showCommentReactionPicker === c.id && (

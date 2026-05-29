@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuraStore, type PrismChatMessage } from '@/store/aura-store';
+import { timeAgo } from '@/lib/utils';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
@@ -281,7 +282,7 @@ function PrismCompanionPanel() {
                   {msg.content}
                 </p>
                 <p className={`text-[9px] mt-1 ${msg.role === 'user' ? 'text-violet-300/50' : 'text-slate-500'}`}>
-                  {Math.floor((Date.now() - msg.createdAt) / 60000) < 1 ? 'Just now' : `${Math.floor((Date.now() - msg.createdAt) / 60000)}m ago`}
+                  {timeAgo(msg.createdAt)}
                 </p>
               </div>
             </div>

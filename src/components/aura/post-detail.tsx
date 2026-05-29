@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuraStore } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
-import { resolveImageUrl } from '@/lib/utils';
+import { resolveImageUrl, timeAgo } from '@/lib/utils';
 import { useToggleLike, useComments, useCreateComment } from '@/lib/api-hooks';
 import { ArrowLeft, Heart, MessageCircle, Share2, Bookmark, BadgeCheck, Send, Waves } from 'lucide-react';
 import { toast } from 'sonner';
@@ -22,18 +22,7 @@ const REACTION_TYPES = [
 
 type ReactionKey = typeof REACTION_TYPES[number]['key'];
 
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h`;
-  const diffDay = Math.floor(diffHr / 24);
-  return `${diffDay}d`;
-}
+// timeAgo is now imported from @/lib/utils
 
 export function PostDetail() {
   const { viewingPostId, setViewingPostId, setView, setViewingUser, likedPosts, postReactions, toggleLike, savedPosts, toggleSave, viewingEchoId, setViewingEchoId } = useAuraStore();
@@ -308,9 +297,7 @@ export function PostDetail() {
                     </div>
                     <div className="flex items-center gap-3 mt-1 ml-1">
                       <p className="text-[10px] text-slate-600">
-                        {Math.floor((Date.now() - c.createdAt) / 60000) < 1
-                          ? 'Just now'
-                          : `${Math.floor((Date.now() - c.createdAt) / 60000)}m ago`}
+                        {timeAgo(c.createdAt)}
                       </p>
                       <button className="text-[10px] font-medium text-slate-600 hover:text-red-400 transition-colors">
                         {c.isLiked ? '❤️ Liked' : 'Like'}{c.likesCount > 0 ? ` ${c.likesCount}` : ''}

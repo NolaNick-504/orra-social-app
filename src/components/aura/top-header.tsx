@@ -8,6 +8,97 @@ import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 
+// QR Scanner component using html5-qrcode
+function TopHeaderQRScanner({ onClose }: { onClose: () => void }) {
+  const scannerRef = useRef<any>(null);
+  const [scanResult, setScanResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const { setViewingUser, setView } = useAuraStore();
+
+  useEffect(() => {
+    let scanner: any = null;
+    const startScanner = async () => {
+      setIsStarting(true);
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode');
+        scanner = new Html5Qrcode('top-header-qr-scanner');
+        scannerRef.current = scanner;
+        await scanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText: string) => {
+            setScanResult(decodedText);
+            scanner.stop();
+            // If it's an ORRA profile URL or orra:// protocol, navigate
+            if (decodedText.includes('orra://profile/')) {
+              const userId = decodedText.replace('orra://profile/', '');
+              setViewingUser(userId);
+              setView('profile');
+              toast.success('Profile found!');
+              setTimeout(onClose, 1000);
+            } else if (decodedText.includes(window.location.origin) || decodedText.includes('orra.app') || decodedText.includes('orra.link')) {
+              const handle = decodedText.split('/').pop();
+              if (handle) {
+                toast.success('QR code scanned!');
+                setTimeout(onClose, 1000);
+              }
+            }
+          },
+          () => { /* scan failure - ignore */ }
+        );
+      } catch (err: any) {
+        setError(err?.message || 'Could not access camera. Please allow camera permissions.');
+      } finally {
+        setIsStarting(false);
+      }
+    };
+    startScanner();
+    return () => {
+      if (scanner) { try { scanner.stop(); } catch {} }
+    };
+  }, [onClose, setViewingUser, setView]);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center px-6">
+      {error ? (
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mb-3">
+            <X className="w-7 h-7 text-red-400" />
+          </div>
+          <p className="text-red-400 text-sm font-medium mb-2">Camera Error</p>
+          <p className="text-slate-500 text-xs mb-4 max-w-xs">{error}</p>
+          <button onClick={onClose} className="px-5 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-500 transition-colors">
+            Close
+          </button>
+        </div>
+      ) : scanResult ? (
+        <div className="flex flex-col items-center justify-center text-center">
+          <div className="w-14 h-14 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3">
+            <QrCode className="w-7 h-7 text-emerald-400" />
+          </div>
+          <p className="text-emerald-400 text-sm font-bold mb-2">QR Code Found!</p>
+          <p className="text-slate-400 text-xs break-all max-w-xs">{scanResult}</p>
+          <button onClick={onClose} className="mt-4 px-5 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 transition-colors">
+            Done
+          </button>
+        </div>
+      ) : (
+        <>
+          <div id="top-header-qr-scanner" className="w-full max-w-xs rounded-2xl overflow-hidden" style={{ minHeight: '280px' }} />
+          {isStarting && (
+            <div className="flex items-center gap-2 mt-3">
+              <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+              <span className="text-slate-400 text-xs">Starting camera...</span>
+            </div>
+          )}
+          <p className="text-slate-500 text-[10px] text-center mt-3">Point your camera at an ORRA QR code to scan</p>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function TopHeader() {
   const { homeTab, setHomeTab, toggleVibeCheck, currentVibe, selectedVibes, currentView, searchQuery, setSearchQuery, customNotifications, auraTokens, addRecentSearch, recentSearches, unreadMessages, setViewingUser, setView } = useAuraStore();
   const currentUser = useCurrentUser();
@@ -418,7 +509,7 @@ export function TopHeader() {
             <button
               onClick={() => {
                 const handleForLink = (currentUser.handle || '@orrauser').replace('@', '');
-                const link = `https://orra.link/${handleForLink}`;
+                const link = `${window.location.origin}/${handleForLink}`;
                 if (navigator.share) {
                   navigator.share({
                     title: 'Add me on ORRA',
@@ -440,18 +531,8 @@ export function TopHeader() {
             </button>
           </div>
         ) : (
-          /* Scan Tab - Camera view placeholder */
-          <div className="flex-1 flex flex-col items-center justify-center px-6">
-            <div className="w-64 h-64 rounded-3xl border-2 border-violet-500/50 flex items-center justify-center bg-black/40 mb-6 relative overflow-hidden">
-              {/* Corner markers like a camera viewfinder */}
-              <div className="absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 border-violet-400 rounded-tl-lg" />
-              <div className="absolute top-3 right-3 w-8 h-8 border-t-2 border-r-2 border-violet-400 rounded-tr-lg" />
-              <div className="absolute bottom-3 left-3 w-8 h-8 border-b-2 border-l-2 border-violet-400 rounded-bl-lg" />
-              <div className="absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 border-violet-400 rounded-br-lg" />
-              <ScanLine className="w-12 h-12 text-violet-400/50" />
-            </div>
-            <p className="text-sm text-slate-400 text-center">Point your camera at an ORRA QR code to scan</p>
-          </div>
+          /* Scan Tab - Working camera scanner */
+          <TopHeaderQRScanner onClose={() => { setShowQRView(false); setQrTab('myqr'); }} />
         )}
       </div>
     )}

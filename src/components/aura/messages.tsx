@@ -1,7 +1,7 @@
 'use client';
 
 import { useChats, useChatMessages, useSendMessage } from '@/lib/api-hooks';
-import { resolveImageUrl } from '@/lib/utils';
+import { resolveImageUrl, timeAgo } from '@/lib/utils';
 import { useAuraStore, type ChatMessage } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { Camera, Search, MoreVertical, Phone, Video, Send, Image as ImageIcon, Smile, Heart, ThumbsUp, Laugh, X, Plus, QrCode, ScanLine, UserPlus, Share2 } from 'lucide-react';
@@ -384,9 +384,7 @@ export function Messages() {
                       </div>
                     )}
                     <p className={`text-[9px] mt-1 ${isMe ? 'text-violet-300/60' : 'text-slate-500'}`}>
-                      {Math.floor((Date.now() - msg.createdAt) / 60000) < 1
-                        ? 'Just now'
-                        : `${Math.floor((Date.now() - msg.createdAt) / 60000)}m ago`}
+                      {timeAgo(msg.createdAt)}
                       {isMe && ' ✓✓'}
                     </p>
                     {reaction && (
