@@ -20,13 +20,6 @@ function TopHeaderQRScanner({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     let scanner: any = null;
-    // Only try camera if we're on HTTPS or localhost
-    const isSecure = typeof window !== 'undefined' && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-    
-    if (!isSecure) {
-      setError('Camera requires HTTPS. Use the search box below to find friends instead.');
-      return;
-    }
 
     const startScanner = async () => {
       setIsStarting(true);
@@ -47,8 +40,10 @@ function TopHeaderQRScanner({ onClose }: { onClose: () => void }) {
               toast.success('Profile found!');
               setTimeout(onClose, 1000);
             } else if (decodedText.includes(window.location.origin) || decodedText.includes('orra.app')) {
-              const handle = decodedText.split('/').pop();
-              if (handle) {
+              // Extract handle from URL like http://18.118.22.101/handle or orra.app/handle
+              const parts = decodedText.split('/');
+              const handle = parts[parts.length - 1];
+              if (handle && handle.length > 0) {
                 toast.success('QR code scanned!');
                 setTimeout(onClose, 1000);
               }
@@ -92,18 +87,16 @@ function TopHeaderQRScanner({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const isSecure = typeof window !== 'undefined' && (window.location.protocol === 'https:' || window.location.hostname === 'localhost');
-
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6">
-      {error && !isSecure ? (
-        /* HTTP - No camera, show search instead */
+      {error ? (
+        /* Camera error - show search fallback */
         <div className="flex flex-col items-center justify-center text-center w-full max-w-sm">
           <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mb-4">
             <Search className="w-8 h-8 text-violet-400" />
           </div>
           <p className="text-white text-base font-bold mb-1">Find Friends</p>
-          <p className="text-slate-500 text-xs mb-5">Camera requires HTTPS. Search by name or handle instead.</p>
+          <p className="text-slate-500 text-xs mb-5">{error.includes('HTTPS') || error.includes('secure') ? 'Camera needs HTTPS. Search by name or handle instead.' : 'Camera unavailable. Search by name or handle instead.'}</p>
           <div className="w-full flex items-center gap-2">
             <input
               type="text"
@@ -121,18 +114,6 @@ function TopHeaderQRScanner({ onClose }: { onClose: () => void }) {
               {searching ? '...' : 'Go'}
             </button>
           </div>
-        </div>
-      ) : error ? (
-        /* HTTPS but camera error */
-        <div className="flex flex-col items-center justify-center text-center">
-          <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mb-3">
-            <X className="w-7 h-7 text-red-400" />
-          </div>
-          <p className="text-red-400 text-sm font-medium mb-2">Camera Error</p>
-          <p className="text-slate-500 text-xs mb-4 max-w-xs">{error}</p>
-          <button onClick={onClose} className="px-5 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-500 transition-colors">
-            Close
-          </button>
         </div>
       ) : scanResult ? (
         <div className="flex flex-col items-center justify-center text-center">
