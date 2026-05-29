@@ -112,6 +112,9 @@ function StoreHydrator({ children }: { children: React.ReactNode }) {
           profileSongUrl: user.profileSongUrl || '',
           profileSongTitle: user.profileSongTitle || '',
           profileSongArtist: user.profileSongArtist || '',
+          activeTheme: user.activeTheme || '',
+          activeNameEffect: user.activeNameEffect || '',
+          customTitle: user.customTitle || '',
         };
 
         // Hydrate the store with all API data

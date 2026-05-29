@@ -39,6 +39,9 @@ export async function GET() {
           auraXP: true,
           dailyStreak: true,
           badges: true,
+          activeTheme: true,
+          activeNameEffect: true,
+          customTitle: true,
           profileSetupComplete: true,
           createdAt: true,
           _count: {

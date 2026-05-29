@@ -39,6 +39,9 @@ export function useCurrentUser() {
     profileSongUrl: '',
     profileSongTitle: '',
     profileSongArtist: '',
+    activeTheme: '',
+    activeNameEffect: '',
+    customTitle: '',
   } : null;
 
   // Use currentUserProfile (from API) or session data. No mock fallback.
@@ -66,6 +69,9 @@ export function useCurrentUser() {
     profileSongUrl: '',
     profileSongTitle: '',
     profileSongArtist: '',
+    activeTheme: '',
+    activeNameEffect: '',
+    customTitle: '',
   };
 
   // Apply profile edits (user's manual changes in Edit Profile)
@@ -101,5 +107,8 @@ export function useCurrentUser() {
     profileSongUrl: base.profileSongUrl || '',
     profileSongTitle: base.profileSongTitle || '',
     profileSongArtist: base.profileSongArtist || '',
+    activeTheme: base.activeTheme || '',
+    activeNameEffect: base.activeNameEffect || '',
+    customTitle: base.customTitle || '',
   };
 }

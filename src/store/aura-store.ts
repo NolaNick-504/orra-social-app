@@ -115,6 +115,9 @@ interface CurrentUser {
   profileSongUrl?: string;
   profileSongTitle?: string;
   profileSongArtist?: string;
+  activeTheme?: string;
+  activeNameEffect?: string;
+  customTitle?: string;
 }
 
 interface AuraState {

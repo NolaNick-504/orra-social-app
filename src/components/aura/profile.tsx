@@ -310,7 +310,7 @@ const otherUserTabs = [
 export function Profile() {
   // Build version stamp - forces webpack to generate new chunk hashes on rebuild
   // This ensures browsers download fresh JS after deployments instead of using stale cache
-  const _ORRA_PROFILE_VERSION = 'v2025.05.23-3';
+  const _ORRA_PROFILE_VERSION = 'v2025.05.30-1';
 
   const [activeTab, setActiveTab] = useState('posts');
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -329,6 +329,24 @@ export function Profile() {
   const displayAvatar = currentUser.avatar;
   const totalPosts = currentUser.posts + userPosts.length;
   const totalFollowers = currentUser.followers;
+
+  // Marketplace skin gradient mapping
+  const skinGradients: Record<string, string> = {
+    'skin_aurora': 'from-purple-600/40 via-blue-500/30 to-teal-400/20',
+    'skin_neon': 'from-pink-500/40 via-cyan-400/30 to-yellow-400/20',
+    'skin_midnight': 'from-indigo-900/50 via-purple-900/30 to-slate-900/20',
+    'skin_cherry_blossom': 'from-pink-300/30 via-rose-200/20 to-purple-200/20',
+    'skin_fire': 'from-red-600/40 via-orange-500/30 to-yellow-400/20',
+    'skin_gold_founder': 'from-yellow-400/30 via-amber-400/20 to-yellow-300/20',
+  };
+
+  // Marketplace name effect mapping
+  const nameEffects: Record<string, string> = {
+    'effect_neon_glow': 'text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-purple-400 drop-shadow-[0_0_12px_rgba(168,85,247,0.5)]',
+    'effect_rainbow_wave': 'text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400',
+    'effect_fire_glow': 'text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500 drop-shadow-[0_0_12px_rgba(239,68,68,0.5)]',
+    'effect_gold_glow': 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 drop-shadow-[0_0_12px_rgba(245,158,11,0.5)]',
+  };
 
   // Determine if we're viewing another user's profile
   // Safety: if viewingUserId is our own ID, treat as own profile (not "other user" mode)
@@ -395,6 +413,10 @@ export function Profile() {
     } catch { return false; }
   })();
   const profileIsFounder = isViewingOther ? isOtherUserFounder : isFounder;
+
+  // Apply marketplace skin/effect (only for own profile)
+  const activeSkinGradient = !isViewingOther && currentUser.activeTheme ? skinGradients[currentUser.activeTheme] : null;
+  const activeNameEffectClass = !isViewingOther && currentUser.activeNameEffect ? nameEffects[currentUser.activeNameEffect] : null;
 
   // If viewing another user, use their data; otherwise use current user data
   const profileName = isViewingOther ? (otherUserData?.name || '') : displayName;
@@ -488,7 +510,11 @@ export function Profile() {
           alt="Cover"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
-        <div className={`absolute inset-0 ${profileIsFounder ? 'bg-gradient-to-t from-[#050505] via-[#050505]/20 to-amber-500/5' : 'bg-gradient-to-t from-[#050505] via-[#050505]/30 to-transparent'}`} />
+        <div className={`absolute inset-0 ${profileIsFounder ? 'bg-gradient-to-t from-[#050505] via-[#050505]/20 to-amber-500/5' : activeSkinGradient ? `bg-gradient-to-t from-[#050505] via-[#050505]/30 to-transparent` : 'bg-gradient-to-t from-[#050505] via-[#050505]/30 to-transparent'}`} />
+        {/* Marketplace skin overlay */}
+        {activeSkinGradient && (
+          <div className={`absolute inset-0 bg-gradient-to-b ${activeSkinGradient} pointer-events-none`} />
+        )}
         {isViewingOther && (
           <button
             onClick={() => { setViewingUser(null); setView('home'); }}
@@ -606,7 +632,7 @@ export function Profile() {
 
         <div>
           <div className="flex items-center gap-2">
-            <h1 className={`text-xl font-bold ${profileIsFounder ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500' : 'text-white'}`}>{profileName}</h1>
+            <h1 className={`text-xl font-bold ${profileIsFounder ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500' : activeNameEffectClass ? activeNameEffectClass : 'text-white'}`}>{profileName}</h1>
             {profileVerified && (
               profileIsFounder ? (
                 <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 founder-badge-glow">
@@ -640,6 +666,10 @@ export function Profile() {
             })()}
           </div>
           <p className={`text-sm ${profileIsFounder ? 'text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 font-semibold' : 'text-slate-400'}`}>{profileHandle}</p>
+          {/* Custom title from marketplace */}
+          {!isViewingOther && currentUser.customTitle && (
+            <p className="text-[11px] font-bold text-violet-400 mt-0.5">{currentUser.customTitle}</p>
+          )}
           <p className={`text-sm mt-2 leading-relaxed ${profileIsFounder ? 'text-slate-200 font-medium' : 'text-slate-300'}`}>{profileBio}</p>
           <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500">
             {profileLocation && <span className={`flex items-center gap-1 ${profileIsFounder ? 'text-amber-400' : ''}`}><MapPin className="w-3 h-3" /> {profileLocation}</span>}
