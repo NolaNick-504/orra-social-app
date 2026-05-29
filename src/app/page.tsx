@@ -469,7 +469,9 @@ export default function Home() {
   useEffect(() => {
     // Check document.cookie for the NextAuth session token
     // This is only available on the client side
-    const cookieExists = document.cookie.includes('next-auth.session-token=');
+    // Check for both prefixed and non-prefixed NextAuth session cookies
+    // Over HTTPS, NextAuth uses __Secure-next-auth.session-token
+    const cookieExists = document.cookie.includes('next-auth.session-token=') || document.cookie.includes('__Secure-next-auth.session-token=');
     if (cookieExists) setHasSessionCookie(true);
   }, []);
 

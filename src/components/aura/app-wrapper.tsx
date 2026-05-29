@@ -203,26 +203,24 @@ function StoreHydrator({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Reset store when user signs out
-  // DEBOUNCE: Only reset if unauthenticated for at least 15 seconds.
+  // DEBOUNCE: Only reset if unauthenticated for at least 3 seconds.
   // NextAuth's update() call briefly sets status to 'unauthenticated' during
-  // session refresh, which was causing the app to flash to the login page
-  // when saving profile edits. This debounce prevents that false sign-out.
-  // Extended from 1s to 15s to survive container freezes and slow network —
-  // a real sign-out (user clicking logout) will explicitly reset the store
-  // via the logout API, so this timer only handles the edge case where
-  // the session is genuinely gone for a long time.
+  // session refresh, which was causing the app to flash to the login page.
+  // The fastLogout function in sidebar.tsx clears localStorage and does a
+  // hard page reload, so this timer is a safety net for edge cases.
   useEffect(() => {
     if (status === 'unauthenticated') {
       const timeout = setTimeout(() => {
-        // Double-check: if still unauthenticated after 15s, it's a real sign-out
+        // Double-check: if still unauthenticated, it's a real sign-out
         const currentStatus = useAuraStore.getState().isHydrated;
         if (currentStatus) {
           const store = useAuraStore.getState();
           store.resetStore();
           hasFetched.current = false;
           hydrationAttempted.current = false;
+          try { sessionStorage.removeItem('orra-was-auth'); } catch {}
         }
-      }, 15000);
+      }, 3000);
       return () => clearTimeout(timeout);
     }
   }, [status]);

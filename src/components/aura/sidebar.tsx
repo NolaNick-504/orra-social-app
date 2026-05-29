@@ -6,21 +6,35 @@ import { useNotifications, useChats } from '@/lib/api-hooks';
 import { resolveImageUrl } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 // Server-side logout that properly clears Secure cookies
-// Client-side document.cookie deletion fails for Secure cookies behind HTTPS proxy
+// NextAuth v4 uses __Secure- and __Host- prefixes for cookies over HTTPS.
+// Client-side document.cookie deletion fails for Secure/HttpOnly cookies,
+// so we rely on the server-side endpoint. The fallback below covers
+// non-HTTPS environments where cookies don't have prefixes.
 async function fastLogout() {
   try {
-    // Step 1: Call server-side logout to clear cookies with correct Secure flag
+    // Step 1: Call server-side logout to clear ALL cookie variants
+    // (including __Secure- and __Host- prefixed versions)
     await fetch('/api/auth/logout', { method: 'POST' });
   } catch {
-    // If server call fails, fall back to client-side cookie clearing
-    document.cookie = 'next-auth.session-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'next-auth.callback-url=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'next-auth.csrf-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    // Fallback: try to clear non-prefixed cookies (won't work for Secure/HttpOnly,
+    // but helps in dev or non-HTTPS environments)
+    const cookies = [
+      'next-auth.session-token',
+      '__Secure-next-auth.session-token',
+      'next-auth.callback-url',
+      '__Secure-next-auth.callback-url',
+      'next-auth.csrf-token',
+      '__Host-next-auth.csrf-token',
+    ];
+    for (const name of cookies) {
+      document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure`;
+    }
   }
-  // Step 2: Clear ORRA localStorage
+  // Step 2: Clear ORRA localStorage + any cached state
   try { localStorage.removeItem('aura-storage'); } catch {}
-  // Step 3: Navigate to root — cookies are now properly cleared server-side
-  window.location.href = '/';
+  try { sessionStorage.clear(); } catch {}
+  // Step 3: Hard reload to root — ensures all state is reset
+  window.location.replace('/?logout=' + Date.now());
 }
 import {
   Home,
