@@ -23,6 +23,7 @@ jobs:
             git reset --hard origin/main
             npm install --production=false 2>&1 | tail -1
             npx prisma generate 2>&1 | tail -1
+            npx prisma db push --skip-generate 2>&1 | tail -3
             rm -rf .next
             NODE_OPTIONS="--max-old-space-size=1536" npm run build 2>&1 | tail -10
             pm2 delete orra-server 2>/dev/null || true
