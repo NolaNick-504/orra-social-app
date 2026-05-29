@@ -73,3 +73,29 @@ Stage Summary:
 - Added marketplace skin/effect display on profile component
 - All marketplace features working: buy, toggle, color options, founder exclusivity
 - Server healthy at 18.118.22.101
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Fix logout, feed, and account access issues
+
+Work Log:
+- Diagnosed 3 critical issues: (1) logout not working, (2) only 1 test post in feed, (3) can't switch accounts
+- Found root cause of logout failure: NextAuth cookies set with Secure flag + __Secure-/__Host- prefixes weren't being cleared properly
+- Found root cause of "can't logout" bug: sessionStorage 'orra-was-auth' flag persisted across page reloads, keeping the authenticated app visible even after cookies were cleared
+- Found root cause of empty feed: database only had 1 test post from previous session (all previous seed data was lost)
+- Fixed logout server-side: clear ALL cookie variants including __Secure- and __Host- prefixed versions with Secure=true
+- Fixed logout client-side: added signOut() from next-auth, clear sessionStorage, use window.location.replace with cache-buster
+- Fixed page.tsx: removed sessionStorage persistence for wasAuthenticated (was causing "stuck on wrong account" after logout)
+- Created /api/admin/seed-posts endpoint: seeded 24 posts from 7 users (5 bot users + founder + test user)
+- Added bot users with follows (founder follows all bots, bots follow back)
+- Fixed logout 500 error: removed appendHeader() calls that weren't supported, used cookies.set() instead
+- Pushed all fixes to GitHub (2 commits), auto-deployed to EC2
+- Verified all fixes end-to-end: login → session → feed → logout → session cleared
+
+Stage Summary:
+- Logout now works: clears Secure cookies + prefixed cookies + sessionStorage + calls signOut()
+- Feed now shows 24 posts from 7 users
+- Founder profile: verified=true, profileSetupComplete=true, badges=[Crown,Fire,Founder], 5 posts, 6 followers
+- Server healthy at 18.118.22.101
+- User can now: (1) logout, (2) log back in with nickjoseph8087@gmail.com, (3) see full feed
