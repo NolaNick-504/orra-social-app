@@ -32,6 +32,10 @@ npm install --production=false 2>&1 | tail -1
 echo "[$(date +"%Y-%m-%d %H:%M:%S")] Generating Prisma client..." >> "$LOG_FILE"
 npx prisma generate 2>&1 | tail -1
 
+# Step 4b: Push schema changes to database (creates new tables/columns)
+echo "[$(date +"%Y-%m-%d %H:%M:%S")] Pushing schema changes to database..." >> "$LOG_FILE"
+npx prisma db push --skip-generate 2>&1 | tail -3
+
 # Step 5: Build (now safe because server is stopped — full RAM available)
 echo "[$(date +"%Y-%m-%d %H:%M:%S")] Building (server stopped, full RAM available)..." >> "$LOG_FILE"
 rm -rf .next
