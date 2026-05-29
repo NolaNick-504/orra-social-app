@@ -1,0 +1,267 @@
+diff --git a/src/app/api/me/route.ts b/src/app/api/me/route.ts
+index 6cf5c15..f1b21b2 100755
+--- a/src/app/api/me/route.ts
++++ b/src/app/api/me/route.ts
+@@ -40,6 +40,9 @@ export async function GET() {
+           dailyStreak: true,
+           badges: true,
+           profileSetupComplete: true,
++          activeTheme: true,
++          activeNameEffect: true,
++          customTitle: true,
+           createdAt: true,
+           _count: {
+             select: {
+diff --git a/src/app/api/purchases/route.ts b/src/app/api/purchases/route.ts
+index 04e2854..8e70445 100755
+--- a/src/app/api/purchases/route.ts
++++ b/src/app/api/purchases/route.ts
+@@ -117,11 +117,6 @@ export async function POST(request: NextRequest) {
+       return NextResponse.json({ success: true, data: { action: 'activated', itemId } });
+     }
+ 
+-    // New purchase - check if user has enough tokens
+-    if (user.auraTokens < cost) {
+-      return NextResponse.json({ success: false, error: `Not enough ORRA tokens. You need ${cost - user.auraTokens} more.` }, { status: 400 });
+-    }
+-
+     // Determine effective category for profile items
+     const badgeItemIds = ['holographic-badge', 'badge_fire', 'badge_star', 'badge_crown'];
+     const effectItemIds = ['neon-name-glow', 'effect_neon_glow', 'effect_rainbow_wave', 'effect_fire_glow', 'effect_gold_glow'];
+@@ -134,7 +129,7 @@ export async function POST(request: NextRequest) {
+       else if (themeItemIds.includes(itemId)) effectiveCategory = 'Themes';
+     }
+ 
+-    // For badges: add to user's badges array
++    // For badges: compute updated badges
+     let updatedBadges = user.badges;
+     if (effectiveCategory === 'Badges') {
+       const badgeName = name.replace(' Badge', '').replace(' badge', '').trim() || name;
+@@ -149,7 +144,19 @@ export async function POST(request: NextRequest) {
+       }
+     }
+ 
++    // New purchase - balance check INSIDE writeQueue to prevent TOCTOU race
++    let tokensRemaining = 0;
+     const result = await writeQueue.run(async () => {
++      // Re-check balance inside the queue to prevent double-spending
++      const freshUser = await db.user.findUnique({
++        where: { id: userId },
++        select: { auraTokens: true },
++      });
++      if (!freshUser || freshUser.auraTokens < cost) {
++        throw new Error('INSUFFICIENT_TOKENS');
++      }
++      tokensRemaining = freshUser.auraTokens - cost;
++
+       // Deactivate other items of same category when activating a theme or effect
+       if (effectiveCategory === 'Themes' || effectiveCategory === 'Effects') {
+         await db.purchase.updateMany({
+@@ -170,7 +177,7 @@ export async function POST(request: NextRequest) {
+         },
+       });
+ 
+-      const updateData: Record<string, any> = { auraTokens: user.auraTokens - cost };
++      const updateData: Record<string, any> = { auraTokens: tokensRemaining };
+ 
+       if (effectiveCategory === 'Badges') {
+         updateData.badges = updatedBadges;
+@@ -203,10 +210,14 @@ export async function POST(request: NextRequest) {
+         cost: result.cost,
+         isActive: result.isActive,
+         selectedOption: result.selectedOption,
+-        tokensRemaining: user.auraTokens - cost,
++        tokensRemaining,
+       },
+     });
+-  } catch (error) {
++  } catch (error: any) {
++    // Handle known transaction errors
++    if (error?.message === 'INSUFFICIENT_TOKENS') {
++      return NextResponse.json({ success: false, error: 'Not enough ORRA tokens.' }, { status: 400 });
++    }
+     console.error('POST /api/purchases error:', error);
+     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+   }
+diff --git a/src/app/api/users/[id]/route.ts b/src/app/api/users/[id]/route.ts
+index 92c72ce..251e791 100755
+--- a/src/app/api/users/[id]/route.ts
++++ b/src/app/api/users/[id]/route.ts
+@@ -32,6 +32,9 @@ export async function GET(
+         auraXP: true,
+         dailyStreak: true,
+         badges: true,
++        activeTheme: true,
++        activeNameEffect: true,
++        customTitle: true,
+         createdAt: true,
+         _count: {
+           select: {
+diff --git a/src/components/aura/app-wrapper.tsx b/src/components/aura/app-wrapper.tsx
+index 1823b87..f34dae9 100755
+--- a/src/components/aura/app-wrapper.tsx
++++ b/src/components/aura/app-wrapper.tsx
+@@ -112,6 +112,9 @@ function StoreHydrator({ children }: { children: React.ReactNode }) {
+           profileSongUrl: user.profileSongUrl || '',
+           profileSongTitle: user.profileSongTitle || '',
+           profileSongArtist: user.profileSongArtist || '',
++          activeTheme: user.activeTheme || '',
++          activeNameEffect: user.activeNameEffect || '',
++          customTitle: user.customTitle || '',
+         };
+ 
+         // Hydrate the store with all API data
+diff --git a/src/components/aura/profile.tsx b/src/components/aura/profile.tsx
+index 0ad2b6a..9d95e44 100755
+--- a/src/components/aura/profile.tsx
++++ b/src/components/aura/profile.tsx
+@@ -335,6 +335,29 @@ export function Profile() {
+   // This can happen when clicking on your own avatar/name in a post
+   const isViewingOther = !!(viewingUserId && viewingUserId !== currentUser.id && currentUser.id !== '');
+ 
++  // Active marketplace items - skin & effect
++  const activeTheme = !isViewingOther ? (currentUser.activeTheme || '') : (otherUserData?.activeTheme || '');
++  const activeNameEffect = !isViewingOther ? (currentUser.activeNameEffect || '') : (otherUserData?.activeNameEffect || '');
++  const customTitle = !isViewingOther ? (currentUser.customTitle || '') : (otherUserData?.customTitle || '');
++
++  // Theme gradient map (itemId -> Tailwind gradient classes)
++  const THEME_GRADIENTS: Record<string, string> = {
++    'skin_aurora': 'from-purple-600/30 via-blue-500/20 to-teal-400/30',
++    'skin_neon': 'from-pink-500/30 via-cyan-400/20 to-yellow-400/30',
++    'skin_midnight': 'from-indigo-900/40 via-purple-900/30 to-slate-900/40',
++    'skin_cherry_blossom': 'from-pink-300/30 via-rose-200/20 to-purple-200/30',
++    'skin_fire': 'from-red-600/30 via-orange-500/20 to-yellow-400/30',
++    'skin_gold_founder': 'from-yellow-400/30 via-amber-400/20 to-yellow-300/30',
++  };
++
++  // Name effect style map (itemId -> CSS classes for the name)
++  const NAME_EFFECTS: Record<string, string> = {
++    'effect_neon_glow': 'text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]',
++    'effect_rainbow_wave': 'text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400 animate-pulse',
++    'effect_fire_glow': 'text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]',
++    'effect_gold_glow': 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]',
++  };
++
+   // Auto-fix: if viewingUserId matches our own ID, clear it immediately
+   // This ensures the profile always renders in "own profile" mode even if
+   // setViewingUser was called with our own ID before the fix was deployed
+@@ -489,6 +512,10 @@ export function Profile() {
+           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+         />
+         <div className={`absolute inset-0 ${profileIsFounder ? 'bg-gradient-to-t from-[#050505] via-[#050505]/20 to-amber-500/5' : 'bg-gradient-to-t from-[#050505] via-[#050505]/30 to-transparent'}`} />
++        {/* Active skin gradient overlay */}
++        {activeTheme && THEME_GRADIENTS[activeTheme] && (
++          <div className={`absolute inset-0 bg-gradient-to-br ${THEME_GRADIENTS[activeTheme]} mix-blend-overlay`} />
++        )}
+         {isViewingOther && (
+           <button
+             onClick={() => { setViewingUser(null); setView('home'); }}
+@@ -606,7 +633,11 @@ export function Profile() {
+ 
+         <div>
+           <div className="flex items-center gap-2">
+-            <h1 className={`text-xl font-bold ${profileIsFounder ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500' : 'text-white'}`}>{profileName}</h1>
++            <h1 className={`text-xl font-bold ${
++              profileIsFounder ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500' :
++              activeNameEffect && NAME_EFFECTS[activeNameEffect] ? NAME_EFFECTS[activeNameEffect] :
++              'text-white'
++            }`}>{profileName}</h1>
+             {profileVerified && (
+               profileIsFounder ? (
+                 <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 founder-badge-glow">
+@@ -640,6 +671,13 @@ export function Profile() {
+             })()}
+           </div>
+           <p className={`text-sm ${profileIsFounder ? 'text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 font-semibold' : 'text-slate-400'}`}>{profileHandle}</p>
++          {/* Custom Title from marketplace */}
++          {customTitle && customTitle !== 'Custom Title' && (
++            <p className="text-xs text-violet-300 font-medium mt-0.5 flex items-center gap-1">
++              <Sparkles className="w-3 h-3 text-violet-400" />
++              {customTitle}
++            </p>
++          )}
+           <p className={`text-sm mt-2 leading-relaxed ${profileIsFounder ? 'text-slate-200 font-medium' : 'text-slate-300'}`}>{profileBio}</p>
+           <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500">
+             {profileLocation && <span className={`flex items-center gap-1 ${profileIsFounder ? 'text-amber-400' : ''}`}><MapPin className="w-3 h-3" /> {profileLocation}</span>}
+diff --git a/src/components/aura/token-marketplace.tsx b/src/components/aura/token-marketplace.tsx
+index 98a14c9..f220990 100755
+--- a/src/components/aura/token-marketplace.tsx
++++ b/src/components/aura/token-marketplace.tsx
+@@ -448,9 +448,9 @@ function MarketplaceItemCard({
+       <div className="flex items-center gap-3">
+         {/* Icon */}
+         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center flex-shrink-0 ${
+-          isFounderOnly && !isFounder ? 'opacity-30' : ''
++          item.isFounderOnly && !isFounder ? 'opacity-30' : ''
+         }`}>
+-          {isFounderOnly && !isFounder ? (
++          {item.isFounderOnly && !isFounder ? (
+             <Lock className="w-6 h-6 text-white/60" />
+           ) : isOwned && !isActive ? (
+             <ItemIcon className="w-6 h-6 text-white/50" />
+@@ -474,7 +474,7 @@ function MarketplaceItemCard({
+                 {item.badge}
+               </span>
+             )}
+-            {isFounderOnly && isFounder && (
++            {item.isFounderOnly && isFounder && (
+               <span className="px-1.5 py-0.5 rounded-md text-[8px] font-bold bg-yellow-500/20 text-yellow-400">
+                 FOUNDER
+               </span>
+@@ -494,7 +494,7 @@ function MarketplaceItemCard({
+         <ToggleSwitch
+           isOn={isActive}
+           onToggle={handleToggle}
+-          disabled={isFounderOnly && !isFounder}
++          disabled={item.isFounderOnly && !isFounder}
+           isLoading={isLoading}
+           isOwned={isOwned}
+           cost={item.cost}
+diff --git a/src/lib/use-current-user.ts b/src/lib/use-current-user.ts
+index 2e0225a..61b24de 100755
+--- a/src/lib/use-current-user.ts
++++ b/src/lib/use-current-user.ts
+@@ -39,6 +39,9 @@ export function useCurrentUser() {
+     profileSongUrl: '',
+     profileSongTitle: '',
+     profileSongArtist: '',
++    activeTheme: '',
++    activeNameEffect: '',
++    customTitle: '',
+   } : null;
+ 
+   // Use currentUserProfile (from API) or session data. No mock fallback.
+@@ -66,6 +69,9 @@ export function useCurrentUser() {
+     profileSongUrl: '',
+     profileSongTitle: '',
+     profileSongArtist: '',
++    activeTheme: '',
++    activeNameEffect: '',
++    customTitle: '',
+   };
+ 
+   // Apply profile edits (user's manual changes in Edit Profile)
+@@ -101,5 +107,8 @@ export function useCurrentUser() {
+     profileSongUrl: base.profileSongUrl || '',
+     profileSongTitle: base.profileSongTitle || '',
+     profileSongArtist: base.profileSongArtist || '',
++    activeTheme: base.activeTheme || '',
++    activeNameEffect: base.activeNameEffect || '',
++    customTitle: base.customTitle || '',
+   };
+ }
+diff --git a/src/store/aura-store.ts b/src/store/aura-store.ts
+index f534152..6566b3a 100755
+--- a/src/store/aura-store.ts
++++ b/src/store/aura-store.ts
+@@ -115,6 +115,10 @@ interface CurrentUser {
+   profileSongUrl?: string;
+   profileSongTitle?: string;
+   profileSongArtist?: string;
++  // Marketplace - Active items
++  activeTheme?: string;
++  activeNameEffect?: string;
++  customTitle?: string;
+ }
+ 
+ interface AuraState {
