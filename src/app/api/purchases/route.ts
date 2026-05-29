@@ -179,11 +179,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data: { action: 'activated', itemId } });
     }
 
-    // New purchase - check if user has enough tokens
-    if (user.auraTokens < cost) {
-      return NextResponse.json({ success: false, error: `Not enough ORRA tokens. You need ${cost - user.auraTokens} more.` }, { status: 400 });
-    }
-
     // Determine effective category for profile items
     const badgeItemIds = ['holographic-badge', 'badge_fire', 'badge_star', 'badge_crown'];
     const effectItemIds = ['neon-name-glow', 'effect_neon_glow', 'effect_rainbow_wave', 'effect_fire_glow', 'effect_gold_glow'];
@@ -196,7 +191,7 @@ export async function POST(request: NextRequest) {
       else if (themeItemIds.includes(itemId)) effectiveCategory = 'Themes';
     }
 
-    // For badges: add to user's badges array
+    // For badges: compute updated badges
     let updatedBadges = user.badges;
     if (effectiveCategory === 'Badges') {
       const badgeName = name.replace(' Badge', '').replace(' badge', '').trim() || name;
@@ -211,7 +206,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Balance check INSIDE writeQueue to prevent TOCTOU race
+    let tokensRemaining = 0;
     const result = await writeQueue.run(async () => {
+      // Re-check balance inside the queue to prevent double-spending
+      const freshUser = await db.user.findUnique({
+        where: { id: userId },
+        select: { auraTokens: true },
+      });
+      if (!freshUser || freshUser.auraTokens < cost) {
+        throw new Error('INSUFFICIENT_TOKENS');
+      }
+      tokensRemaining = freshUser.auraTokens - cost;
+
       // Deactivate other items of same category when activating a theme or effect
       if (effectiveCategory === 'Themes' || effectiveCategory === 'Effects') {
         await db.purchase.updateMany({
@@ -232,7 +239,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      const updateData: Record<string, any> = { auraTokens: user.auraTokens - cost };
+      const updateData: Record<string, any> = { auraTokens: tokensRemaining };
 
       if (effectiveCategory === 'Badges') {
         updateData.badges = updatedBadges;
@@ -265,10 +272,14 @@ export async function POST(request: NextRequest) {
         cost: result.cost,
         isActive: result.isActive,
         selectedOption: result.selectedOption,
-        tokensRemaining: user.auraTokens - cost,
+        tokensRemaining,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
+    // Handle known transaction errors
+    if (error?.message === 'INSUFFICIENT_TOKENS') {
+      return NextResponse.json({ success: false, error: 'Not enough ORRA tokens.' }, { status: 400 });
+    }
     console.error('POST /api/purchases error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }

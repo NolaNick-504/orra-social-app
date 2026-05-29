@@ -414,9 +414,16 @@ export function Profile() {
   })();
   const profileIsFounder = isViewingOther ? isOtherUserFounder : isFounder;
 
-  // Apply marketplace skin/effect (only for own profile)
-  const activeSkinGradient = !isViewingOther && currentUser.activeTheme ? skinGradients[currentUser.activeTheme] : null;
-  const activeNameEffectClass = !isViewingOther && currentUser.activeNameEffect ? nameEffects[currentUser.activeNameEffect] : null;
+  // Apply marketplace skin/effect (for own profile AND other users' profiles)
+  const activeSkinGradient = !isViewingOther
+    ? (currentUser.activeTheme ? skinGradients[currentUser.activeTheme] : null)
+    : (otherUserData?.activeTheme ? skinGradients[otherUserData.activeTheme] : null);
+  const activeNameEffectClass = !isViewingOther
+    ? (currentUser.activeNameEffect ? nameEffects[currentUser.activeNameEffect] : null)
+    : (otherUserData?.activeNameEffect ? nameEffects[otherUserData.activeNameEffect] : null);
+  const activeCustomTitle = !isViewingOther
+    ? (currentUser.customTitle || '')
+    : (otherUserData?.customTitle || '');
 
   // If viewing another user, use their data; otherwise use current user data
   const profileName = isViewingOther ? (otherUserData?.name || '') : displayName;
@@ -667,8 +674,11 @@ export function Profile() {
           </div>
           <p className={`text-sm ${profileIsFounder ? 'text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 font-semibold' : 'text-slate-400'}`}>{profileHandle}</p>
           {/* Custom title from marketplace */}
-          {!isViewingOther && currentUser.customTitle && (
-            <p className="text-[11px] font-bold text-violet-400 mt-0.5">{currentUser.customTitle}</p>
+          {activeCustomTitle && activeCustomTitle !== 'Custom Title' && (
+            <p className="text-xs text-violet-300 font-medium mt-0.5 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-violet-400" />
+              {activeCustomTitle}
+            </p>
           )}
           <p className={`text-sm mt-2 leading-relaxed ${profileIsFounder ? 'text-slate-200 font-medium' : 'text-slate-300'}`}>{profileBio}</p>
           <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500">

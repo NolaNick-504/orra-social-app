@@ -448,9 +448,9 @@ function MarketplaceItemCard({
       <div className="flex items-center gap-3">
         {/* Icon */}
         <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center flex-shrink-0 ${
-          isFounderOnly && !isFounder ? 'opacity-30' : ''
+          item.isFounderOnly && !isFounder ? 'opacity-30' : ''
         }`}>
-          {isFounderOnly && !isFounder ? (
+          {item.isFounderOnly && !isFounder ? (
             <Lock className="w-6 h-6 text-white/60" />
           ) : isOwned && !isActive ? (
             <ItemIcon className="w-6 h-6 text-white/50" />
@@ -474,7 +474,7 @@ function MarketplaceItemCard({
                 {item.badge}
               </span>
             )}
-            {isFounderOnly && isFounder && (
+            {item.isFounderOnly && isFounder && (
               <span className="px-1.5 py-0.5 rounded-md text-[8px] font-bold bg-yellow-500/20 text-yellow-400">
                 FOUNDER
               </span>
@@ -494,7 +494,7 @@ function MarketplaceItemCard({
         <ToggleSwitch
           isOn={isActive}
           onToggle={handleToggle}
-          disabled={isFounderOnly && !isFounder}
+          disabled={!!(item.isFounderOnly && !isFounder)}
           isLoading={isLoading}
           isOwned={isOwned}
           cost={item.cost}
