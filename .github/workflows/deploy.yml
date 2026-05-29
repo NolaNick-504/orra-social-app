@@ -1,0 +1,31 @@
+name: Auto Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Allow manual trigger from GitHub UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 18.118.22.101
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/orra
+            pm2 stop orra-server 2>/dev/null || true
+            git fetch origin
+            git reset --hard origin/main
+            npm install --production=false 2>&1 | tail -1
+            npx prisma generate 2>&1 | tail -1
+            rm -rf .next
+            NODE_OPTIONS="--max-old-space-size=1536" npm run build 2>&1 | tail -10
+            pm2 start orra-server 2>/dev/null || pm2 start server.js --name orra-server
+            pm2 save
+            echo "Deploy complete at $(date)"
+          script_stop: false
+          command_timeout: 10m

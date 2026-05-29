@@ -1,7 +1,12 @@
 #!/bin/bash
-# ORRA Auto-Deploy Setup
-# Run this ONCE on your EC2 instance to enable GitHub Actions auto-deploy
-# After running this, every push to GitHub will automatically update your server!
+# =============================================================================
+# ORRA Auto-Deploy Setup (GitHub Actions approach)
+# =============================================================================
+# Run this ONCE on your EC2 instance to set up auto-deploy.
+# After setup, every push to GitHub will automatically deploy to your server!
+#
+# Usage: bash /home/ubuntu/orra/aws/setup-autodeploy.sh
+# =============================================================================
 
 set -e
 
@@ -53,14 +58,8 @@ echo "========================================="
 echo "  DONE! After adding the secret,"
 echo "  every push to GitHub will auto-deploy!"
 echo "========================================="
-
-# 4. Also do the pending code update now
 echo ""
-echo "Updating ORRA code now..."
-cd /home/ubuntu/orra
-git fetch origin
-git reset --hard origin/main
-rm -rf .next
-npm run build
-pm2 restart orra-server
-echo "ORRA UPDATED!"
+echo "The deploy workflow is already in the repo at:"
+echo "  .github/workflows/deploy.yml"
+echo ""
+echo "It will activate automatically on the next push."
