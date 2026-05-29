@@ -38,6 +38,11 @@ model User {
   // Badges (stored as JSON string array)
   badges        String   @default("[]")
 
+  // Marketplace - Active items
+  activeTheme     String   @default("")
+  activeNameEffect String  @default("")
+  customTitle     String   @default("")
+
   // Profile setup tracking
   profileSetupComplete Boolean @default(false)
 
@@ -77,6 +82,7 @@ model User {
   mutedBy       Mute[]          @relation("UserMuted")
   reports       Report[]        @relation("UserReports")
   reelHistory   ReelHistory[]
+  purchases     Purchase[]
 
   // NextAuth
   accounts      Account[]
@@ -632,4 +638,27 @@ model Report {
   @@index([reporterId])
   @@index([targetId, targetType])
   @@index([status])
+}
+
+// ============================================
+// MARKETPLACE PURCHASES
+// ============================================
+
+model Purchase {
+  id             String   @id @default(cuid())
+  userId         String
+  itemId         String
+  category       String   // "Themes", "Effects", "Badges", "Boosts", "Titles"
+  name           String
+  cost           Int
+  isActive       Boolean  @default(false)
+  selectedOption String   @default("")  // Color/variant choice
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, itemId])
+  @@index([userId])
+  @@index([userId, category])
 }

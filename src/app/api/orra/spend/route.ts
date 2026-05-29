@@ -34,13 +34,11 @@ export async function POST(req: Request) {
     }
 
     // Use serialized transaction to prevent TOCTOU race on balance check
-    // Previously, balance was checked then tokens deducted in separate operations,
-    // allowing double-spend under concurrent requests
     const result = await serializedTransaction(async (tx) => {
       // Check user has enough tokens INSIDE the transaction
       const user = await tx.user.findUnique({
         where: { id: userId },
-        select: { id: true, auraTokens: true, badges: true, purchasedThemes: true, purchasedBadges: true, purchasedNameEffects: true, activeTheme: true, activeNameEffect: true },
+        select: { id: true, auraTokens: true, badges: true, activeTheme: true, activeNameEffect: true },
       });
 
       if (!user) {
@@ -76,47 +74,16 @@ export async function POST(req: Request) {
           currentBadges.push(badgeName);
         }
         updateData.badges = JSON.stringify(currentBadges);
-        // Also add to purchasedBadges
-        let currentPurchasedBadges: string[] = [];
-        try {
-          currentPurchasedBadges = JSON.parse(user.purchasedBadges);
-        } catch { currentPurchasedBadges = []; }
-        if (!currentPurchasedBadges.includes(itemId)) {
-          currentPurchasedBadges.push(itemId);
-        }
-        updateData.purchasedBadges = JSON.stringify(currentPurchasedBadges);
       }
 
-      // If purchasing a theme, add to purchasedThemes and set activeTheme
-      if (action === "purchase_theme" && itemId) {
-        let currentPurchasedThemes: string[] = [];
-        try {
-          currentPurchasedThemes = JSON.parse(user.purchasedThemes);
-        } catch { currentPurchasedThemes = []; }
-        if (!currentPurchasedThemes.includes(itemId)) {
-          currentPurchasedThemes.push(itemId);
-        }
-        updateData.purchasedThemes = JSON.stringify(currentPurchasedThemes);
-        // Auto-activate the newly purchased theme
-        if (activeTheme) {
-          updateData.activeTheme = activeTheme;
-        }
+      // If purchasing a theme, set activeTheme
+      if (action === "purchase_theme" && activeTheme) {
+        updateData.activeTheme = activeTheme;
       }
 
-      // If purchasing a name effect, add to purchasedNameEffects and set activeNameEffect
-      if (action === "purchase_name_effect" && itemId) {
-        let currentPurchasedEffects: string[] = [];
-        try {
-          currentPurchasedEffects = JSON.parse(user.purchasedNameEffects);
-        } catch { currentPurchasedEffects = []; }
-        if (!currentPurchasedEffects.includes(itemId)) {
-          currentPurchasedEffects.push(itemId);
-        }
-        updateData.purchasedNameEffects = JSON.stringify(currentPurchasedEffects);
-        // Auto-activate the newly purchased name effect
-        if (activeNameEffect) {
-          updateData.activeNameEffect = activeNameEffect;
-        }
+      // If purchasing a name effect, set activeNameEffect
+      if (action === "purchase_name_effect" && activeNameEffect) {
+        updateData.activeNameEffect = activeNameEffect;
       }
 
       await tx.tokenAction.create({

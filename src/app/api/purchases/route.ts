@@ -4,6 +4,16 @@ import { getAuthUserId } from '@/lib/auth-helpers';
 
 export const dynamic = 'force-dynamic';
 
+// Founder email for exclusive items
+const FOUNDER_EMAIL = 'nickjoseph8087@gmail.com';
+
+// Founder-only item IDs
+const FOUNDER_ONLY_ITEMS = [
+  'skin_gold_founder',
+  'effect_gold_glow',
+  'badge_crown',
+];
+
 // GET /api/purchases - List all purchases for current user
 export async function GET() {
   try {
@@ -12,15 +22,16 @@ export async function GET() {
       return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }
 
-    const purchases = await db.purchase.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { activeTheme: true, activeNameEffect: true, customTitle: true, auraTokens: true, badges: true },
-    });
+    const [purchases, user] = await Promise.all([
+      db.purchase.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      db.user.findUnique({
+        where: { id: userId },
+        select: { activeTheme: true, activeNameEffect: true, customTitle: true, auraTokens: true, badges: true, email: true },
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,
@@ -32,12 +43,14 @@ export async function GET() {
           name: p.name,
           cost: p.cost,
           isActive: p.isActive,
+          selectedOption: p.selectedOption,
           createdAt: p.createdAt,
         })),
         activeTheme: user?.activeTheme || '',
         activeNameEffect: user?.activeNameEffect || '',
         customTitle: user?.customTitle || '',
         auraTokens: user?.auraTokens || 0,
+        isFounder: user?.email === FOUNDER_EMAIL,
       },
     });
   } catch (error) {
@@ -46,7 +59,7 @@ export async function GET() {
   }
 }
 
-// POST /api/purchases - Purchase an item
+// POST /api/purchases - Purchase an item (toggle ON = buy)
 export async function POST(request: NextRequest) {
   try {
     const userId = await getAuthUserId();
@@ -55,10 +68,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { itemId, category, name, cost } = body;
+    const { itemId, category, name, cost, selectedOption } = body;
 
     if (!itemId || !category || !name || !cost) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Check founder-only restriction
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { auraTokens: true, badges: true, email: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+    }
+
+    if (FOUNDER_ONLY_ITEMS.includes(itemId) && user.email !== FOUNDER_EMAIL) {
+      return NextResponse.json({ success: false, error: 'This item is exclusive to the ORRA Founder' }, { status: 403 });
     }
 
     // Check if already purchased
@@ -67,8 +94,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (existing) {
-      // Already owned - just activate it
+      // Already owned - just activate it (toggle ON)
       await writeQueue.run(async () => {
+        // For themes and effects, deactivate others of same category first
         if (category === 'Themes' || category === 'Effects') {
           await db.purchase.updateMany({
             where: { userId, category, isActive: true },
@@ -77,8 +105,9 @@ export async function POST(request: NextRequest) {
         }
         await db.purchase.update({
           where: { id: existing.id },
-          data: { isActive: true },
+          data: { isActive: true, selectedOption: selectedOption || existing.selectedOption },
         });
+        // Update user's active item
         if (category === 'Themes') {
           await db.user.update({ where: { id: userId }, data: { activeTheme: itemId } });
         } else if (category === 'Effects') {
@@ -88,21 +117,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data: { action: 'activated', itemId } });
     }
 
-    // Check if user has enough tokens
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { auraTokens: true, badges: true },
-    });
-
-    if (!user || user.auraTokens < cost) {
-      return NextResponse.json({ success: false, error: 'Not enough ORRA tokens' }, { status: 400 });
+    // New purchase - check if user has enough tokens
+    if (user.auraTokens < cost) {
+      return NextResponse.json({ success: false, error: `Not enough ORRA tokens. You need ${cost - user.auraTokens} more.` }, { status: 400 });
     }
 
-    // Determine the effective category for profile items from the marketplace
-    // Marketplace sends category 'Profile' but items can be badges, effects, etc.
-    const badgeItemIds = ['holographic-badge', 'badge_early', 'badge_supporter', 'badge_legend', 'badge_fire'];
-    const effectItemIds = ['neon-name-glow', 'name_glow', 'name_rainbow', 'name_fire'];
-    const themeItemIds = ['theme_aurora', 'theme_neon', 'theme_gold', 'theme_midnight', 'animated-cover'];
+    // Determine effective category for profile items
+    const badgeItemIds = ['holographic-badge', 'badge_fire', 'badge_star', 'badge_crown'];
+    const effectItemIds = ['neon-name-glow', 'effect_neon_glow', 'effect_rainbow_wave', 'effect_fire_glow', 'effect_gold_glow'];
+    const themeItemIds = ['skin_aurora', 'skin_neon', 'skin_midnight', 'skin_cherry_blossom', 'skin_fire', 'skin_gold_founder', 'animated-cover'];
 
     let effectiveCategory = category;
     if (category === 'Profile') {
@@ -129,10 +152,8 @@ export async function POST(request: NextRequest) {
     const result = await writeQueue.run(async () => {
       // Deactivate other items of same category when activating a theme or effect
       if (effectiveCategory === 'Themes' || effectiveCategory === 'Effects') {
-        // Deactivate all items in the same effective category
-        const catsToDeactivate = effectiveCategory === 'Themes' ? ['Themes', 'Profile'] : ['Effects', 'Profile'];
         await db.purchase.updateMany({
-          where: { userId, category: { in: catsToDeactivate }, isActive: true },
+          where: { userId, category: { in: [effectiveCategory, 'Profile'] }, isActive: true },
           data: { isActive: false },
         });
       }
@@ -144,7 +165,8 @@ export async function POST(request: NextRequest) {
           category,
           name,
           cost,
-          isActive: effectiveCategory === 'Themes' || effectiveCategory === 'Effects' || effectiveCategory === 'Badges',
+          isActive: true,
+          selectedOption: selectedOption || '',
         },
       });
 
@@ -155,20 +177,11 @@ export async function POST(request: NextRequest) {
       }
       if (effectiveCategory === 'Themes') {
         updateData.activeTheme = itemId;
-        // animated-cover maps to a theme-like behavior
-        if (itemId === 'animated-cover') {
-          updateData.activeTheme = 'theme_animated_cover';
-        }
       }
       if (effectiveCategory === 'Effects') {
         updateData.activeNameEffect = itemId;
-        // neon-name-glow from marketplace maps to the name_glow effect
-        if (itemId === 'neon-name-glow') {
-          updateData.activeNameEffect = 'name_glow';
-        }
       }
-      // Custom title from marketplace
-      if (itemId === 'custom-title') {
+      if (effectiveCategory === 'Titles' || itemId === 'custom-title') {
         updateData.customTitle = name;
       }
 
@@ -189,7 +202,8 @@ export async function POST(request: NextRequest) {
         name: result.name,
         cost: result.cost,
         isActive: result.isActive,
-        tokensRemaining: (user.auraTokens - cost),
+        selectedOption: result.selectedOption,
+        tokensRemaining: user.auraTokens - cost,
       },
     });
   } catch (error) {
@@ -198,7 +212,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/purchases - Toggle active state for a purchased item
+// PUT /api/purchases - Toggle active state (toggle ON/OFF for owned items)
 export async function PUT(request: NextRequest) {
   try {
     const userId = await getAuthUserId();
@@ -207,7 +221,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { itemId, isActive } = body;
+    const { itemId, isActive, selectedOption } = body;
 
     if (!itemId) {
       return NextResponse.json({ success: false, error: 'Missing itemId' }, { status: 400 });
@@ -222,6 +236,7 @@ export async function PUT(request: NextRequest) {
     }
 
     await writeQueue.run(async () => {
+      // If activating a theme or effect, deactivate others in same category
       if (isActive && (purchase.category === 'Themes' || purchase.category === 'Effects')) {
         await db.purchase.updateMany({
           where: { userId, category: purchase.category, isActive: true },
@@ -229,9 +244,14 @@ export async function PUT(request: NextRequest) {
         });
       }
 
+      const updateData: Record<string, any> = { isActive };
+      if (selectedOption) {
+        updateData.selectedOption = selectedOption;
+      }
+
       await db.purchase.update({
         where: { id: purchase.id },
-        data: { isActive },
+        data: updateData,
       });
 
       if (purchase.category === 'Themes') {
@@ -242,7 +262,7 @@ export async function PUT(request: NextRequest) {
       }
     });
 
-    return NextResponse.json({ success: true, data: { itemId, isActive } });
+    return NextResponse.json({ success: true, data: { itemId, isActive, selectedOption: selectedOption || purchase.selectedOption } });
   } catch (error) {
     console.error('PUT /api/purchases error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
