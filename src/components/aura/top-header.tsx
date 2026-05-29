@@ -8,16 +8,26 @@ import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 
-// QR Scanner component using html5-qrcode
+// QR Scanner component using html5-qrcode with manual fallback
 function TopHeaderQRScanner({ onClose }: { onClose: () => void }) {
   const scannerRef = useRef<any>(null);
   const [scanResult, setScanResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
+  const [manualInput, setManualInput] = useState('');
+  const [searching, setSearching] = useState(false);
   const { setViewingUser, setView } = useAuraStore();
 
   useEffect(() => {
     let scanner: any = null;
+    // Only try camera if we're on HTTPS or localhost
+    const isSecure = typeof window !== 'undefined' && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    
+    if (!isSecure) {
+      setError('Camera requires HTTPS. Use the search box below to find friends instead.');
+      return;
+    }
+
     const startScanner = async () => {
       setIsStarting(true);
       try {
@@ -30,14 +40,13 @@ function TopHeaderQRScanner({ onClose }: { onClose: () => void }) {
           (decodedText: string) => {
             setScanResult(decodedText);
             scanner.stop();
-            // If it's an ORRA profile URL or orra:// protocol, navigate
             if (decodedText.includes('orra://profile/')) {
               const userId = decodedText.replace('orra://profile/', '');
               setViewingUser(userId);
               setView('profile');
               toast.success('Profile found!');
               setTimeout(onClose, 1000);
-            } else if (decodedText.includes(window.location.origin) || decodedText.includes('orra.app') || decodedText.includes('orra.link')) {
+            } else if (decodedText.includes(window.location.origin) || decodedText.includes('orra.app')) {
               const handle = decodedText.split('/').pop();
               if (handle) {
                 toast.success('QR code scanned!');
@@ -48,7 +57,7 @@ function TopHeaderQRScanner({ onClose }: { onClose: () => void }) {
           () => { /* scan failure - ignore */ }
         );
       } catch (err: any) {
-        setError(err?.message || 'Could not access camera. Please allow camera permissions.');
+        setError(err?.message || 'Could not access camera. Use the search box below instead.');
       } finally {
         setIsStarting(false);
       }
@@ -59,9 +68,62 @@ function TopHeaderQRScanner({ onClose }: { onClose: () => void }) {
     };
   }, [onClose, setViewingUser, setView]);
 
+  const handleManualSearch = async () => {
+    const input = manualInput.trim().replace('@', '');
+    if (!input) return;
+    setSearching(true);
+    try {
+      // Search by handle or name
+      const res = await fetch(`/api/search?q=${encodeURIComponent(input)}`);
+      const data = await res.json();
+      if (data.success && data.users && data.users.length > 0) {
+        const user = data.users[0];
+        setViewingUser(user.id);
+        setView('profile');
+        toast.success(`Found ${user.name}!`);
+        onClose();
+      } else {
+        toast.error('User not found. Try a different name or handle.');
+      }
+    } catch {
+      toast.error('Search failed. Try again.');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const isSecure = typeof window !== 'undefined' && (window.location.protocol === 'https:' || window.location.hostname === 'localhost');
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6">
-      {error ? (
+      {error && !isSecure ? (
+        /* HTTP - No camera, show search instead */
+        <div className="flex flex-col items-center justify-center text-center w-full max-w-sm">
+          <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mb-4">
+            <Search className="w-8 h-8 text-violet-400" />
+          </div>
+          <p className="text-white text-base font-bold mb-1">Find Friends</p>
+          <p className="text-slate-500 text-xs mb-5">Camera requires HTTPS. Search by name or handle instead.</p>
+          <div className="w-full flex items-center gap-2">
+            <input
+              type="text"
+              value={manualInput}
+              onChange={(e) => setManualInput(e.target.value)}
+              placeholder="Search @handle or name..."
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-violet-500/50"
+              onKeyDown={(e) => { if (e.key === 'Enter') handleManualSearch(); }}
+            />
+            <button
+              onClick={handleManualSearch}
+              disabled={!manualInput.trim() || searching}
+              className="px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-bold disabled:opacity-30 hover:opacity-90 transition-all active:scale-95"
+            >
+              {searching ? '...' : 'Go'}
+            </button>
+          </div>
+        </div>
+      ) : error ? (
+        /* HTTPS but camera error */
         <div className="flex flex-col items-center justify-center text-center">
           <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mb-3">
             <X className="w-7 h-7 text-red-400" />
