@@ -34,24 +34,42 @@ echo "SSL certificate generated successfully."
 # Configure Nginx for HTTPS
 echo "Configuring Nginx for HTTPS..."
 
-sudo tee /etc/nginx/sites-available/orra > /dev/null << 'NGINX_EOF'
-# HTTP - redirect to HTTPS
+sudo tee /etc/nginx/sites-available/orra > /dev/null << NGINX_EOF
+# HTTP server - normal access, no redirect
 server {
     listen 80;
     server_name _;
     
+    # Allow large uploads
+    client_max_body_size 50M;
+
     # Let certbot challenges through if we add Let's Encrypt later
     location /.well-known/acme-challenge/ {
         root /var/www/html;
     }
-    
-    # Redirect all other traffic to HTTPS
+
     location / {
-        return 301 https://$host$request_uri;
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+    }
+
+    # Static files caching
+    location /_next/static/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_cache_valid 200 365d;
+        add_header Cache-Control "public, immutable";
     }
 }
 
-# HTTPS server
+# HTTPS server - optional, for QR scanner camera access
+# Use https://IP when you need camera, http://IP for everything else
 server {
     listen 443 ssl;
     server_name _;
@@ -70,13 +88,13 @@ server {
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
     }
 
     # Static files caching
