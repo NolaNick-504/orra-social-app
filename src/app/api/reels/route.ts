@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUserId, requireAuth } from "@/lib/auth-helpers";
-import { db, writeQueue, awardXPBackground } from "@/lib/db";
+import { db, writeQueue, awardXPAndTokens } from "@/lib/db";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
@@ -243,7 +243,7 @@ export async function POST(req: NextRequest) {
             xpEarned: 20,
           },
         });
-        await awardXPBackground(userId, 10, 20);
+        await awardXPAndTokens(userId, 10, 20);
       } catch {
         // Token award is best-effort
       }

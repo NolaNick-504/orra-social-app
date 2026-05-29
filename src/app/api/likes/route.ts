@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, serializedTransaction, writeQueue, awardXPBackground } from "@/lib/db";
+import { db, serializedTransaction, writeQueue, awardXPAndTokens } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-helpers";
 
 export const dynamic = 'force-dynamic';
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
                 xpEarned: award.xp,
               },
             });
-            await awardXPBackground(userId, award.tokens, award.xp);
+            await awardXPAndTokens(userId, award.tokens, award.xp);
           } catch {
             // Token award is best-effort; if it fails (e.g., duplicate), skip silently
           }
