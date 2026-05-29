@@ -79,5 +79,5 @@ export const SIGNUP_RATE_LIMIT: RateLimitOptions = { limit: 5, windowMs: 60 * 60
 /** Rate limit config for forgot-password: 3 per 15 minutes per IP */
 export const FORGOT_PASSWORD_RATE_LIMIT: RateLimitOptions = { limit: 3, windowMs: 15 * 60 * 1000 };
 
-/** Rate limit config for login attempts: 10 per 15 minutes per IP */
-export const LOGIN_RATE_LIMIT: RateLimitOptions = { limit: 10, windowMs: 15 * 60 * 1000 };
+/** Rate limit config for login attempts: 20 per 5 minutes per IP */
+export const LOGIN_RATE_LIMIT: RateLimitOptions = { limit: 20, windowMs: 5 * 60 * 1000 };
