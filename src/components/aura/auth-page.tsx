@@ -14,11 +14,11 @@ export function AuthPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // On mount, clear stale auto-relogin credentials and reset rate limits
-  // This prevents the auto-relogin from looping and locking users out
+  // On mount, reset any rate limits in case we got locked out
+  // But DON'T clear credentials immediately — the auto-relogin in page.tsx needs them
+  // Credentials will be cleared after a successful login or after a failed attempt
   useEffect(() => {
-    try { localStorage.removeItem('orra-last-email'); localStorage.removeItem('orra-last-password'); } catch {}
-    // Also reset any rate limits in case we got locked out
+    // Reset rate limits so the user can actually try to log in
     fetch('/api/admin/reset-rate-limit?key=orra504').catch(() => {});
   }, []);
 
@@ -78,7 +78,9 @@ export function AuthPage() {
 
     const success = await customLogin(email, password);
     if (success) {
-      window.location.reload();
+      // Use href instead of reload() to force a fresh page load from the server
+      // This ensures the browser doesn't use cached JS bundles
+      window.location.href = '/?_cb=' + Date.now();
     } else {
       // Clear saved credentials on failed login
       try { localStorage.removeItem('orra-last-email'); localStorage.removeItem('orra-last-password'); } catch {}
@@ -125,7 +127,7 @@ export function AuthPage() {
       // Auto sign in after registration using custom login
       const success = await customLogin(email, password);
       if (success) {
-        window.location.reload();
+        window.location.href = '/?_cb=' + Date.now();
       } else {
         setError('Account created but auto-login failed. Please sign in manually.');
         setIsSignUp(false);
@@ -142,7 +144,7 @@ export function AuthPage() {
     setError('');
     const success = await customLogin(demoEmail, 'password123');
     if (success) {
-      window.location.reload();
+      window.location.href = '/?_cb=' + Date.now();
     } else {
       setLoading(false);
     }

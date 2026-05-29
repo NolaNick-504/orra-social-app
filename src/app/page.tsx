@@ -527,9 +527,9 @@ export default function Home() {
 
         const data = await res.json();
         if (data.success) {
-          console.warn('ORRA: Auto-re-login successful — reloading');
-          // Small delay to let the session cookie propagate
-          setTimeout(() => window.location.reload(), 300);
+          console.warn('ORRA: Auto-re-login successful — redirecting');
+          // Use href instead of reload() to force a fresh page load
+          setTimeout(() => { window.location.href = '/?_cb=' + Date.now(); }, 300);
         } else {
           console.warn('ORRA: Auto-re-login failed — clearing saved credentials');
           localStorage.removeItem('orra-last-email');
