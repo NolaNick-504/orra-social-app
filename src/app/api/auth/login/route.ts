@@ -8,14 +8,17 @@ const SECRET = process.env.NEXTAUTH_SECRET;
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limit login attempts
-    const clientId = getClientIdentifier(request);
-    const rateLimit = checkRateLimit(`login:${clientId}`, LOGIN_RATE_LIMIT);
-    if (rateLimit.limited) {
-      return NextResponse.json(
-        { success: false, error: `Too many login attempts. Try again in ${rateLimit.retryAfter} seconds.` },
-        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } }
-      );
+    // Rate limit login attempts (skip for auto-re-login to avoid lockouts)
+    const isAutoRelogin = request.headers.get('x-orra-auto-relogin') === 'true';
+    if (!isAutoRelogin) {
+      const clientId = getClientIdentifier(request);
+      const rateLimit = checkRateLimit(`login:${clientId}`, LOGIN_RATE_LIMIT);
+      if (rateLimit.limited) {
+        return NextResponse.json(
+          { success: false, error: `Too many login attempts. Try again in ${rateLimit.retryAfter} seconds.` },
+          { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } }
+        );
+      }
     }
 
     const body = await request.json();

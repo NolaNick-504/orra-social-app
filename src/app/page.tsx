@@ -499,8 +499,9 @@ export default function Home() {
   }, [status, sessionTimedOut]);
 
   // Auto-re-login: When session becomes unauthenticated (e.g., after container restart),
-  // check localStorage for saved credentials and automatically try to re-login.
+  // check localStorage for saved credentials and automatically try to re-login ONCE.
   // This prevents users from being kicked to the login page when the server restarts.
+  // IMPORTANT: Only tries once to avoid hitting the rate limiter.
   useEffect(() => {
     if (status !== 'unauthenticated' || autoReloginAttempted) return;
 
@@ -517,10 +518,10 @@ export default function Home() {
         console.warn('ORRA: Session lost — attempting auto-re-login for', savedEmail);
         setAutoReloginAttempted(true);
 
-        // Try to re-login with saved credentials
+        // Try to re-login with saved credentials (only once)
         const res = await fetch('/api/auth/login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-orra-auto-relogin': 'true' },
           body: JSON.stringify({ email: savedEmail, password: savedPassword }),
         });
 
@@ -537,7 +538,7 @@ export default function Home() {
       } catch (err) {
         console.warn('ORRA: Auto-re-login error:', err);
         // Network error — server might still be waking up, don't clear credentials
-        // The user will see the login page and can try again
+        // The user will see the login page and can try again manually
       }
     };
 
