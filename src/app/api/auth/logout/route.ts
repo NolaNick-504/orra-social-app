@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    // Determine if we should use Secure flag (match login route behavior)
-    const forwardedProto = request.headers.get('x-forwarded-proto');
-    const isSecure = forwardedProto === 'https' || request.nextUrl.protocol === 'https:';
+    // DEBUG: Log what's calling logout
+    const referer = request.headers.get('referer') || 'no-referer';
+    const userAgent = request.headers.get('user-agent') || 'no-ua';
+    console.warn(`ORRA LOGOUT called from: ${referer} | UA: ${userAgent.substring(0, 80)}`);
 
     const response = NextResponse.json({ success: true });
 
@@ -18,8 +19,8 @@ export async function POST(request: NextRequest) {
     // 2. Setting a cookie with just "next-auth.session-token" creates a DIFFERENT cookie
     // 3. The original prefixed cookie remains and the user stays logged in
     //
-    // The __Host- prefix requires: Secure, no Domain attribute, Path=/
-    // The __Secure- prefix requires: Secure flag
+    // Always use Secure=true since the site is always served over HTTPS (Nginx proxy).
+    // Also set raw Set-Cookie headers without Secure as belt-and-suspenders fallback.
 
     const cookieNames = [
       { name: 'next-auth.session-token', prefix: '__Secure-', hostPrefix: false },
@@ -27,37 +28,37 @@ export async function POST(request: NextRequest) {
       { name: 'next-auth.csrf-token', prefix: '__Host-', hostPrefix: true },
     ];
 
-    for (const { name, prefix, hostPrefix } of cookieNames) {
-      // Clear non-prefixed version
+    for (const { name, prefix } of cookieNames) {
+      // Clear non-prefixed version with Secure=true
       response.cookies.set(name, '', {
         httpOnly: true,
-        secure: isSecure,
+        secure: true,
         sameSite: 'lax',
         path: '/',
         maxAge: 0,
       });
 
       // Clear prefixed version (this is what actually holds the session over HTTPS)
-      if (isSecure) {
-        const prefixedName = `${prefix}${name}`;
-        response.cookies.set(prefixedName, '', {
-          httpOnly: true,
-          secure: true,
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 0,
-          // __Host- prefix cookies must NOT have a Domain attribute
-          // The cookies.set API doesn't set domain by default, which is correct
-        });
-      }
+      const prefixedName = `${prefix}${name}`;
+      response.cookies.set(prefixedName, '', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 0,
+      });
+
+      // Also add raw Set-Cookie headers without Secure as belt-and-suspenders fallback
+      response.appendHeader('Set-Cookie', `${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`);
+      response.appendHeader('Set-Cookie', `${prefixedName}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
     }
 
     return response;
   } catch (error) {
     console.error('Logout error:', error);
-    // Even on error, try to clear all possible cookie variants
+    // Even on error, try to clear all possible cookie variants using raw headers
     const response = NextResponse.json({ success: true });
-    const names = [
+    const allCookieNames = [
       'next-auth.session-token',
       '__Secure-next-auth.session-token',
       'next-auth.callback-url',
@@ -65,8 +66,11 @@ export async function POST(request: NextRequest) {
       'next-auth.csrf-token',
       '__Host-next-auth.csrf-token',
     ];
-    for (const name of names) {
-      response.cookies.set(name, '', { path: '/', maxAge: 0, secure: true, httpOnly: true, sameSite: 'lax' });
+    for (const name of allCookieNames) {
+      // With Secure
+      response.appendHeader('Set-Cookie', `${name}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
+      // Without Secure (fallback)
+      response.appendHeader('Set-Cookie', `${name}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`);
     }
     return response;
   }

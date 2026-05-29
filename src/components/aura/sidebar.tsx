@@ -5,18 +5,21 @@ import { useCurrentUser } from '@/lib/use-current-user';
 import { useNotifications, useChats } from '@/lib/api-hooks';
 import { resolveImageUrl } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
-// Server-side logout that properly clears Secure cookies
-// NextAuth v4 uses __Secure- and __Host- prefixes for cookies over HTTPS.
-// Client-side document.cookie deletion fails for Secure/HttpOnly cookies,
-// so we rely on the server-side endpoint. The fallback below covers
-// non-HTTPS environments where cookies don't have prefixes.
+import { signOut } from 'next-auth/react';
+
+// Comprehensive logout that properly clears Secure cookies and all session state
+// Fixes:
+// 1. __Secure- and __Host- prefixed cookies used by NextAuth over HTTPS
+// 2. sessionStorage 'orra-was-auth' flag keeps app showing after session is gone
+// 3. localStorage 'aura-storage' holds Zustand store with stale user data
+// 4. next-auth signOut() properly invalidates the JWT on the client side
 async function fastLogout() {
   try {
     // Step 1: Call server-side logout to clear ALL cookie variants
     // (including __Secure- and __Host- prefixed versions)
     await fetch('/api/auth/logout', { method: 'POST' });
   } catch {
-    // Fallback: try to clear non-prefixed cookies (won't work for Secure/HttpOnly,
+    // Fallback: try to clear cookies client-side (won't work for Secure/HttpOnly,
     // but helps in dev or non-HTTPS environments)
     const cookies = [
       'next-auth.session-token',
@@ -30,10 +33,19 @@ async function fastLogout() {
       document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure`;
     }
   }
-  // Step 2: Clear ORRA localStorage + any cached state
+
+  // Step 2: Use next-auth signOut to properly invalidate the client-side session
+  try {
+    await signOut({ redirect: false });
+  } catch {}
+
+  // Step 3: Clear ORRA localStorage (Zustand store with stale user data)
   try { localStorage.removeItem('aura-storage'); } catch {}
+
+  // Step 4: Clear ALL sessionStorage (includes 'orra-was-auth' flag that keeps app showing)
   try { sessionStorage.clear(); } catch {}
-  // Step 3: Hard reload to root — ensures all state is reset
+
+  // Step 5: Hard reload to root with cache-buster — ensures all state is reset
   window.location.replace('/?logout=' + Date.now());
 }
 import {

@@ -445,19 +445,14 @@ export default function Home() {
   // Track if the user was EVER authenticated this session.
   // This prevents NextAuth's update() call from briefly setting status
   // to 'unauthenticated' (during session refresh), which would flash the login page.
-  // Once authenticated, we stay showing the app unless the user explicitly signs out
-  // OR the session is unauthenticated for more than 15 seconds (handled in app-wrapper.tsx).
-  // We also persist this in sessionStorage so it survives page reloads within the same tab.
-  const [wasAuthenticated, setWasAuthenticated] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try { return sessionStorage.getItem('orra-was-auth') === 'true'; } catch { return false; }
-    }
-    return false;
-  });
+  // IMPORTANT: We do NOT persist this in sessionStorage anymore because that caused
+  // the "can't logout" bug — the app would keep showing the authenticated view even
+  // after cookies were cleared. Now it only survives React re-renders, not page reloads.
+  // After logout, the page reloads to '/', wasAuthenticated=false, and the login page shows.
+  const [wasAuthenticated, setWasAuthenticated] = useState(false);
   useEffect(() => {
     if (isAuthenticated) {
       setWasAuthenticated(true);
-      try { sessionStorage.setItem('orra-was-auth', 'true'); } catch {}
     }
   }, [isAuthenticated]);
 
