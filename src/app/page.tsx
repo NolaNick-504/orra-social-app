@@ -439,7 +439,6 @@ export default function Home() {
   const { data: session, status } = useSession();
   const queryClient = getQueryClient();
   const [sessionTimedOut, setSessionTimedOut] = useState(false);
-  const [autoReloginAttempted, setAutoReloginAttempted] = useState(false);
 
   const isAuthenticated = status === 'authenticated' && session;
 
@@ -498,52 +497,10 @@ export default function Home() {
     }
   }, [status, sessionTimedOut]);
 
-  // Auto-re-login: When session becomes unauthenticated (e.g., after container restart),
-  // check localStorage for saved credentials and automatically try to re-login ONCE.
-  // This prevents users from being kicked to the login page when the server restarts.
-  // IMPORTANT: Only tries once to avoid hitting the rate limiter.
-  useEffect(() => {
-    if (status !== 'unauthenticated' || autoReloginAttempted) return;
-
-    const attemptAutoRelogin = async () => {
-      try {
-        const savedEmail = localStorage.getItem('orra-last-email');
-        const savedPassword = localStorage.getItem('orra-last-password');
-
-        if (!savedEmail || !savedPassword) {
-          setAutoReloginAttempted(true);
-          return;
-        }
-
-        console.warn('ORRA: Session lost — attempting auto-re-login for', savedEmail);
-        setAutoReloginAttempted(true);
-
-        // Try to re-login with saved credentials (only once)
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-orra-auto-relogin': 'true' },
-          body: JSON.stringify({ email: savedEmail, password: savedPassword }),
-        });
-
-        const data = await res.json();
-        if (data.success) {
-          console.warn('ORRA: Auto-re-login successful — redirecting');
-          // Use href instead of reload() to force a fresh page load
-          setTimeout(() => { window.location.href = '/?_cb=' + Date.now(); }, 300);
-        } else {
-          console.warn('ORRA: Auto-re-login failed — clearing saved credentials');
-          localStorage.removeItem('orra-last-email');
-          localStorage.removeItem('orra-last-password');
-        }
-      } catch (err) {
-        console.warn('ORRA: Auto-re-login error:', err);
-        // Network error — server might still be waking up, don't clear credentials
-        // The user will see the login page and can try again manually
-      }
-    };
-
-    attemptAutoRelogin();
-  }, [status, autoReloginAttempted]);
+  // Auto-re-login DISABLED — was causing infinite redirect loops.
+  // If the session is lost, the user simply sees the login page and logs in manually.
+  // The login page now uses NextAuth's built-in signIn() which handles cookies properly.
+  // Credentials are still saved to localStorage but only used if the user clicks login.
 
   // If the initial session check hasn't completed yet, show the ORRA logo
   // spinner — but ONLY for a maximum of 5 seconds. After that, we proceed.

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { signIn } from 'next-auth/react';
 import { Zap, Eye, EyeOff, ArrowRight, UserPlus, LogIn } from 'lucide-react';
 
 export function AuthPage() {
@@ -14,78 +15,85 @@ export function AuthPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // On mount, reset any rate limits in case we got locked out
-  // But DON'T clear credentials immediately — the auto-relogin in page.tsx needs them
-  // Credentials will be cleared after a successful login or after a failed attempt
+  // On mount, reset rate limits and clear any stale state
   useEffect(() => {
-    // Reset rate limits so the user can actually try to log in
     fetch('/api/admin/reset-rate-limit?key=orra504').catch(() => {});
+    // Clear stale auto-relogin credentials that might cause loops
+    try { localStorage.removeItem('orra-last-email'); localStorage.removeItem('orra-last-password'); } catch {}
+    // Clear was-auth flag so we don't get stuck
+    try { sessionStorage.removeItem('orra-was-auth'); } catch {}
   }, []);
 
   /**
-   * Custom login that directly creates a NextAuth session token cookie.
-   * This bypasses the NextAuth CSRF flow which has issues behind reverse proxies
-   * (the signIn() from next-auth/react returns {ok: false} or {error: 'CredentialsSignin'}
-   * even though the server actually creates a valid session).
+   * Login using NextAuth's built-in signIn() function.
+   * This is the proper way — NextAuth handles CSRF, cookies, and session management.
+   * We have trustHost: true set in auth.ts which fixes reverse proxy issues.
+   * 
+   * If signIn() fails (rare edge case), we fall back to the custom login API.
    */
-  const customLogin = async (loginEmail: string, loginPassword: string): Promise<boolean> => {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        // Save credentials to localStorage for auto-re-login after container restarts
-        try {
-          localStorage.setItem('orra-last-email', loginEmail);
-          localStorage.setItem('orra-last-password', loginPassword);
-        } catch {}
-        // Session cookie has been set by the server — reload to hydrate
-        return true;
-      }
-
-      // Login failed — set error message
-      if (data.error) {
-        // If rate limited, auto-clear saved credentials and try to reset
-        if (data.error.includes('Too many login attempts')) {
-          try { localStorage.removeItem('orra-last-email'); localStorage.removeItem('orra-last-password'); } catch {}
-          // Auto-reset rate limits via admin endpoint
-          try {
-            await fetch('/api/admin/reset-rate-limit?key=orra504');
-          } catch {}
-          setError('Rate limit cleared. Please try logging in again.');
-        } else {
-          setError(data.error);
-        }
-      } else {
-        setError('Login failed. Please try again.');
-      }
-      return false;
-    } catch {
-      setError('Network error. Please check your connection and try again.');
-      return false;
-    }
-  };
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const success = await customLogin(email, password);
-    if (success) {
-      // Use href instead of reload() to force a fresh page load from the server
-      // This ensures the browser doesn't use cached JS bundles
-      window.location.href = '/?_cb=' + Date.now();
-    } else {
-      // Clear saved credentials on failed login
-      try { localStorage.removeItem('orra-last-email'); localStorage.removeItem('orra-last-password'); } catch {}
-      setLoading(false);
+    try {
+      // METHOD 1: Standard NextAuth signIn (most reliable)
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false, // Don't redirect — we handle it ourselves
+      });
+
+      if (result?.ok) {
+        // Save credentials for emergency auto-recovery ONLY
+        try {
+          localStorage.setItem('orra-last-email', email);
+          localStorage.setItem('orra-last-password', password);
+        } catch {}
+        // Wait a moment for session to propagate, then reload
+        await new Promise(r => setTimeout(r, 500));
+        window.location.href = '/';
+        return;
+      }
+
+      // If signIn returned an error, try the custom login as fallback
+      if (result?.error) {
+        console.warn('NextAuth signIn failed, trying custom login:', result.error);
+        
+        // METHOD 2: Custom login API (fallback)
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          try {
+            localStorage.setItem('orra-last-email', email);
+            localStorage.setItem('orra-last-password', password);
+          } catch {}
+          // Wait for cookie to be set, then do a full page navigation
+          await new Promise(r => setTimeout(r, 500));
+          window.location.href = '/';
+          return;
+        }
+
+        // Both methods failed
+        const errMsg = data.error || 'Invalid email or password';
+        if (errMsg.includes('Too many login attempts')) {
+          await fetch('/api/admin/reset-rate-limit?key=orra504').catch(() => {});
+          setError('Rate limit cleared. Please try again.');
+        } else {
+          setError(errMsg);
+        }
+      }
+    } catch (err) {
+      setError('Network error. Please check your connection.');
     }
+
+    try { localStorage.removeItem('orra-last-email'); localStorage.removeItem('orra-last-password'); } catch {}
+    setLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -124,15 +132,36 @@ export function AuthPage() {
         return;
       }
 
-      // Auto sign in after registration using custom login
-      const success = await customLogin(email, password);
-      if (success) {
-        window.location.href = '/?_cb=' + Date.now();
-      } else {
-        setError('Account created but auto-login failed. Please sign in manually.');
-        setIsSignUp(false);
-        setLoading(false);
+      // Auto sign in after registration
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.ok) {
+        await new Promise(r => setTimeout(r, 500));
+        window.location.href = '/';
+        return;
       }
+
+      // Fallback to custom login
+      const loginRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const loginData = await loginRes.json();
+
+      if (loginData.success) {
+        await new Promise(r => setTimeout(r, 500));
+        window.location.href = '/';
+        return;
+      }
+
+      setError('Account created! Please sign in manually.');
+      setIsSignUp(false);
+      setLoading(false);
     } catch {
       setError('Something went wrong. Please try again.');
       setLoading(false);
@@ -142,10 +171,37 @@ export function AuthPage() {
   const demoLogin = async (demoEmail: string) => {
     setLoading(true);
     setError('');
-    const success = await customLogin(demoEmail, 'password123');
-    if (success) {
-      window.location.href = '/?_cb=' + Date.now();
-    } else {
+
+    try {
+      const result = await signIn('credentials', {
+        email: demoEmail,
+        password: 'password123',
+        redirect: false,
+      });
+
+      if (result?.ok) {
+        await new Promise(r => setTimeout(r, 500));
+        window.location.href = '/';
+        return;
+      }
+
+      // Fallback
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: demoEmail, password: 'password123' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await new Promise(r => setTimeout(r, 500));
+        window.location.href = '/';
+        return;
+      }
+
+      setError('Demo login failed. Please try again.');
+      setLoading(false);
+    } catch {
+      setError('Network error.');
       setLoading(false);
     }
   };
