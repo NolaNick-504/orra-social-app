@@ -251,7 +251,8 @@ export async function POST(request: NextRequest) {
         updateData.activeNameEffect = itemId;
       }
       if (effectiveCategory === 'Titles' || itemId === 'custom-title') {
-        updateData.customTitle = name;
+        // Use selectedOption as the custom title text if provided, otherwise fall back to name
+        updateData.customTitle = selectedOption || name;
       }
 
       await db.user.update({
@@ -332,6 +333,10 @@ export async function PUT(request: NextRequest) {
       }
       if (purchase.category === 'Effects') {
         await db.user.update({ where: { id: userId }, data: { activeNameEffect: isActive ? itemId : '' } });
+      }
+      if (purchase.category === 'Titles') {
+        const titleText = selectedOption || purchase.selectedOption || purchase.name;
+        await db.user.update({ where: { id: userId }, data: { customTitle: isActive ? titleText : '' } });
       }
     });
 
