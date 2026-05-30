@@ -499,6 +499,15 @@
   100% { transform: translateX(100%); }
 }
 
+/* ===== VOICE POST ANIMATIONS ===== */
+@keyframes voice-avatar-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.voice-avatar-spin {
+  animation: voice-avatar-spin 3s linear infinite;
+}
+
 /* ===== PROFILE MUSIC PLAYER ANIMATIONS ===== */
 @keyframes sound1 {
   0% { height: 3px; }

@@ -150,7 +150,8 @@ model Post {
   text        String
   images      String   @default("[]")  // JSON array of image URLs
   vibeTag     String   @default("hyped")
-  type        String   @default("text") // text, image
+  type        String   @default("text") // text, image, voice
+  audioUrl    String   @default("")  // URL for voice/audio posts
   likesCount  Int      @default(0)
   commentsCount Int    @default(0)
   sharesCount Int      @default(0)

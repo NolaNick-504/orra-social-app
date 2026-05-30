@@ -8,7 +8,7 @@ import { resolveImageUrl, timeAgo } from '@/lib/utils';
 import { vibeLabels } from '@/lib/data';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { useQueryClient } from '@tanstack/react-query';
-import { Heart, MessageCircle, Share2, Bookmark, Plus, Image as ImageIcon, Video, MoreHorizontal, BadgeCheck, Repeat2, BarChart3, Play, Send, X, Trash2, Zap, Waves, Sparkles, Radio, Trophy, CheckCircle2, Eye, Clock, MonitorUp, Users, Megaphone, ExternalLink, Star } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Bookmark, Plus, Image as ImageIcon, Video, MoreHorizontal, BadgeCheck, Repeat2, BarChart3, Play, Send, X, Trash2, Zap, Waves, Sparkles, Radio, Trophy, CheckCircle2, Eye, Clock, MonitorUp, Users, Megaphone, ExternalLink, Star, Mic, Pause, Volume2 } from 'lucide-react';
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Carousel, CarouselContent, CarouselItem, CarouselApi } from '@/components/ui/carousel';
@@ -452,6 +452,190 @@ function PollRenderer({ poll, postId }: { poll: { id: string; question: string; 
         <span>{poll.totalVotes} vote{poll.totalVotes !== 1 ? 's' : ''}</span>
         <span>·</span>
         <span>{isExpired ? 'Poll ended' : `Ends ${timeAgo(poll.expiresAt)}`}</span>
+      </div>
+    </div>
+  );
+}
+
+// Voice Player Component - Premium vinyl/radio aesthetic
+function VoicePlayer({ audioUrl, avatarUrl, authorName }: { audioUrl: string; avatarUrl: string; authorName: string }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const [waveformBars] = useState(() => Array.from({ length: 32 }, () => Math.random() * 0.6 + 0.3));
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const resolvedUrl = resolveImageUrl(audioUrl);
+
+  const updateProgress = useCallback(() => {
+    if (audioRef.current && audioRef.current.duration) {
+      const pct = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+      setProgress(pct);
+      setCurrentTime(audioRef.current.currentTime);
+    }
+    animFrameRef.current = requestAnimationFrame(updateProgress);
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    if (!audioRef.current) {
+      const audio = new Audio(resolvedUrl);
+      audioRef.current = audio;
+
+      audio.onloadedmetadata = () => {
+        setDuration(audio.duration);
+        setIsLoaded(true);
+      };
+
+      audio.onended = () => {
+        setIsPlaying(false);
+        setProgress(0);
+        setCurrentTime(0);
+        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      };
+
+      audio.onerror = () => {
+        toast.error('Failed to load audio');
+      };
+
+      audio.play().catch(() => {
+        toast.error('Failed to play audio');
+      });
+      setIsPlaying(true);
+      updateProgress();
+      return;
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    } else {
+      audioRef.current.play().catch(() => {});
+      setIsPlaying(true);
+      updateProgress();
+    }
+  }, [isPlaying, resolvedUrl, updateProgress]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    };
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    if (!seconds || !isFinite(seconds)) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!audioRef.current || !audioRef.current.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const pct = x / rect.width;
+    audioRef.current.currentTime = pct * audioRef.current.duration;
+    setProgress(pct * 100);
+  };
+
+  return (
+    <div className="mx-4 mb-3 rounded-xl overflow-hidden">
+      <div className="glass-panel rounded-xl p-4 border border-violet-500/15 bg-gradient-to-br from-violet-950/30 via-black/40 to-fuchsia-950/20">
+        {/* Top row: Avatar + Author + Volume icon */}
+        <div className="flex items-center gap-3 mb-3">
+          <div className={`relative flex-shrink-0 ${isPlaying ? 'voice-avatar-spin' : ''}`}>
+            <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-violet-500/40">
+              <img src={resolveImageUrl(avatarUrl)} alt={authorName} className="w-full h-full object-cover" />
+            </div>
+            {/* Talking animation ring */}
+            {isPlaying && (
+              <div className="absolute inset-[-3px] rounded-full border-2 border-fuchsia-400/40 animate-pulse" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-white truncate">{authorName}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <Mic className="w-3 h-3 text-fuchsia-400" />
+              <span className="text-[10px] text-fuchsia-300/70 font-medium">Voice Note</span>
+            </div>
+          </div>
+          <div className={`transition-opacity duration-300 ${isPlaying ? 'opacity-100' : 'opacity-30'}`}>
+            <Volume2 className="w-4 h-4 text-violet-400" />
+          </div>
+        </div>
+
+        {/* Waveform visualization */}
+        <div className="flex items-end gap-[2px] h-10 mb-2 cursor-pointer" onClick={handleSeek}>
+          {waveformBars.map((height, i) => {
+            const progressIndex = Math.floor((progress / 100) * waveformBars.length);
+            return (
+              <div
+                key={i}
+                className={`flex-1 rounded-full transition-all duration-100 ${
+                  i <= progressIndex
+                    ? 'bg-gradient-to-t from-violet-500 to-fuchsia-400'
+                    : 'bg-white/15'
+                }`}
+                style={{
+                  height: `${isPlaying && i <= progressIndex ? height * 100 : height * 70}%`,
+                  minHeight: '3px',
+                }}
+              />
+            );
+          })}
+        </div>
+
+        {/* Controls row: Play/Pause + Progress + Duration */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={togglePlay}
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center hover:opacity-90 transition-all active:scale-95 flex-shrink-0 shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+          >
+            {isPlaying ? (
+              <Pause className="w-4 h-4 text-white fill-white" />
+            ) : (
+              <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+            )}
+          </button>
+
+          {/* Progress bar */}
+          <div className="flex-1 min-w-0">
+            <div className="w-full bg-white/10 rounded-full h-1.5 cursor-pointer" onClick={handleSeek}>
+              <div
+                className="bg-gradient-to-r from-violet-500 to-fuchsia-500 h-1.5 rounded-full transition-all duration-150"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Duration */}
+          <div className="text-[10px] text-slate-400 tabular-nums flex-shrink-0">
+            <span>{formatTime(currentTime)}</span>
+            <span className="text-slate-600"> / </span>
+            <span>{isLoaded ? formatTime(duration) : '0:00'}</span>
+          </div>
+        </div>
+
+        {/* Vinyl record grooves decoration */}
+        <div className="flex items-center justify-center mt-3 gap-1 opacity-20">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="w-1 h-1 rounded-full bg-violet-400" />
+          ))}
+          <Waves className="w-3 h-3 text-violet-400 mx-1" />
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="w-1 h-1 rounded-full bg-violet-400" />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -902,6 +1086,7 @@ export function PulseFeed() {
       time: timeAgo(post.createdAt),
       verified: post.author.verified,
       type: (post.type || (images.length > 0 ? 'image' : 'text')) as string,
+      audioUrl: (post as any).audioUrl || '',
       vibeTag: post.vibeTag || 'hyped',
       isLiked: post.isLiked,
       myReaction: (post as any).myReaction || null,
@@ -1793,6 +1978,8 @@ export function PulseFeed() {
                   {!isEcho && post.type === 'video' && <span className="text-red-400">Reel</span>}
                   {!isEcho && post.type === 'image' && <span className="text-slate-600">•</span>}
                   {!isEcho && post.type === 'image' && <span className="text-emerald-400">Photo</span>}
+                  {!isEcho && post.type === 'voice' && <span className="text-slate-600">•</span>}
+                  {!isEcho && post.type === 'voice' && <span className="text-fuchsia-400">Voice</span>}
                   {post.vibeTag && (
                     <>
                       <span className="text-slate-600">•</span>
@@ -1915,6 +2102,16 @@ export function PulseFeed() {
                     />
                   </div>
                 )}
+                {/* Original Post Voice Note */}
+                {post.type === 'voice' && (post as any).audioUrl && (
+                  <div className="mx-3 mb-2">
+                    <VoicePlayer
+                      audioUrl={(post as any).audioUrl}
+                      avatarUrl={post.user.avatar}
+                      authorName={post.user.name}
+                    />
+                  </div>
+                )}
                 {/* Original Post Poll */}
                 {post.poll && (
                   <div className="px-3 pb-2">
@@ -1975,6 +2172,15 @@ export function PulseFeed() {
                       className="w-full max-h-[400px] object-cover rounded-xl"
                     />
                   </div>
+                )}
+
+                {/* Post Voice Note (for voice type posts) */}
+                {post.type === 'voice' && (post as any).audioUrl && (
+                  <VoicePlayer
+                    audioUrl={(post as any).audioUrl}
+                    avatarUrl={post.user.avatar}
+                    authorName={post.user.name}
+                  />
                 )}
               </>
             )}

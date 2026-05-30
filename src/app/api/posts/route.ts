@@ -33,6 +33,13 @@ const ALLOWED_VIDEO_TYPES = new Set([
   "video/quicktime",
 ]);
 
+const ALLOWED_AUDIO_TYPES = new Set([
+  "audio/webm",
+  "audio/ogg",
+  "audio/mp4",
+  "audio/mpeg",
+]);
+
 // Helper to build post metadata with echo support
 function buildPostMeta(
   post: any,
@@ -79,6 +86,7 @@ function buildPostMeta(
     images: post.images,
     vibeTag: post.vibeTag,
     type: post.type,
+    audioUrl: post.audioUrl,
     likesCount: post.likesCount,
     commentsCount: post.commentsCount,
     sharesCount: post.sharesCount,
@@ -311,6 +319,7 @@ export async function POST(req: NextRequest) {
 
     // Process uploaded files (base64) if present
     let processedImageUrls: string[] = images || [];
+    let audioFileUrl: string = "";
     const uploadDir = getUploadDir();
     if (uploadedFiles && Array.isArray(uploadedFiles) && uploadedFiles.length > 0) {
       // Ensure upload directory exists
@@ -322,8 +331,9 @@ export async function POST(req: NextRequest) {
         const { data: base64Data, filename, contentType } = fileData;
         const isImage = ALLOWED_IMAGE_TYPES.has(contentType);
         const isVideo = ALLOWED_VIDEO_TYPES.has(contentType);
+        const isAudio = ALLOWED_AUDIO_TYPES.has(contentType);
 
-        if (!isImage && !isVideo) continue;
+        if (!isImage && !isVideo && !isAudio) continue;
 
         // Extract raw base64 data (remove data:xxx;base64, prefix)
         const base64Match = base64Data.match(/^data:[^;]+;base64,(.+)$/);
@@ -331,13 +341,14 @@ export async function POST(req: NextRequest) {
 
         const buffer = Buffer.from(base64Match[1], "base64");
 
-        // Validate file size (10MB for images, 50MB for videos)
+        // Validate file size (10MB for images/audio, 50MB for videos)
         const maxImageSize = 10 * 1024 * 1024;
         const maxVideoSize = 50 * 1024 * 1024;
-        const maxSize = isImage ? maxImageSize : maxVideoSize;
+        const maxAudioSize = 10 * 1024 * 1024;
+        const maxSize = isImage ? maxImageSize : isVideo ? maxVideoSize : maxAudioSize;
         if (buffer.length > maxSize) {
           return NextResponse.json(
-            { success: false, error: `File too large. Maximum size is ${isImage ? '10MB' : '50MB'}` },
+            { success: false, error: `File too large. Maximum size is ${isImage ? '10MB' : isVideo ? '50MB' : '10MB'}` },
             { status: 400 }
           );
         }
@@ -345,7 +356,7 @@ export async function POST(req: NextRequest) {
         // Generate unique filename
         // NOTE: sharp converts ALL images to JPEG, so always use .jpg for images
         // Keeping the original extension (e.g. .webp) after JPEG conversion causes browser rendering failures
-        const ext = isImage ? ".jpg" : (path.extname(filename || "") || ".mp4");
+        const ext = isImage ? ".jpg" : isAudio ? (path.extname(filename || "") || ".webm") : (path.extname(filename || "") || ".mp4");
         const safeFilename = `${crypto.randomUUID()}${ext}`;
         const filepath = path.join(uploadDir, safeFilename);
 
@@ -362,7 +373,12 @@ export async function POST(req: NextRequest) {
           await writeFile(filepath, buffer);
         }
 
-        processedImageUrls.push(`/uploads/${safeFilename}`);
+        if (isAudio) {
+          // For audio files, store the URL separately as audioUrl (not in images array)
+          audioFileUrl = `/uploads/${safeFilename}`;
+        } else {
+          processedImageUrls.push(`/uploads/${safeFilename}`);
+        }
       }
     }
 
@@ -375,6 +391,7 @@ export async function POST(req: NextRequest) {
           images: JSON.stringify(processedImageUrls),
           vibeTag: vibeTag || "hyped",
           type: postType,
+          audioUrl: audioFileUrl || "",
           authorId: auth.userId!,
         },
         include: {

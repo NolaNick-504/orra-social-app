@@ -4,7 +4,7 @@ import { useAuraStore } from '@/store/aura-store';
 import { vibeLabels } from '@/lib/data';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { useCreatePost, useCreatePoll } from '@/lib/api-hooks';
-import { X, Image as ImageIcon, Video, BarChart3, MapPin, Smile, Music, Hash, AtSign, Coins, Type, Camera, Plus, Trash2, Upload, Loader2, Clock } from 'lucide-react';
+import { X, Image as ImageIcon, Video, BarChart3, MapPin, Smile, Music, Hash, AtSign, Coins, Type, Camera, Plus, Trash2, Upload, Loader2, Clock, Mic, MicOff, Play, Pause, Square, RotateCcw } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { CameraCapture } from '@/components/aura/camera-capture';
@@ -12,6 +12,7 @@ import { CameraCapture } from '@/components/aura/camera-capture';
 const postTypes = [
   { key: 'text', label: 'Text', icon: Type },
   { key: 'image', label: 'Photo', icon: ImageIcon },
+  { key: 'voice', label: 'Voice', icon: Mic },
   { key: 'poll', label: 'Poll', icon: BarChart3 },
   { key: 'reel', label: 'Reel', icon: Video },
 ] as const;
@@ -41,11 +42,18 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+// Format seconds as M:SS
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 export function CreatePostModal() {
   const { showCreatePost, createPostType, toggleCreatePost, addUserPost, earnTokens, addXP } = useAuraStore();
   const currentUser = useCurrentUser();
   const [text, setText] = useState('');
-  const [postType, setPostType] = useState<'text' | 'image' | 'poll' | 'reel'>('text');
+  const [postType, setPostType] = useState<'text' | 'image' | 'poll' | 'reel' | 'voice'>('text');
   const [vibeTag, setVibeTag] = useState('hyped');
   const [showVibePicker, setShowVibePicker] = useState(false);
   const [showHashtagHint, setShowHashtagHint] = useState(false);
@@ -60,6 +68,22 @@ export function CreatePostModal() {
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordedAudioBlob, setRecordedAudioBlob] = useState<Blob | null>(null);
+  const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const [previewProgress, setPreviewProgress] = useState(0);
+  const [waveformBars] = useState(() => Array.from({ length: 40 }, () => Math.random() * 0.7 + 0.3));
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewAnimFrameRef = useRef<number | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Poll state
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
@@ -77,6 +101,123 @@ export function CreatePostModal() {
 
   const createPostMutation = useCreatePost();
   const createPollMutation = useCreatePoll();
+
+  // Voice recording functions
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
+          ? 'audio/webm;codecs=opus' 
+          : MediaRecorder.isTypeSupported('audio/webm') 
+            ? 'audio/webm' 
+            : 'audio/ogg',
+      });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
+        const url = URL.createObjectURL(blob);
+        setRecordedAudioBlob(blob);
+        setRecordedAudioUrl(url);
+        setIsRecording(false);
+      };
+
+      mediaRecorder.start(100); // collect data every 100ms for smoother chunks
+      setIsRecording(true);
+      setRecordingDuration(0);
+      setRecordedAudioBlob(null);
+      if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
+      setRecordedAudioUrl(null);
+
+      // Start timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration((prev) => {
+          if (prev >= 60) {
+            // Max 60 seconds - auto-stop
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+              mediaRecorderRef.current.stop();
+            }
+            if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach((t) => t.stop());
+            }
+            return 60;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch (err) {
+      console.error('Failed to start recording:', err);
+      toast.error('Microphone access denied. Please allow microphone access to record voice notes.');
+    }
+  }, [recordedAudioUrl]);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+  }, []);
+
+  const clearRecording = useCallback(() => {
+    stopRecording();
+    setRecordingDuration(0);
+    setRecordedAudioBlob(null);
+    if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
+    setRecordedAudioUrl(null);
+    setIsPreviewPlaying(false);
+    setPreviewProgress(0);
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      previewAudioRef.current = null;
+    }
+    setIsRecording(false);
+  }, [recordedAudioUrl, stopRecording]);
+
+  // Preview playback
+  const togglePreviewPlayback = useCallback(() => {
+    if (!recordedAudioUrl) return;
+
+    if (isPreviewPlaying && previewAudioRef.current) {
+      previewAudioRef.current.pause();
+      setIsPreviewPlaying(false);
+      if (previewAnimFrameRef.current) cancelAnimationFrame(previewAnimFrameRef.current);
+      return;
+    }
+
+    const audio = new Audio(recordedAudioUrl);
+    previewAudioRef.current = audio;
+
+    audio.onended = () => {
+      setIsPreviewPlaying(false);
+      setPreviewProgress(0);
+      if (previewAnimFrameRef.current) cancelAnimationFrame(previewAnimFrameRef.current);
+    };
+
+    const updateProgress = () => {
+      if (audio.duration && audio.currentTime) {
+        setPreviewProgress((audio.currentTime / audio.duration) * 100);
+      }
+      previewAnimFrameRef.current = requestAnimationFrame(updateProgress);
+    };
+
+    audio.play();
+    setIsPreviewPlaying(true);
+    updateProgress();
+  }, [recordedAudioUrl, isPreviewPlaying]);
 
   // Trigger the image file picker
   const openImagePicker = useCallback(() => {
@@ -96,7 +237,7 @@ export function CreatePostModal() {
   }, []);
 
   // Switch to a post type and auto-trigger file picker for image/reel
-  const switchPostType = useCallback((type: 'text' | 'image' | 'poll' | 'reel') => {
+  const switchPostType = useCallback((type: 'text' | 'image' | 'poll' | 'reel' | 'voice') => {
     setPostType(type);
     if (type === 'image') {
       // Use requestAnimationFrame to ensure DOM is updated before clicking
@@ -116,6 +257,7 @@ export function CreatePostModal() {
 
   const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB per image
   const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB per video
+  const MAX_AUDIO_SIZE = 10 * 1024 * 1024; // 10MB per audio
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -202,6 +344,7 @@ export function CreatePostModal() {
     setSelectedVideo(null);
     if (videoPreview) URL.revokeObjectURL(videoPreview);
     setVideoPreview(null);
+    clearRecording();
     setPollOptions(['', '']);
     setPollDuration(86400);
     setIsUploading(false);
@@ -212,7 +355,7 @@ export function CreatePostModal() {
   };
 
   const handlePost = async () => {
-    if (!text.trim() && postType !== 'image') {
+    if (!text.trim() && postType !== 'image' && postType !== 'voice') {
       toast.error('Post cannot be empty!');
       return;
     }
@@ -236,6 +379,11 @@ export function CreatePostModal() {
 
     if (postType === 'reel' && !selectedVideo) {
       toast.error('Please select a video');
+      return;
+    }
+
+    if (postType === 'voice' && !recordedAudioBlob) {
+      toast.error('Please record a voice note first');
       return;
     }
 
@@ -272,9 +420,28 @@ export function CreatePostModal() {
         postTypeValue = 'video';
       }
 
+      if (postType === 'voice' && recordedAudioBlob) {
+        setUploadProgress(20);
+        // Validate audio size
+        if (recordedAudioBlob.size > MAX_AUDIO_SIZE) {
+          toast.error('Voice note exceeds 10MB limit.');
+          setIsUploading(false);
+          return;
+        }
+        const extension = recordedAudioBlob.type.includes('webm') ? 'webm' : 'ogg';
+        const audioFile = new File([recordedAudioBlob], `voice-note.${extension}`, { type: recordedAudioBlob.type });
+        const base64 = await fileToBase64(audioFile);
+        uploadedFiles.push({
+          data: base64,
+          filename: audioFile.name,
+          contentType: audioFile.type,
+        });
+        postTypeValue = 'voice';
+      }
+
       setUploadProgress(60);
 
-      const postText = text.trim() || (postType === 'reel' ? 'Shared a reel' : postType === 'image' ? 'Shared a photo' : '');
+      const postText = text.trim() || (postType === 'reel' ? 'Shared a reel' : postType === 'image' ? 'Shared a photo' : postType === 'voice' ? 'Shared a voice note' : '');
 
       const post = await createPostMutation.mutateAsync({
         text: postText,
@@ -354,6 +521,27 @@ export function CreatePostModal() {
     }
   }, [showCreatePost, createPostType, openImagePicker, openVideoPicker]);
 
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+      }
+      if (previewAnimFrameRef.current) {
+        cancelAnimationFrame(previewAnimFrameRef.current);
+      }
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      if (recordedAudioUrl) {
+        URL.revokeObjectURL(recordedAudioUrl);
+      }
+    };
+  }, []);
+
   if (!showCreatePost) return null;
 
   const getPlaceholder = () => {
@@ -361,6 +549,7 @@ export function CreatePostModal() {
       case 'poll': return 'Ask a question...';
       case 'reel': return 'Describe your reel...';
       case 'image': return 'Add a caption...';
+      case 'voice': return 'Add a caption for your voice note...';
       default: return "What's happening in your ORRA?";
     }
   };
@@ -375,6 +564,9 @@ export function CreatePostModal() {
     }
     if (postType === 'reel') {
       return selectedVideo !== null;
+    }
+    if (postType === 'voice') {
+      return recordedAudioBlob !== null; // caption is optional for voice posts
     }
     return text.trim().length > 0 && text.length <= 280;
   };
@@ -397,7 +589,7 @@ export function CreatePostModal() {
           <div>
             <p className="font-semibold text-white text-sm">{displayName}</p>
             <p className="text-xs text-slate-400">
-              {postType === 'reel' ? 'Posting to Prism' : postType === 'poll' ? 'Creating a poll' : 'Posting to Pulse'}
+              {postType === 'reel' ? 'Posting to Prism' : postType === 'poll' ? 'Creating a poll' : postType === 'voice' ? 'Recording a voice note' : 'Posting to Pulse'}
             </p>
           </div>
         </div>
@@ -410,14 +602,14 @@ export function CreatePostModal() {
               <button
                 key={type.key}
                 onClick={() => switchPostType(type.key)}
-                className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
                   postType === type.key
                     ? 'bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
-                {type.label}
+                <span className="hidden sm:inline">{type.label}</span>
               </button>
             );
           })}
@@ -482,6 +674,127 @@ export function CreatePostModal() {
             {text.length}/280
           </span>
         </div>
+
+        {/* Voice Recorder UI */}
+        {postType === 'voice' && (
+          <div className="mt-3 fade-in">
+            {!recordedAudioBlob ? (
+              <div className="flex flex-col items-center gap-4 py-6">
+                {/* Waveform visualization during recording */}
+                <div className="flex items-center gap-[2px] h-16 px-2">
+                  {waveformBars.map((height, i) => (
+                    <div
+                      key={i}
+                      className={`w-[3px] rounded-full transition-all duration-150 ${
+                        isRecording
+                          ? 'bg-gradient-to-t from-violet-500 to-fuchsia-400'
+                          : 'bg-white/10'
+                      }`}
+                      style={{
+                        height: isRecording
+                          ? `${height * 100}%`
+                          : `${height * 20}%`,
+                        animationDelay: `${i * 50}ms`,
+                        animation: isRecording ? `voicebar ${0.3 + Math.random() * 0.4}s ease-in-out infinite alternate` : 'none',
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Timer */}
+                <div className="text-center">
+                  <span className={`text-2xl font-mono font-bold tabular-nums ${
+                    isRecording ? 'text-red-400' : 'text-slate-400'
+                  }`}>
+                    {formatDuration(recordingDuration)}
+                  </span>
+                  {isRecording && (
+                    <span className="text-xs text-red-400/60 block mt-1">Max 60 seconds</span>
+                  )}
+                </div>
+
+                {/* Record button */}
+                <button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                    isRecording
+                      ? 'bg-red-500/20 hover:bg-red-500/30'
+                      : 'bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:opacity-90'
+                  }`}
+                >
+                  {/* Pulsing ring animation when recording */}
+                  {isRecording && (
+                    <>
+                      <div className="absolute inset-0 rounded-full border-2 border-red-500 animate-ping opacity-30" />
+                      <div className="absolute inset-[-4px] rounded-full border border-red-500/40 animate-pulse" />
+                    </>
+                  )}
+                  {isRecording ? (
+                    <Square className="w-8 h-8 text-red-400 fill-red-400" />
+                  ) : (
+                    <Mic className="w-8 h-8 text-white" />
+                  )}
+                </button>
+
+                <p className="text-xs text-slate-500">
+                  {isRecording ? 'Tap to stop recording' : 'Tap to start recording'}
+                </p>
+              </div>
+            ) : (
+              <div className="glass-panel rounded-xl p-4 space-y-4 border border-violet-500/20">
+                {/* Playback preview */}
+                <div className="flex items-center gap-3">
+                  {/* Play/Pause button */}
+                  <button
+                    onClick={togglePreviewPlayback}
+                    className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center hover:opacity-90 transition-all active:scale-95 flex-shrink-0"
+                  >
+                    {isPreviewPlaying ? (
+                      <Pause className="w-5 h-5 text-white fill-white" />
+                    ) : (
+                      <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                    )}
+                  </button>
+
+                  {/* Waveform + progress */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-[2px] h-10">
+                      {waveformBars.map((height, i) => {
+                        const progressIndex = Math.floor((previewProgress / 100) * waveformBars.length);
+                        return (
+                          <div
+                            key={i}
+                            className={`w-[3px] rounded-full transition-all duration-100 ${
+                              i <= progressIndex
+                                ? 'bg-gradient-to-t from-violet-500 to-fuchsia-400'
+                                : 'bg-white/15'
+                            }`}
+                            style={{ height: `${height * 100}%` }}
+                          />
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-slate-500">
+                        {isPreviewPlaying ? 'Playing...' : 'Voice note ready'}
+                      </span>
+                      <span className="text-[10px] text-slate-500">{formatDuration(recordingDuration)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Re-record button */}
+                <button
+                  onClick={clearRecording}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-slate-400 hover:text-white hover:border-violet-500/30 transition-all active:scale-[0.98]"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Re-record
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Image Upload UI (for image type) - LARGE PROMINENT AREA */}
         {postType === 'image' && (
@@ -676,6 +989,9 @@ export function CreatePostModal() {
             <button onClick={() => switchPostType('image')} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 text-emerald-400 text-xs hover:bg-emerald-500/10 transition-all active:scale-95">
               <ImageIcon className="w-4 h-4" /> Photo
             </button>
+            <button onClick={() => switchPostType('voice')} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 text-fuchsia-400 text-xs hover:bg-fuchsia-500/10 transition-all active:scale-95">
+              <Mic className="w-4 h-4" /> Voice
+            </button>
             <button onClick={() => switchPostType('reel')} className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 text-red-400 text-xs hover:bg-red-500/10 transition-all active:scale-95">
               <Video className="w-4 h-4" /> Video
             </button>
@@ -684,9 +1000,6 @@ export function CreatePostModal() {
             </button>
             <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 text-slate-500 text-xs cursor-not-allowed opacity-50" title="Coming soon">
               <Smile className="w-4 h-4" /> GIF
-            </button>
-            <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 text-slate-500 text-xs cursor-not-allowed opacity-50" title="Coming soon">
-              <Music className="w-4 h-4" /> Sound
             </button>
             <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 text-slate-500 text-xs cursor-not-allowed opacity-50" title="Coming soon">
               <MapPin className="w-4 h-4" /> Location
@@ -719,6 +1032,14 @@ export function CreatePostModal() {
           maxDuration={60}
         />
       )}
+
+      {/* CSS Keyframes for voice bar animation */}
+      <style jsx>{`
+        @keyframes voicebar {
+          0% { transform: scaleY(0.3); }
+          100% { transform: scaleY(1); }
+        }
+      `}</style>
     </div>
   );
 }

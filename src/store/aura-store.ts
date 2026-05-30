@@ -129,7 +129,7 @@ interface AuraState {
   // Modals
   showVibeCheck: boolean;
   showCreatePost: boolean;
-  createPostType: 'text' | 'image' | 'poll' | 'reel';
+  createPostType: 'text' | 'image' | 'poll' | 'reel' | 'voice';
   showStoryViewer: boolean;
   showShareModal: boolean;
   showReelViewer: boolean;
@@ -286,7 +286,7 @@ interface AuraState {
   setHomeTab: (tab: HomeTab) => void;
   setNavVisible: (visible: boolean) => void;
   toggleVibeCheck: () => void;
-  toggleCreatePost: (type?: 'text' | 'image' | 'poll' | 'reel') => void;
+  toggleCreatePost: (type?: 'text' | 'image' | 'poll' | 'reel' | 'voice') => void;
   toggleStoryViewer: () => void;
   toggleShareModal: (postId?: string | null) => void;
   toggleReelViewer: (reelId?: string | null) => void;
