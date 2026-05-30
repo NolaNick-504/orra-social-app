@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Cache-bust version for avatar/profile images — bump this to force browsers to re-fetch images
-const IMAGE_CACHE_VERSION = 'v2026.05.31-1';
+const IMAGE_CACHE_VERSION = 'v2026.05.31-2';
 
 /**
  * Convert /images/ and /uploads/ paths to API-served paths for standalone mode compatibility.
@@ -14,7 +14,7 @@ const IMAGE_CACHE_VERSION = 'v2026.05.31-1';
  * The /api/uploads?path= endpoint serves these files reliably.
  * Also adds cache-busting parameter for avatar/cover images to prevent stale cached 404s.
  *
- * - /images/orra-logo.png → /api/uploads?path=images/orra-logo.png&_v=v2026.05.31-1
+ * - /images/orra-logo.png → /api/uploads?path=images/orra-logo.png&_v=v2026.05.31-2
  * - /uploads/avatar.jpg → /api/uploads?file=avatar.jpg (already API path)
  * - http://... or data:... → unchanged
  */
