@@ -96,6 +96,10 @@ model User {
   hotTakes HotTake[]
   hotTakeVotes HotTakeVote[]
 
+  // Tips
+  sentTips     Tip[]    @relation("SentTips")
+  receivedTips Tip[]    @relation("ReceivedTips")
+
   // NextAuth
   accounts      Account[]
   sessions      Session[]
@@ -850,4 +854,27 @@ model HotTakeVote {
   @@unique([takeId, voterId])
   @@index([takeId])
   @@index([voterId])
+}
+
+// ============================================
+// CREATOR TIPS / GIFTING
+// ============================================
+
+model Tip {
+  id          String   @id @default(cuid())
+  senderId    String
+  sender      User     @relation("SentTips", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId  String
+  receiver    User     @relation("ReceivedTips", fields: [receiverId], references: [id], onDelete: Cascade)
+  amount      Int      // ORRA tokens sent
+  message     String   @default("")  // Optional tip message
+  giftType    String   @default("coins") // "coins", "coffee", "pizza", "diamond", "rocket", "crown"
+  postId      String?  // Optional: tip on a specific post
+
+  createdAt   DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([postId])
+  @@index([createdAt])
 }

@@ -4,12 +4,13 @@ import { useAuraStore } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { usePosts, useUserPosts, useHubs } from '@/lib/api-hooks';
 import { resolveImageUrl, getInitials } from '@/lib/utils';
-import { MapPin, Link as LinkIcon, Calendar, Grid3X3, Clapperboard, Trophy, Bookmark, Heart, Share2, Zap, Users, X, MessageCircle, Waves, Sparkles, ArrowLeft, Crown, Star, Rocket, Music, QrCode, ScanLine } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, Grid3X3, Clapperboard, Trophy, Bookmark, Heart, Share2, Zap, Users, X, MessageCircle, Waves, Sparkles, ArrowLeft, Crown, Star, Rocket, Music, QrCode, ScanLine, Gift, Coins } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ProfileMusicPlayer } from './profile-music-player';
+import { TipModal } from './tip-modal';
 
 // Followers/Following Modal Component
 function FollowersFollowingModal({ userId, type, onClose }: { userId: string; type: 'followers' | 'following'; onClose: () => void }) {
@@ -315,7 +316,8 @@ export function Profile() {
   const [activeTab, setActiveTab] = useState('posts');
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showFollowers, setShowFollowers] = useState<'followers' | 'following' | null>(null);
-  const { toggleEditProfile, userPosts, savedPosts, likedPosts, toggleLike, auraTokens, auraLevel, auraXP, joinedHubs, danceEntries, repostIds, viewingUserId, setViewingUser, setView, followedUsers, toggleFollow, setViewingPostId, setViewingEchoId, clearStaleUserPosts } = useAuraStore();
+  const [showTipModal, setShowTipModal] = useState(false);
+  const { toggleEditProfile, userPosts, savedPosts, likedPosts, toggleLike, auraTokens, auraLevel, auraXP, joinedHubs, danceEntries, repostIds, viewingUserId, setViewingUser, setView, followedUsers, toggleFollow, setViewingPostId, setViewingEchoId, clearStaleUserPosts, setAuraTokens } = useAuraStore();
   const currentUser = useCurrentUser();
   const { data: apiHubs } = useHubs();
   const queryClient = useQueryClient();
@@ -608,6 +610,13 @@ export function Profile() {
                   }`}
                 >
                   {isFollowing ? 'Following' : 'Follow'}
+                </button>
+                <button
+                  onClick={() => setShowTipModal(true)}
+                  className="p-2 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/30 transition-all"
+                  title="Send a gift"
+                >
+                  <Gift className="w-4 h-4" />
                 </button>
                 <button onClick={handleShareProfile} className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all">
                   <Share2 className="w-4 h-4" />
@@ -1024,6 +1033,19 @@ export function Profile() {
 
       {/* QR Scanner Modal */}
       <QRScannerModal isOpen={showQRScanner} onClose={() => setShowQRScanner(false)} />
+
+      {/* Tip Modal - only when viewing another user's profile */}
+      {showTipModal && isViewingOther && viewingUserId && (
+        <TipModal
+          receiverId={viewingUserId}
+          receiverName={profileName}
+          receiverAvatar={profileAvatar}
+          onClose={() => setShowTipModal(false)}
+          onSuccess={(amount) => {
+            queryClient.invalidateQueries({ queryKey: ['user-profile', viewingUserId] });
+          }}
+        />
+      )}
     </div>
   );
 }

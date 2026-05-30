@@ -333,6 +333,7 @@ interface AuraState {
 
   // ORRA Sphere
   earnTokens: (amount: number, reason: string) => void;
+  setAuraTokens: (amount: number) => void;
   addXP: (amount: number) => void;
   checkDailyStreak: () => void;
 
@@ -1088,6 +1089,9 @@ export const useAuraStore = create<AuraState>()(
             ],
           };
         }),
+
+      setAuraTokens: (amount) =>
+        set({ auraTokens: amount }),
 
       addXP: (amount) =>
         set((s) => {
