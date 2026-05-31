@@ -160,7 +160,7 @@ app.prepare().then(() => {
     const chunkMatch = pathname && pathname.match(/^\/_next\/static\/(chunks|css)\/(.+\.(js|css|map))$/);
     if (chunkMatch) {
       const subDir = chunkMatch[1]; // 'chunks' or 'css'
-      const filename = chunkMatch[2]; // e.g., 'webpack-abc123.js'
+      const filename = decodeURIComponent(chunkMatch[2]); // URL-decode: %5B...%5D → [...]
       const filePath = path.join(PROJECT_ROOT, '.next', 'static', subDir, filename);
 
       if (existsSync(filePath)) {
