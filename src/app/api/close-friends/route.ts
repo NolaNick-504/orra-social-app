@@ -32,9 +32,9 @@ export async function GET() {
     });
 
     const data = closeFriends.map((cf) => ({
-      id: cf.id,
+      closeFriendId: cf.id,
       createdAt: cf.createdAt,
-      ...cf.friend,
+      friend: cf.friend,
     }));
 
     return NextResponse.json({ success: true, data });

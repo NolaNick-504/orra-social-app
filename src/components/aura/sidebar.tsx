@@ -71,6 +71,8 @@ import {
   Calendar,
   Headphones,
   Bookmark,
+  Crown,
+  Clock,
 } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -85,6 +87,9 @@ const desktopNavItems: { view: NavView; label: string; icon: React.ElementType; 
   { view: 'hub', label: 'Hub', icon: Users },
   { view: 'messages', label: 'Messages', icon: Send },
   { view: 'collections', label: 'Collections', icon: Bookmark },
+  { view: 'subscriptions', label: 'Subscribe', icon: Crown },
+  { view: 'close-friends', label: 'Inner Circle', icon: Users },
+  { view: 'scheduled-posts', label: 'Scheduled', icon: Clock },
   { view: 'activity', label: 'Activity', icon: Heart },
   { view: 'wellness', label: 'Wellness', icon: Leaf },
   { view: 'marketplace', label: 'Market', icon: ShoppingBag },

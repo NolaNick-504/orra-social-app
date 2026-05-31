@@ -211,3 +211,106 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// DELETE /api/subscriptions - Unsubscribe from a creator (sets isActive: false, refunds remaining days proportionally)
+export async function DELETE(request: NextRequest) {
+  try {
+    const userId = await getAuthUserId();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { subscriptionId } = body;
+
+    if (!subscriptionId) {
+      return NextResponse.json(
+        { success: false, error: 'subscriptionId is required' },
+        { status: 400 }
+      );
+    }
+
+    // Find the subscription
+    const subscription = await db.subscription.findUnique({
+      where: { id: subscriptionId },
+      include: {
+        tier: {
+          select: { price: true },
+        },
+      },
+    });
+
+    if (!subscription) {
+      return NextResponse.json(
+        { success: false, error: 'Subscription not found' },
+        { status: 404 }
+      );
+    }
+
+    // Only the subscriber can unsubscribe
+    if (subscription.subscriberId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Not authorized to unsubscribe' },
+        { status: 403 }
+      );
+    }
+
+    if (!subscription.isActive) {
+      return NextResponse.json(
+        { success: false, error: 'Subscription is already inactive' },
+        { status: 400 }
+      );
+    }
+
+    // Calculate proportional refund for remaining days
+    const now = new Date();
+    const expiresAt = new Date(subscription.expiresAt);
+    const createdAt = new Date(subscription.createdAt);
+    const totalDays = Math.max(1, Math.ceil((expiresAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)));
+    const remainingMs = expiresAt.getTime() - now.getTime();
+    const remainingDays = Math.max(0, Math.ceil(remainingMs / (1000 * 60 * 60 * 24)));
+    const price = subscription.tier?.price || 0;
+    const refundAmount = Math.floor((remainingDays / totalDays) * price);
+
+    await serializedTransaction(async (tx) => {
+      // Set subscription to inactive
+      await tx.subscription.update({
+        where: { id: subscriptionId },
+        data: { isActive: false },
+      });
+
+      // Refund proportional tokens if there are remaining days
+      if (refundAmount > 0) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { auraTokens: { increment: refundAmount } },
+        });
+
+        // Deduct from creator
+        await tx.user.update({
+          where: { id: subscription.creatorId },
+          data: { auraTokens: { decrement: refundAmount } },
+        });
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        unsubscribed: true,
+        refundAmount,
+        remainingDays,
+        message: `Unsubscribed successfully${refundAmount > 0 ? `. ${refundAmount} ORRA refunded for ${remainingDays} remaining day(s)` : ''}`,
+      },
+    });
+  } catch (error) {
+    console.error('Unsubscribe error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to unsubscribe' },
+      { status: 500 }
+    );
+  }
+}

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, serializedTransaction, awardXPAndTokens } from '@/lib/db';
-import { getAuthUserId } from '@/lib/auth-helpers';
+import { getAuthUserId, requireAuth, handleApiError } from '@/lib/auth-helpers';
 
 export const dynamic = 'force-dynamic';
 
-// GET /api/collections - List user's collections with item count
-export async function GET() {
+// GET /api/collections - List user's collections with item count, or get single collection
+export async function GET(req: NextRequest) {
   try {
     const userId = await getAuthUserId();
     if (!userId) {
@@ -15,6 +15,39 @@ export async function GET() {
       );
     }
 
+    const { searchParams } = new URL(req.url);
+    const collectionId = searchParams.get('collectionId');
+
+    // Single collection GET with items
+    if (collectionId) {
+      const collection = await db.collection.findUnique({
+        where: { id: collectionId, userId },
+        include: {
+          items: {
+            orderBy: { addedAt: 'desc' },
+          },
+        },
+      });
+
+      if (!collection) {
+        return NextResponse.json(
+          { success: false, error: 'Collection not found' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          collections: {
+            ...collection,
+            itemCount: collection.items.length,
+          },
+        },
+      });
+    }
+
+    // List all collections
     const collections = await db.collection.findMany({
       where: { userId },
       include: {
@@ -30,7 +63,7 @@ export async function GET() {
       itemCount: _count.items,
     }));
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: { collections: data } });
   } catch (error) {
     console.error('List collections error:', error);
     return NextResponse.json(
@@ -84,5 +117,59 @@ export async function POST(request: NextRequest) {
       { success: false, error: 'Failed to create collection' },
       { status: 500 }
     );
+  }
+}
+
+// DELETE /api/collections - Delete a collection and its items
+export async function DELETE(request: NextRequest) {
+  try {
+    const auth = await requireAuth();
+    if (auth.response) return auth.response;
+
+    const body = await request.json();
+    const { collectionId } = body;
+
+    if (!collectionId) {
+      return NextResponse.json(
+        { success: false, error: 'collectionId is required' },
+        { status: 400 }
+      );
+    }
+
+    // Verify ownership
+    const collection = await db.collection.findUnique({
+      where: { id: collectionId },
+    });
+
+    if (!collection) {
+      return NextResponse.json(
+        { success: false, error: 'Collection not found' },
+        { status: 404 }
+      );
+    }
+
+    if (collection.userId !== auth.userId) {
+      return NextResponse.json(
+        { success: false, error: 'Not authorized to delete this collection' },
+        { status: 403 }
+      );
+    }
+
+    // Delete all CollectionItem records and the collection in a transaction
+    await serializedTransaction(async (tx) => {
+      await tx.collectionItem.deleteMany({
+        where: { collectionId },
+      });
+      await tx.collection.delete({
+        where: { id: collectionId },
+      });
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: { deleted: true, collectionId },
+    });
+  } catch (error) {
+    return handleApiError(error, 'Collections DELETE');
   }
 }

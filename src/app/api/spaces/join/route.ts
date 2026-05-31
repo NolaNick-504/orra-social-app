@@ -150,12 +150,18 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // If the user is the host, end the space
+    // If the user is the host, end the space and clean up all speakers/listeners
     if (space.hostId === auth.userId) {
       await serializedTransaction(async (tx) => {
+        await tx.spaceSpeaker.deleteMany({
+          where: { spaceId },
+        });
+        await tx.spaceListener.deleteMany({
+          where: { spaceId },
+        });
         await tx.space.update({
           where: { id: spaceId },
-          data: { isActive: false },
+          data: { isActive: false, listenerCount: 0 },
         });
       });
 

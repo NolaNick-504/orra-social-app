@@ -100,6 +100,9 @@ const SettingsPage = dynamic(retryImport(() => import('@/components/aura/setting
 const EventsPage = dynamic(retryImport(() => import('@/components/aura/events-page').then(m => ({ default: m.EventsPage }))), { loading: () => <LoadingScreen /> });
 const SpacesPage = dynamic(retryImport(() => import('@/components/aura/spaces-page').then(m => ({ default: m.SpacesPage }))), { loading: () => <LoadingScreen /> });
 const CollectionsPage = dynamic(retryImport(() => import('@/components/aura/collections-page').then(m => ({ default: m.CollectionsPage }))), { loading: () => <LoadingScreen /> });
+const ScheduledPostsPage = dynamic(retryImport(() => import('@/components/aura/scheduled-posts-page').then(m => ({ default: m.ScheduledPostsPage }))), { loading: () => <LoadingScreen /> });
+const CloseFriendsPage = dynamic(retryImport(() => import('@/components/aura/close-friends-page').then(m => ({ default: m.CloseFriendsPage }))), { loading: () => <LoadingScreen /> });
+const SubscriptionsPage = dynamic(retryImport(() => import('@/components/aura/subscriptions-page').then(m => ({ default: m.SubscriptionsPage }))), { loading: () => <LoadingScreen /> });
 const PrismCompanion = dynamic(retryImport(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanion }))), { ssr: false });
 const PrismCompanionButton = dynamic(retryImport(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanionButton }))), { ssr: false });
 import { Toaster } from 'sonner';
@@ -290,6 +293,12 @@ function MainContent() {
       return <SpacesPage />;
     case 'collections':
       return <CollectionsPage />;
+    case 'scheduled-posts':
+      return <ScheduledPostsPage />;
+    case 'close-friends':
+      return <CloseFriendsPage />;
+    case 'subscriptions':
+      return <SubscriptionsPage />;
     default:
       return <PulseFeed />;
   }
@@ -338,6 +347,9 @@ function AuthenticatedApp() {
       '/events': 'events',
       '/spaces': 'spaces',
       '/collections': 'collections',
+      '/scheduled-posts': 'scheduled-posts',
+      '/close-friends': 'close-friends',
+      '/subscriptions': 'subscriptions',
     };
     const path = window.location.pathname;
     const viewFromUrl = pathMap[path];

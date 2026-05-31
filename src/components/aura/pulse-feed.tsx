@@ -1969,7 +1969,7 @@ export function PulseFeed() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <span>{(() => { const t = isEcho && (post as any).echoedAt ? timeAgo(new Date((post as any).echoedAt)) : post.time; return t === 'Just now' ? t : `${t} ago`; })()}</span>
+                  <span>{(() => { const t = isEcho && (post as any).echoedAt ? timeAgo(new Date((post as any).echoedAt)) : post.time; return t; })()}</span>
                   {!isEcho && post.type === 'text' && <span className="text-slate-600">•</span>}
                   {!isEcho && post.type === 'text' && <span className="text-slate-600">Pulse</span>}
                   {!isEcho && post.type === 'poll' && <span className="text-slate-600">•</span>}

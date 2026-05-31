@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type NavView = 'home' | 'explore' | 'reels' | 'live' | 'dance' | 'games' | 'hub' | 'messages' | 'activity' | 'postDetail' | 'profile' | 'wellness' | 'marketplace' | 'settings' | 'events' | 'spaces' | 'collections';
+export type NavView = 'home' | 'explore' | 'reels' | 'live' | 'dance' | 'games' | 'hub' | 'messages' | 'activity' | 'postDetail' | 'profile' | 'wellness' | 'marketplace' | 'settings' | 'events' | 'spaces' | 'collections' | 'scheduled-posts' | 'close-friends' | 'subscriptions';
 
 export interface UserSettings {
   // Notifications
@@ -392,7 +392,7 @@ function calculateXPLevelUp(currentXP: number, currentLevel: number, xpToAdd: nu
 }
 
 // Build version stamp - forces webpack to generate new chunk hashes on rebuild
-const _ORRA_STORE_VERSION = 'v2025.05.23-3';
+const _ORRA_STORE_VERSION = 'v2025.05.31-1';
 
 export const useAuraStore = create<AuraState>()(
   persist(
@@ -674,6 +674,12 @@ export const useAuraStore = create<AuraState>()(
             'wellness': '/wellness',
             'marketplace': '/marketplace',
             'settings': '/settings',
+            'events': '/events',
+            'spaces': '/spaces',
+            'collections': '/collections',
+            'scheduled-posts': '/scheduled-posts',
+            'close-friends': '/close-friends',
+            'subscriptions': '/subscriptions',
           };
           const targetPath = viewToPath[view] || '/';
           const currentPath = window.location.pathname;

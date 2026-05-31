@@ -269,35 +269,37 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Delete the RSVP
-    await db.eventRSVP.delete({
-      where: { id: existingRsvp.id },
-    });
-
     // Check if the event had a token cost — refund if applicable
     const event = await db.event.findUnique({
       where: { id: eventId },
       select: { tokenCost: true, title: true, creatorId: true },
     });
 
-    if (event && event.tokenCost > 0) {
-      // Refund the token cost
-      await db.user.update({
-        where: { id: auth.userId! },
-        data: { auraTokens: { increment: event.tokenCost } },
+    // Wrap RSVP deletion and token refund in a transaction to prevent race condition
+    await db.$transaction(async (tx) => {
+      await tx.eventRSVP.delete({
+        where: { id: existingRsvp.id },
       });
 
-      // Record refund in token actions
-      await db.tokenAction.create({
-        data: {
-          userId: auth.userId!,
-          action: 'event_rsvp_cancel',
-          targetId: existingRsvp.id,
-          tokensEarned: -event.tokenCost, // negative to indicate refund reversal
-          xpEarned: 0,
-        },
-      });
-    }
+      if (event && event.tokenCost > 0) {
+        // Refund the token cost
+        await tx.user.update({
+          where: { id: auth.userId! },
+          data: { auraTokens: { increment: event.tokenCost } },
+        });
+
+        // Record refund in token actions
+        await tx.tokenAction.create({
+          data: {
+            userId: auth.userId!,
+            action: 'event_rsvp_cancel',
+            targetId: existingRsvp.id,
+            tokensEarned: -event.tokenCost, // negative to indicate refund reversal
+            xpEarned: 0,
+          },
+        });
+      }
+    });
 
     return NextResponse.json({
       success: true,
