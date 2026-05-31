@@ -36,12 +36,42 @@ export async function GET(req: NextRequest) {
         );
       }
 
+      // Fetch post details for each collection item
+      const itemPostIds = collection.items.map(item => item.postId);
+      const posts = itemPostIds.length > 0 ? await db.post.findMany({
+        where: { id: { in: itemPostIds } },
+        include: {
+          author: {
+            select: { id: true, name: true, handle: true, avatar: true },
+          },
+        },
+      }) : [];
+
+      const postsMap = new Map(posts.map(p => [p.id, p]));
+
       return NextResponse.json({
         success: true,
         data: {
-          collections: {
-            ...collection,
-            itemCount: collection.items.length,
+          collection: {
+            id: collection.id,
+            name: collection.name,
+            description: collection.description,
+            coverImage: collection.coverImage,
+            isPrivate: collection.isPrivate,
+            userId: collection.userId,
+            createdAt: collection.createdAt,
+            updatedAt: collection.updatedAt,
+            postsCount: collection.items.length,
+            posts: collection.items.map(item => {
+              const post = postsMap.get(item.postId);
+              return post ? {
+                id: post.id,
+                text: post.text,
+                images: typeof post.images === 'string' ? JSON.parse(post.images || '[]') : (post.images || []),
+                createdAt: post.createdAt,
+                author: post.author,
+              } : { id: item.postId, text: '[Post unavailable]', images: [], createdAt: item.addedAt, author: { id: '', name: 'Unknown', handle: '', avatar: '' } };
+            }),
           },
         },
       });
@@ -58,10 +88,49 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    const data = collections.map(({ _count, ...collection }) => ({
-      ...collection,
-      itemCount: _count.items,
-    }));
+    // Fetch first 4 post images for each collection's mosaic cover
+    const collectionIds = collections.map(c => c.id);
+    const allItems = collectionIds.length > 0 ? await db.collectionItem.findMany({
+      where: { collectionId: { in: collectionIds } },
+      include: {
+        // We don't have a direct relation, so we'll get postIds and fetch separately
+      },
+      orderBy: { addedAt: 'desc' },
+    }) : [];
+
+    // Get post images for mosaic covers
+    const postIds = [...new Set(allItems.map(i => i.postId))];
+    const postsData = postIds.length > 0 ? await db.post.findMany({
+      where: { id: { in: postIds } },
+      select: { id: true, images: true },
+    }) : [];
+    const postsMap = new Map(postsData.map(p => [p.id, typeof p.images === 'string' ? JSON.parse(p.images || '[]') : (p.images || [])]));
+
+    // Group items by collectionId
+    const itemsByCollection = new Map<string, string[]>();
+    for (const item of allItems) {
+      const arr = itemsByCollection.get(item.collectionId) || [];
+      arr.push(item.postId);
+      itemsByCollection.set(item.collectionId, arr);
+    }
+
+    const data = collections.map(({ _count, ...collection }) => {
+      const itemPostIds = (itemsByCollection.get(collection.id) || []).slice(0, 4);
+      const coverImages = itemPostIds
+        .map(pid => postsMap.get(pid))
+        .filter(Boolean)
+        .flat()
+        .slice(0, 4);
+
+      return {
+        ...collection,
+        postsCount: _count.items,
+        posts: itemPostIds.map(pid => ({
+          id: pid,
+          images: postsMap.get(pid) || [],
+        })),
+      };
+    });
 
     return NextResponse.json({ success: true, data: { collections: data } });
   } catch (error) {

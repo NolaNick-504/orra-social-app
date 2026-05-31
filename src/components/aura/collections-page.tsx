@@ -541,7 +541,7 @@ function CollectionDetailView({
     }
   };
 
-  const coverImages = collection.posts
+  const coverImages = (collection.posts || [])
     .filter((p) => p.images && p.images.length > 0)
     .flatMap((p) => p.images)
     .slice(0, 4);
@@ -566,7 +566,7 @@ function CollectionDetailView({
             )}
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span>{collection.postsCount} post{collection.postsCount !== 1 ? 's' : ''}</span>
+            <span>{collection.postsCount || collection.posts?.length || 0} post{(collection.postsCount || collection.posts?.length || 0) !== 1 ? 's' : ''}</span>
             <span className="text-slate-600">•</span>
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
@@ -631,9 +631,9 @@ function CollectionDetailView({
       </div>
 
       {/* Posts Grid */}
-      {collection.posts.length > 0 ? (
+      {(collection.posts || []).length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {collection.posts.map((post) => (
+          {(collection.posts || []).map((post) => (
             <div
               key={post.id}
               className="glass-panel rounded-2xl overflow-hidden group transition-all hover:border-violet-500/20"
@@ -754,7 +754,7 @@ function CollectionCard({
   index: number;
   onClick: () => void;
 }) {
-  const coverImages = collection.posts
+  const coverImages = (collection.posts || [])
     .filter((p) => p.images && p.images.length > 0)
     .flatMap((p) => p.images)
     .slice(0, 4);
