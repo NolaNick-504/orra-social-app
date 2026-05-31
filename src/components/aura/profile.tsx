@@ -4,7 +4,7 @@ import { useAuraStore } from '@/store/aura-store';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { usePosts, useUserPosts, useHubs } from '@/lib/api-hooks';
 import { resolveImageUrl, getInitials } from '@/lib/utils';
-import { MapPin, Link as LinkIcon, Calendar, Grid3X3, Clapperboard, Trophy, Bookmark, Heart, Share2, Zap, Users, X, MessageCircle, Waves, Sparkles, ArrowLeft, Crown, Star, Rocket, Music, QrCode, ScanLine, Gift, Coins } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, Grid3X3, Clapperboard, Trophy, Bookmark, Heart, Share2, Zap, Users, X, MessageCircle, Waves, Sparkles, ArrowLeft, Crown, Star, Rocket, Music, QrCode, ScanLine, Gift, Coins, MoreVertical, Pin, ShieldCheck, CreditCard, Gem, UserCheck, UserMinus, Crown as CrownIcon } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -317,6 +317,14 @@ export function Profile() {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showFollowers, setShowFollowers] = useState<'followers' | 'following' | null>(null);
   const [showTipModal, setShowTipModal] = useState(false);
+  const [openMenuPostId, setOpenMenuPostId] = useState<string | null>(null);
+  const [showCreatorStudio, setShowCreatorStudio] = useState(false);
+  const [tierName, setTierName] = useState('');
+  const [tierPrice, setTierPrice] = useState('');
+  const [tierPerks, setTierPerks] = useState('');
+  const [isCreatingTier, setIsCreatingTier] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [isTogglingCloseFriend, setIsTogglingCloseFriend] = useState(false);
   const { toggleEditProfile, userPosts, savedPosts, likedPosts, toggleLike, auraTokens, auraLevel, auraXP, joinedHubs, danceEntries, repostIds, viewingUserId, setViewingUser, setView, followedUsers, toggleFollow, setViewingPostId, setViewingEchoId, clearStaleUserPosts, setAuraTokens } = useAuraStore();
   const currentUser = useCurrentUser();
   const { data: apiHubs } = useHubs();
@@ -443,6 +451,175 @@ export function Profile() {
   const profileFollowingCount = isViewingOther ? (otherUserData?._count?.follows || 0) : currentUser.following;
   const profilePostCount = isViewingOther ? (otherUserData?._count?.posts || 0) : totalPosts;
   const isFollowing = isViewingOther ? (otherUserData?.isFollowing || followedUsers.has(viewingUserId!)) : false;
+
+  // ─── Pinned Posts ───
+  const { data: pinnedPostsData, isLoading: pinnedPostsLoading } = useQuery({
+    queryKey: ['pinned-posts', profileUserId],
+    queryFn: async () => {
+      const res = await fetch(`/api/pinned-posts?userId=${profileUserId}`);
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data.data as Array<{ id: string; postId: string; post: { id: string; text: string; images: string; likesCount: number; commentsCount: number; createdAt: string } }>;
+    },
+    enabled: !!profileUserId,
+    staleTime: 30000,
+  });
+  const pinnedPosts = pinnedPostsData || [];
+  const pinnedPostIds = new Set(pinnedPosts.map((p) => p.postId));
+
+  const handlePinPost = async (postId: string) => {
+    if (pinnedPostIds.size >= 3 && !pinnedPostIds.has(postId)) {
+      toast.error('Maximum 3 pinned posts allowed');
+      return;
+    }
+    const isPinned = pinnedPostIds.has(postId);
+    try {
+      const res = await fetch('/api/pinned-posts', {
+        method: isPinned ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      toast.success(isPinned ? 'Post unpinned' : 'Post pinned!');
+      queryClient.invalidateQueries({ queryKey: ['pinned-posts', profileUserId] });
+    } catch {
+      toast.error(isPinned ? 'Failed to unpin post' : 'Failed to pin post');
+    }
+    setOpenMenuPostId(null);
+  };
+
+  // ─── Close Friends ───
+  const { data: closeFriendsData } = useQuery({
+    queryKey: ['close-friends', currentUser.id],
+    queryFn: async () => {
+      const res = await fetch('/api/close-friends');
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data.data as Array<{ friendId: string }>;
+    },
+    enabled: !!currentUser.id,
+    staleTime: 30000,
+  });
+  const closeFriendIds = new Set((closeFriendsData || []).map((cf) => cf.friendId));
+  const isCloseFriend = isViewingOther ? closeFriendIds.has(viewingUserId!) : false;
+
+  const handleToggleCloseFriend = async () => {
+    if (!viewingUserId) return;
+    const wasCloseFriend = isCloseFriend;
+    setIsTogglingCloseFriend(true);
+    try {
+      const res = await fetch('/api/close-friends', {
+        method: wasCloseFriend ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ friendId: viewingUserId }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      toast.success(wasCloseFriend ? `Removed ${profileName} from close friends` : `Added ${profileName} to close friends`);
+      queryClient.invalidateQueries({ queryKey: ['close-friends', currentUser.id] });
+    } catch {
+      toast.error('Failed to update close friends');
+    }
+    setIsTogglingCloseFriend(false);
+  };
+
+  // ─── Creator Subscription Tier ───
+  // Own tier
+  const { data: ownTierData } = useQuery({
+    queryKey: ['subscription-tier', 'own'],
+    queryFn: async () => {
+      const res = await fetch('/api/subscriptions?mode=tier');
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data.data as { id: string; name: string; price: number; perks: string; subscriberCount: number } | null;
+    },
+    enabled: !isViewingOther && !!currentUser.id,
+    staleTime: 30000,
+  });
+
+  // Other user's tier
+  const { data: otherTierData } = useQuery({
+    queryKey: ['subscription-tier', viewingUserId],
+    queryFn: async () => {
+      const res = await fetch(`/api/subscriptions?mode=tier&userId=${viewingUserId}`);
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data.data as { id: string; name: string; price: number; perks: string; subscriberCount: number } | null;
+    },
+    enabled: !!isViewingOther && !!viewingUserId,
+    staleTime: 30000,
+  });
+
+  // Am I subscribed to this user?
+  const { data: mySubscriptionsData } = useQuery({
+    queryKey: ['my-subscriptions'],
+    queryFn: async () => {
+      const res = await fetch('/api/subscriptions?mode=subscriptions');
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data.data as Array<{ creatorId: string; tierId: string }>;
+    },
+    enabled: !!isViewingOther && !!currentUser.id,
+    staleTime: 30000,
+  });
+  const subscribedCreatorIds = new Set((mySubscriptionsData || []).map((s) => s.creatorId));
+  const isSubscribedToCreator = isViewingOther ? subscribedCreatorIds.has(viewingUserId!) : false;
+
+  const activeTier = isViewingOther ? otherTierData : ownTierData;
+
+  const handleCreateTier = async () => {
+    if (!tierName.trim() || !tierPrice.trim()) {
+      toast.error('Tier name and price are required');
+      return;
+    }
+    setIsCreatingTier(true);
+    try {
+      const res = await fetch('/api/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'create-tier', name: tierName, price: Number(tierPrice), perks: tierPerks }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      toast.success('Creator tier created!');
+      setTierName('');
+      setTierPrice('');
+      setTierPerks('');
+      setShowCreatorStudio(false);
+      queryClient.invalidateQueries({ queryKey: ['subscription-tier', 'own'] });
+    } catch {
+      toast.error('Failed to create tier');
+    }
+    setIsCreatingTier(false);
+  };
+
+  const handleSubscribe = async () => {
+    if (!viewingUserId || !otherTierData) return;
+    setIsSubscribing(true);
+    try {
+      const res = await fetch('/api/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'subscribe', creatorId: viewingUserId, tierId: otherTierData.id, amount: otherTierData.price }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      toast.success(`Subscribed to ${profileName}! -${otherTierData.price} ORRA`);
+      queryClient.invalidateQueries({ queryKey: ['my-subscriptions'] });
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to subscribe');
+    }
+    setIsSubscribing(false);
+  };
+
+  // Close post menu on outside click
+  useEffect(() => {
+    if (!openMenuPostId) return;
+    const handler = () => setOpenMenuPostId(null);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [openMenuPostId]);
 
   // Fetch real posts from API for the Saved tab
   const { data: savedPostsData } = usePosts();
@@ -618,6 +795,19 @@ export function Profile() {
                 >
                   <Gift className="w-4 h-4" />
                 </button>
+                {/* Close Friends Toggle */}
+                <button
+                  onClick={handleToggleCloseFriend}
+                  disabled={isTogglingCloseFriend}
+                  className={`p-2 rounded-xl border transition-all ${
+                    isCloseFriend
+                      ? 'bg-amber-500/20 border-amber-500/30 text-amber-400 hover:bg-amber-500/30'
+                      : 'bg-white/5 border-white/10 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10'
+                  }`}
+                  title={isCloseFriend ? 'Remove from close friends' : 'Add to close friends'}
+                >
+                  <Star className={`w-4 h-4 ${isCloseFriend ? 'fill-amber-400' : ''}`} />
+                </button>
                 <button onClick={handleShareProfile} className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all">
                   <Share2 className="w-4 h-4" />
                 </button>
@@ -785,6 +975,156 @@ export function Profile() {
           </div>
         )}
 
+        {/* ─── Close Friend Badge (on other user's profile) ─── */}
+        {isViewingOther && isCloseFriend && (
+          <div className="mt-3 flex items-center gap-1.5">
+            <span className="px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-bold border border-amber-500/30 flex items-center gap-1">
+              <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" /> Close Friend
+            </span>
+          </div>
+        )}
+
+        {/* ─── Subscriber Badge (on other user's profile you've subscribed to) ─── */}
+        {isViewingOther && isSubscribedToCreator && (
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <span className="px-2.5 py-1 rounded-full bg-violet-500/15 text-violet-300 text-[10px] font-bold border border-violet-500/30 flex items-center gap-1">
+              <ShieldCheck className="w-2.5 h-2.5 text-violet-400" /> Subscriber
+            </span>
+          </div>
+        )}
+
+        {/* ─── Creator Studio Section (own profile) ─── */}
+        {!isViewingOther && (
+          <div className="mt-4">
+            <button
+              onClick={() => setShowCreatorStudio(!showCreatorStudio)}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-violet-600/10 to-fuchsia-600/10 border border-violet-500/20 hover:border-violet-500/40 transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <Gem className="w-4 h-4 text-violet-400" />
+                <span className="text-sm font-bold text-white">Creator Studio</span>
+                {ownTierData && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">Active</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {ownTierData && (
+                  <span className="text-[10px] text-slate-400">{ownTierData.subscriberCount} subscriber{ownTierData.subscriberCount !== 1 ? 's' : ''}</span>
+                )}
+                <Sparkles className={`w-3.5 h-3.5 text-violet-400 transition-transform ${showCreatorStudio ? 'rotate-180' : ''}`} />
+              </div>
+            </button>
+            {showCreatorStudio && (
+              <div className="mt-2 glass-panel rounded-xl p-4 border border-violet-500/10 fade-in space-y-3">
+                {ownTierData ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <CrownIcon className="w-4 h-4 text-violet-400" />
+                      <span className="text-sm font-bold text-white">{ownTierData.name}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">{ownTierData.price} ORRA/mo</span>
+                    </div>
+                    {ownTierData.perks && (
+                      <p className="text-xs text-slate-400 leading-relaxed">{ownTierData.perks}</p>
+                    )}
+                    <div className="flex items-center gap-2 pt-1">
+                      <Users className="w-3.5 h-3.5 text-violet-400" />
+                      <span className="text-xs text-slate-300">{ownTierData.subscriberCount} subscriber{ownTierData.subscriberCount !== 1 ? 's' : ''}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-xs text-slate-400">Create a subscriber tier to let fans support you with ORRA tokens.</p>
+                    <input
+                      type="text"
+                      placeholder="Tier name (e.g. Inner Circle)"
+                      value={tierName}
+                      onChange={(e) => setTierName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Price (ORRA tokens/month)"
+                      value={tierPrice}
+                      onChange={(e) => setTierPrice(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
+                      min="1"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Perks (e.g. Exclusive posts, Badge, Early access)"
+                      value={tierPerks}
+                      onChange={(e) => setTierPerks(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-violet-500/50"
+                    />
+                    <button
+                      onClick={handleCreateTier}
+                      disabled={isCreatingTier}
+                      className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {isCreatingTier ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Gem className="w-3.5 h-3.5" />
+                          Create Tier
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ─── Creator Tier Info (other user's profile with a tier) ─── */}
+        {isViewingOther && otherTierData && (
+          <div className="mt-4 glass-panel rounded-xl p-4 border border-violet-500/20">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Gem className="w-4 h-4 text-violet-400" />
+                <span className="text-sm font-bold text-white">{otherTierData.name}</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">{otherTierData.price} ORRA/mo</span>
+            </div>
+            {otherTierData.perks && (
+              <p className="text-xs text-slate-400 leading-relaxed mb-3">{otherTierData.perks}</p>
+            )}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-violet-400" />
+                <span className="text-xs text-slate-400">{otherTierData.subscriberCount} subscriber{otherTierData.subscriberCount !== 1 ? 's' : ''}</span>
+              </div>
+              {isSubscribedToCreator ? (
+                <span className="px-3 py-1.5 rounded-lg text-xs font-bold bg-violet-600/20 text-violet-300 border border-violet-500/30 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Subscribed
+                </span>
+              ) : (
+                <button
+                  onClick={handleSubscribe}
+                  disabled={isSubscribing}
+                  className="px-4 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:opacity-90 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {isSubscribing ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Subscribing...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-3.5 h-3.5" />
+                      Subscribe ({otherTierData.price} ORRA)
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Profile Song Player - MySpace Style */}
         {(() => {
           const songUrl = isViewingOther ? (otherUserData?.profileSongUrl || '') : (currentUser.profileSongUrl || '');
@@ -885,14 +1225,81 @@ export function Profile() {
 
           const allPosts = [...apiPosts, ...localPosts].sort((a: any, b: any) => b.createdAt - a.createdAt);
 
-          return allPosts.length === 0 ? (
-            <div className="glass-panel rounded-xl p-8 text-center">
-              <Grid3X3 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-              <p className="text-sm text-slate-400">No posts yet</p>
-            </div>
-          ) : (
+          return (
             <div className="space-y-3">
-              {allPosts.map((post: any) => (
+              {/* ─── Pinned Posts Section ─── */}
+              {pinnedPosts.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-1">
+                    <Pin className="w-3.5 h-3.5 text-violet-400" />
+                    <span className="text-xs font-bold text-violet-400 uppercase tracking-wider">Pinned</span>
+                    <span className="text-[9px] text-slate-500">({pinnedPosts.length}/3)</span>
+                  </div>
+                  {pinnedPosts.map((pinned) => {
+                    const postImages = (() => { try { return JSON.parse(pinned.post.images); } catch { return []; } })();
+                    return (
+                      <div
+                        key={pinned.id}
+                        className="glass-panel rounded-xl p-4 border border-violet-500/20 bg-gradient-to-r from-violet-600/5 to-fuchsia-600/5 relative"
+                      >
+                        {/* Pinned indicator bar */}
+                        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-t-xl" />
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-full overflow-hidden ring-1 ring-violet-500/30 flex-shrink-0">
+                            <img src={resolveImageUrl(profileAvatar || '/api/uploads?path=images/orra-logo.png', true)} alt="" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-white">{profileName}</span>
+                              <span className="text-[10px] text-slate-500">{profileHandle}</span>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 font-bold flex items-center gap-0.5">
+                                <Pin className="w-2 h-2" /> Pinned
+                              </span>
+                            </div>
+                            <p className="text-sm text-slate-300 mt-1 leading-relaxed whitespace-pre-wrap">{pinned.post.text}</p>
+                            {postImages.length > 0 && (
+                              <div className={`mt-2 grid gap-1 ${postImages.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                                {postImages.slice(0, 4).map((img: string, idx: number) => (
+                                  <div key={idx} className="rounded-lg overflow-hidden">
+                                    <img src={resolveImageUrl(img)} alt="" className="w-full h-32 object-cover" />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-4 mt-2.5 text-slate-500">
+                              <span className="flex items-center gap-1 text-xs">
+                                <Heart className="w-3.5 h-3.5" /> {pinned.post.likesCount}
+                              </span>
+                              <span className="flex items-center gap-1 text-xs">
+                                <MessageCircle className="w-3.5 h-3.5" /> {pinned.post.commentsCount}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Unpin button (own profile only) */}
+                          {!isViewingOther && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handlePinPost(pinned.postId); }}
+                              className="p-1 rounded-lg hover:bg-white/10 text-slate-500 hover:text-red-400 transition-all flex-shrink-0"
+                              title="Unpin post"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="border-b border-white/5" />
+                </div>
+              )}
+
+              {/* Regular posts */}
+              {allPosts.length === 0 && pinnedPosts.length === 0 ? (
+                <div className="glass-panel rounded-xl p-8 text-center">
+                  <Grid3X3 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                  <p className="text-sm text-slate-400">No posts yet</p>
+                </div>
+              ) : allPosts.map((post: any) => (
                 <div
                   key={post.id}
                   onClick={() => {
@@ -914,6 +1321,12 @@ export function Profile() {
                         <span className="text-sm font-semibold text-white">{profileName}</span>
                         <span className="text-[10px] text-slate-500">{profileHandle}</span>
                         {post.isLocal && <span className="text-[9px] text-amber-400">syncing...</span>}
+                        {/* Pinned indicator on regular post if it's pinned */}
+                        {pinnedPostIds.has(post.id) && (
+                          <span className="text-[9px] px-1 py-0.5 rounded-full bg-violet-500/20 text-violet-300 font-bold flex items-center gap-0.5">
+                            <Pin className="w-2 h-2" /> Pinned
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-slate-300 mt-1 leading-relaxed whitespace-pre-wrap">{post.text}</p>
                       {post.images.length > 0 && (
@@ -940,6 +1353,31 @@ export function Profile() {
                         </button>
                       </div>
                     </div>
+                    {/* ─── Post More Menu (3 dots) ─── */}
+                    {!isViewingOther && !post.isLocal && (
+                      <div className="relative flex-shrink-0">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuPostId(openMenuPostId === post.id ? null : post.id); }}
+                          className="p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-white/10 text-slate-500 hover:text-white transition-all"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        {openMenuPostId === post.id && (
+                          <div
+                            className="absolute right-0 top-8 z-30 w-36 glass-panel rounded-xl border border-white/10 shadow-xl overflow-hidden fade-in"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handlePinPost(post.id); }}
+                              className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-slate-300 hover:bg-white/5 transition-colors"
+                            >
+                              <Pin className="w-3.5 h-3.5 text-violet-400" />
+                              {pinnedPostIds.has(post.id) ? 'Unpin Post' : 'Pin Post'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

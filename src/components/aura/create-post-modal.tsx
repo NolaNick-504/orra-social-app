@@ -4,7 +4,7 @@ import { useAuraStore } from '@/store/aura-store';
 import { vibeLabels } from '@/lib/data';
 import { useCurrentUser } from '@/lib/use-current-user';
 import { useCreatePost, useCreatePoll } from '@/lib/api-hooks';
-import { X, Image as ImageIcon, Video, BarChart3, MapPin, Smile, Music, Hash, AtSign, Coins, Type, Camera, Plus, Trash2, Upload, Loader2, Clock, Mic, MicOff, Play, Pause, Square, RotateCcw } from 'lucide-react';
+import { X, Image as ImageIcon, Video, BarChart3, MapPin, Smile, Music, Hash, AtSign, Coins, Type, Camera, Plus, Trash2, Upload, Loader2, Clock, Mic, MicOff, Play, Pause, Square, RotateCcw, Sparkles, UserPlus, Calendar, Lock, Search, Users } from 'lucide-react';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { CameraCapture } from '@/components/aura/camera-capture';
@@ -42,11 +42,41 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+// Helper: convert a Blob to base64 data URL
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 // Format seconds as M:SS
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+// Format date for schedule display
+function formatScheduleDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+interface CollabUser {
+  id: string;
+  name: string;
+  handle?: string;
+  avatar?: string;
 }
 
 export function CreatePostModal() {
@@ -77,6 +107,9 @@ export function CreatePostModal() {
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
   const [previewProgress, setPreviewProgress] = useState(0);
   const [waveformBars] = useState(() => Array.from({ length: 40 }, () => Math.random() * 0.7 + 0.3));
+  // Voice upload state — audioUrl from /api/voice-post
+  const [voiceAudioUrl, setVoiceAudioUrl] = useState<string | null>(null);
+  const [isUploadingVoice, setIsUploadingVoice] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -96,6 +129,30 @@ export function CreatePostModal() {
   // Camera recording state
   const [showCamera, setShowCamera] = useState(false);
 
+  // ─── NEW FEATURE STATE ───────────────────────────────────────
+
+  // 2. AI Content Creation
+  const [showAiOverlay, setShowAiOverlay] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState('');
+  const [isLoadingAi, setIsLoadingAi] = useState(false);
+
+  // 3. Collab Post
+  const [showCollabSearch, setShowCollabSearch] = useState(false);
+  const [collabSearchQuery, setCollabSearchQuery] = useState('');
+  const [collabSearchResults, setCollabSearchResults] = useState<CollabUser[]>([]);
+  const [selectedCoAuthor, setSelectedCoAuthor] = useState<CollabUser | null>(null);
+  const [isSearchingCollab, setIsSearchingCollab] = useState(false);
+  const collabSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 4. Schedule Post
+  const [scheduledDate, setScheduledDate] = useState<string>('');
+  const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+
+  // 5. Close Friends Only
+  const [closeFriendsOnly, setCloseFriendsOnly] = useState(false);
+
+  // ─────────────────────────────────────────────────────────────
+
   const displayName = currentUser.name;
   const displayAvatar = currentUser.avatar;
 
@@ -108,10 +165,10 @@ export function CreatePostModal() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus') 
-          ? 'audio/webm;codecs=opus' 
-          : MediaRecorder.isTypeSupported('audio/webm') 
-            ? 'audio/webm' 
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : MediaRecorder.isTypeSupported('audio/webm')
+            ? 'audio/webm'
             : 'audio/ogg',
       });
       mediaRecorderRef.current = mediaRecorder;
@@ -123,18 +180,49 @@ export function CreatePostModal() {
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const blob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
-        const url = URL.createObjectURL(blob);
+        const localUrl = URL.createObjectURL(blob);
         setRecordedAudioBlob(blob);
-        setRecordedAudioUrl(url);
+        setRecordedAudioUrl(localUrl);
         setIsRecording(false);
+
+        // Upload to /api/voice-post to get audioUrl
+        setIsUploadingVoice(true);
+        try {
+          if (blob.size > MAX_AUDIO_SIZE) {
+            toast.error('Voice note exceeds 10MB limit.');
+            setIsUploadingVoice(false);
+            return;
+          }
+          const base64 = await blobToBase64(blob);
+          const extension = blob.type.includes('webm') ? 'webm' : 'ogg';
+          const res = await fetch('/api/voice-post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              audio: base64,
+              filename: `voice-note.${extension}`,
+              contentType: blob.type,
+            }),
+          });
+          if (!res.ok) throw new Error('Voice upload failed');
+          const data = await res.json();
+          setVoiceAudioUrl(data.audioUrl || data.url || null);
+        } catch (err) {
+          console.error('Voice upload to /api/voice-post failed:', err);
+          // Fallback — still allow posting with local blob
+          setVoiceAudioUrl(null);
+        } finally {
+          setIsUploadingVoice(false);
+        }
       };
 
       mediaRecorder.start(100); // collect data every 100ms for smoother chunks
       setIsRecording(true);
       setRecordingDuration(0);
       setRecordedAudioBlob(null);
+      setVoiceAudioUrl(null);
       if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
       setRecordedAudioUrl(null);
 
@@ -176,6 +264,7 @@ export function CreatePostModal() {
     stopRecording();
     setRecordingDuration(0);
     setRecordedAudioBlob(null);
+    setVoiceAudioUrl(null);
     if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
     setRecordedAudioUrl(null);
     setIsPreviewPlaying(false);
@@ -185,6 +274,7 @@ export function CreatePostModal() {
       previewAudioRef.current = null;
     }
     setIsRecording(false);
+    setIsUploadingVoice(false);
   }, [recordedAudioUrl, stopRecording]);
 
   // Preview playback
@@ -198,7 +288,9 @@ export function CreatePostModal() {
       return;
     }
 
-    const audio = new Audio(recordedAudioUrl);
+    // Prefer the server audioUrl for playback if available
+    const audioSrc = voiceAudioUrl || recordedAudioUrl;
+    const audio = new Audio(audioSrc);
     previewAudioRef.current = audio;
 
     audio.onended = () => {
@@ -217,7 +309,7 @@ export function CreatePostModal() {
     audio.play();
     setIsPreviewPlaying(true);
     updateProgress();
-  }, [recordedAudioUrl, isPreviewPlaying]);
+  }, [recordedAudioUrl, voiceAudioUrl, isPreviewPlaying]);
 
   // Trigger the image file picker
   const openImagePicker = useCallback(() => {
@@ -334,6 +426,87 @@ export function CreatePostModal() {
     setPollOptions((prev) => prev.map((opt, i) => (i === index ? value : opt)));
   };
 
+  // ─── AI Content Creation handler ─────────────────────────────
+  const handleAiSuggest = useCallback(async () => {
+    setIsLoadingAi(true);
+    setShowAiOverlay(true);
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Help me write a creative social media post. Current text: ${text || '(no text yet)'}. Make it engaging, use emojis, keep it under 280 chars.`,
+        }),
+      });
+      if (!res.ok) throw new Error('AI request failed');
+      const data = await res.json();
+      setAiSuggestion(data.message || data.content || data.text || '');
+    } catch (err) {
+      console.error('AI suggestion failed:', err);
+      toast.error('AI suggestion failed. Please try again.');
+      setShowAiOverlay(false);
+    } finally {
+      setIsLoadingAi(false);
+    }
+  }, [text]);
+
+  const acceptAiSuggestion = () => {
+    setText(aiSuggestion);
+    setShowAiOverlay(false);
+    setAiSuggestion('');
+    earnTokens(1, 'AI assist');
+    toast.success('AI suggestion applied! +1 ORRA ✨', { icon: <Sparkles className="w-4 h-4 text-violet-400" /> });
+  };
+
+  const dismissAiSuggestion = () => {
+    setShowAiOverlay(false);
+    setAiSuggestion('');
+  };
+
+  // ─── Collab Post handlers ────────────────────────────────────
+  const handleCollabSearch = useCallback((query: string) => {
+    setCollabSearchQuery(query);
+    if (collabSearchTimerRef.current) clearTimeout(collabSearchTimerRef.current);
+
+    if (!query.trim()) {
+      setCollabSearchResults([]);
+      return;
+    }
+
+    setIsSearchingCollab(true);
+    collabSearchTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        if (!res.ok) throw new Error('Search failed');
+        const data = await res.json();
+        setCollabSearchResults(Array.isArray(data) ? data : data.users || data.results || []);
+      } catch (err) {
+        console.error('Collab search failed:', err);
+        setCollabSearchResults([]);
+      } finally {
+        setIsSearchingCollab(false);
+      }
+    }, 350);
+  }, []);
+
+  const selectCoAuthor = (user: CollabUser) => {
+    setSelectedCoAuthor(user);
+    setShowCollabSearch(false);
+    setCollabSearchQuery('');
+    setCollabSearchResults([]);
+  };
+
+  const removeCoAuthor = () => {
+    setSelectedCoAuthor(null);
+  };
+
+  // ─── Schedule Post handler ───────────────────────────────────
+  const handleScheduleChange = (value: string) => {
+    setScheduledDate(value);
+  };
+
+  // ─────────────────────────────────────────────────────────────
+
   const resetState = () => {
     setText('');
     setPostType('text');
@@ -352,6 +525,20 @@ export function CreatePostModal() {
     setShowVibePicker(false);
     setShowHashtagHint(false);
     setShowMentionHint(false);
+    // Reset new feature state
+    setShowAiOverlay(false);
+    setAiSuggestion('');
+    setIsLoadingAi(false);
+    setShowCollabSearch(false);
+    setCollabSearchQuery('');
+    setCollabSearchResults([]);
+    setSelectedCoAuthor(null);
+    setIsSearchingCollab(false);
+    setScheduledDate('');
+    setShowSchedulePicker(false);
+    setCloseFriendsOnly(false);
+    setVoiceAudioUrl(null);
+    setIsUploadingVoice(false);
   };
 
   const handlePost = async () => {
@@ -443,13 +630,55 @@ export function CreatePostModal() {
 
       const postText = text.trim() || (postType === 'reel' ? 'Shared a reel' : postType === 'image' ? 'Shared a photo' : postType === 'voice' ? 'Shared a voice note' : '');
 
-      const post = await createPostMutation.mutateAsync({
+      // Build the post body with new feature fields
+      const postBody: Record<string, unknown> = {
         text: postText,
         images: [],
         vibeTag,
         type: postTypeValue,
         uploadedFiles,
-      });
+      };
+
+      // 3. Collab: include coAuthorId
+      if (selectedCoAuthor) {
+        postBody.coAuthorId = selectedCoAuthor.id;
+      }
+
+      // 5. Close Friends Only
+      if (closeFriendsOnly) {
+        postBody.closeFriendsOnly = true;
+      }
+
+      // 1. Voice: include audioUrl if we got one from /api/voice-post
+      if (postType === 'voice' && voiceAudioUrl) {
+        postBody.audioUrl = voiceAudioUrl;
+      }
+
+      // 4. Schedule: if scheduled, POST to /api/scheduled-posts instead
+      if (scheduledDate) {
+        postBody.scheduledAt = new Date(scheduledDate).toISOString();
+
+        setUploadProgress(70);
+        const scheduleRes = await fetch('/api/scheduled-posts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(postBody),
+        });
+        if (!scheduleRes.ok) throw new Error('Schedule post failed');
+        setUploadProgress(100);
+
+        toast.success(`Scheduled for ${formatScheduleDate(scheduledDate)} 📅`, {
+          icon: <Calendar className="w-4 h-4 text-violet-400" />,
+        });
+        earnTokens(5, 'scheduled a post');
+        addXP(10);
+
+        resetState();
+        toggleCreatePost();
+        return;
+      }
+
+      const post = await createPostMutation.mutateAsync(postBody as Parameters<typeof createPostMutation.mutateAsync>[0]);
 
       setUploadProgress(85);
 
@@ -539,6 +768,9 @@ export function CreatePostModal() {
       if (recordedAudioUrl) {
         URL.revokeObjectURL(recordedAudioUrl);
       }
+      if (collabSearchTimerRef.current) {
+        clearTimeout(collabSearchTimerRef.current);
+      }
     };
   }, []);
 
@@ -586,13 +818,50 @@ export function CreatePostModal() {
           <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-violet-500/30">
             <img src={displayAvatar} alt={displayName} className="w-full h-full object-cover" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="font-semibold text-white text-sm">{displayName}</p>
             <p className="text-xs text-slate-400">
               {postType === 'reel' ? 'Posting to Prism' : postType === 'poll' ? 'Creating a poll' : postType === 'voice' ? 'Recording a voice note' : 'Posting to Pulse'}
             </p>
           </div>
+          {/* Close Friends Only badge in header */}
+          {closeFriendsOnly && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium">
+              <Lock className="w-3 h-3" />
+              Close Friends
+            </div>
+          )}
         </div>
+
+        {/* Co-author chip */}
+        {selectedCoAuthor && (
+          <div className="flex items-center gap-2 mb-3 fade-in">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs">
+              <Users className="w-3 h-3" />
+              <span>Co-author:</span>
+              {selectedCoAuthor.avatar && (
+                <img src={selectedCoAuthor.avatar} alt={selectedCoAuthor.name} className="w-4 h-4 rounded-full object-cover" />
+              )}
+              <span className="font-medium">{selectedCoAuthor.name}</span>
+              <button onClick={removeCoAuthor} className="ml-1 hover:text-red-400 transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Scheduled date badge */}
+        {scheduledDate && (
+          <div className="flex items-center gap-2 mb-3 fade-in">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs">
+              <Calendar className="w-3 h-3" />
+              <span>Scheduled: {formatScheduleDate(scheduledDate)}</span>
+              <button onClick={() => setScheduledDate('')} className="ml-1 hover:text-red-400 transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Post Type Selector */}
         <div className="flex gap-1 mb-4 bg-white/5 rounded-xl p-1">
@@ -644,6 +913,167 @@ export function CreatePostModal() {
             </div>
           )}
         </div>
+
+        {/* ─── TOOLBAR ROW: AI · Collab · Schedule · Close Friends ─── */}
+        <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+          {/* Prism AI button */}
+          <button
+            onClick={handleAiSuggest}
+            disabled={isLoadingAi}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-600/20 to-fuchsia-600/20 border border-violet-500/30 text-violet-300 text-xs font-medium hover:from-violet-600/30 hover:to-fuchsia-600/30 transition-all active:scale-95 disabled:opacity-50"
+          >
+            {isLoadingAi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            Prism AI ✨
+          </button>
+
+          {/* Collab button */}
+          <button
+            onClick={() => { setShowCollabSearch(!showCollabSearch); setShowSchedulePicker(false); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${
+              selectedCoAuthor
+                ? 'bg-violet-600/20 border border-violet-500/30 text-violet-300'
+                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+            }`}
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            Collab
+          </button>
+
+          {/* Schedule button */}
+          <button
+            onClick={() => { setShowSchedulePicker(!showSchedulePicker); setShowCollabSearch(false); }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${
+              scheduledDate
+                ? 'bg-cyan-600/20 border border-cyan-500/30 text-cyan-300'
+                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            Schedule
+          </button>
+
+          {/* Close Friends Only toggle */}
+          <button
+            onClick={() => setCloseFriendsOnly(!closeFriendsOnly)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 ${
+              closeFriendsOnly
+                ? 'bg-amber-600/20 border border-amber-500/30 text-amber-300'
+                : 'bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5" />
+            Close Friends
+          </button>
+        </div>
+
+        {/* ─── Collab search panel ─────────────────────────────── */}
+        {showCollabSearch && (
+          <div className="mb-3 fade-in">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                value={collabSearchQuery}
+                onChange={(e) => handleCollabSearch(e.target.value)}
+                placeholder="Search for a co-author by name or handle..."
+                className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 transition-all"
+                autoFocus
+              />
+              {isSearchingCollab && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-400 animate-spin" />
+              )}
+            </div>
+            {collabSearchResults.length > 0 && (
+              <div className="mt-2 max-h-40 overflow-y-auto rounded-xl bg-white/5 border border-white/10 divide-y divide-white/5 custom-scrollbar">
+                {collabSearchResults.map((user) => (
+                  <button
+                    key={user.id}
+                    onClick={() => selectCoAuthor(user)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-all text-left"
+                  >
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs text-violet-300 font-bold">{user.name?.[0]?.toUpperCase() || '?'}</span>
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm text-white font-medium truncate">{user.name}</p>
+                      {user.handle && <p className="text-xs text-slate-500 truncate">@{user.handle}</p>}
+                    </div>
+                    <UserPlus className="w-4 h-4 text-violet-400 ml-auto flex-shrink-0" />
+                  </button>
+                ))}
+              </div>
+            )}
+            {collabSearchQuery.trim() && collabSearchResults.length === 0 && !isSearchingCollab && (
+              <p className="text-xs text-slate-500 mt-2 text-center">No users found</p>
+            )}
+          </div>
+        )}
+
+        {/* ─── Schedule date picker ────────────────────────────── */}
+        {showSchedulePicker && (
+          <div className="mb-3 fade-in">
+            <div className="flex items-center gap-2">
+              <input
+                type="datetime-local"
+                value={scheduledDate}
+                onChange={(e) => handleScheduleChange(e.target.value)}
+                min={new Date().toISOString().slice(0, 16)}
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500/50 transition-all [color-scheme:dark]"
+              />
+              {scheduledDate && (
+                <button
+                  onClick={() => setScheduledDate('')}
+                  className="p-2 rounded-lg hover:bg-red-500/10 text-slate-500 hover:text-red-400 transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {scheduledDate && new Date(scheduledDate) <= new Date() && (
+              <p className="text-xs text-red-400 mt-1">Schedule time must be in the future</p>
+            )}
+          </div>
+        )}
+
+        {/* ─── AI suggestion overlay ───────────────────────────── */}
+        {showAiOverlay && (
+          <div className="mb-3 fade-in relative">
+            <div className="rounded-xl p-4 bg-white/5 backdrop-blur-xl border border-violet-500/20 shadow-lg shadow-violet-500/5">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-violet-400" />
+                <span className="text-xs font-semibold text-violet-300">Prism AI Suggestion</span>
+              </div>
+              {isLoadingAi ? (
+                <div className="flex items-center gap-2 py-4 justify-center">
+                  <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
+                  <span className="text-xs text-slate-400">Generating suggestion...</span>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-white/90 leading-relaxed mb-3">{aiSuggestion}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={acceptAiSuggestion}
+                      className="flex-1 px-3 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-xs font-bold hover:opacity-90 transition-all active:scale-95"
+                    >
+                      Accept & Replace
+                    </button>
+                    <button
+                      onClick={dismissAiSuggestion}
+                      className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-xs hover:text-white transition-all active:scale-95"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         <textarea
           value={text}
@@ -742,12 +1172,35 @@ export function CreatePostModal() {
               </div>
             ) : (
               <div className="glass-panel rounded-xl p-4 space-y-4 border border-violet-500/20">
-                {/* Playback preview */}
+                {/* Upload indicator */}
+                {isUploadingVoice && (
+                  <div className="flex items-center gap-2 px-1">
+                    <Loader2 className="w-3.5 h-3.5 text-violet-400 animate-spin" />
+                    <span className="text-xs text-slate-400">Processing voice note...</span>
+                  </div>
+                )}
+
+                {/* Audio player preview */}
+                {voiceAudioUrl && !isUploadingVoice && (
+                  <div className="fade-in">
+                    <audio
+                      controls
+                      src={voiceAudioUrl}
+                      className="w-full h-10 rounded-lg"
+                      preload="metadata"
+                    >
+                      Your browser does not support the audio element.
+                    </audio>
+                  </div>
+                )}
+
+                {/* Playback preview (waveform style) */}
                 <div className="flex items-center gap-3">
                   {/* Play/Pause button */}
                   <button
                     onClick={togglePreviewPlayback}
-                    className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center hover:opacity-90 transition-all active:scale-95 flex-shrink-0"
+                    disabled={isUploadingVoice}
+                    className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center hover:opacity-90 transition-all active:scale-95 flex-shrink-0 disabled:opacity-50"
                   >
                     {isPreviewPlaying ? (
                       <Pause className="w-5 h-5 text-white fill-white" />
@@ -776,7 +1229,7 @@ export function CreatePostModal() {
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-[10px] text-slate-500">
-                        {isPreviewPlaying ? 'Playing...' : 'Voice note ready'}
+                        {isUploadingVoice ? 'Processing...' : isPreviewPlaying ? 'Playing...' : 'Voice note ready'}
                       </span>
                       <span className="text-[10px] text-slate-500">{formatDuration(recordingDuration)}</span>
                     </div>
@@ -1007,18 +1460,42 @@ export function CreatePostModal() {
           </div>
         )}
 
+        {/* Post preview badges */}
+        {(closeFriendsOnly || selectedCoAuthor || scheduledDate) && (
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
+            {closeFriendsOnly && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium">
+                <Lock className="w-2.5 h-2.5" /> Close Friends Only
+              </span>
+            )}
+            {selectedCoAuthor && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-[10px] font-medium">
+                <Users className="w-2.5 h-2.5" /> Collab with {selectedCoAuthor.name}
+              </span>
+            )}
+            {scheduledDate && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[10px] font-medium">
+                <Calendar className="w-2.5 h-2.5" /> Scheduled
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <Coins className="w-3 h-3 text-yellow-400" />
             <span>+5 ORRA +10 XP</span>
+            {scheduledDate && (
+              <span className="ml-1 text-cyan-400">· Scheduled</span>
+            )}
           </div>
           <button
             onClick={handlePost}
-            disabled={!canPost()}
+            disabled={!canPost() || (scheduledDate && new Date(scheduledDate) <= new Date())}
             className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold hover:opacity-90 transition-all glow-violet text-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-            Post
+            {scheduledDate ? 'Schedule' : 'Post'}
           </button>
         </div>
       </div>

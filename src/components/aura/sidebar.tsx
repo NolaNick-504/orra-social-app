@@ -68,6 +68,9 @@ import {
   Menu,
   X,
   Radio,
+  Calendar,
+  Headphones,
+  Bookmark,
 } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -75,10 +78,13 @@ const desktopNavItems: { view: NavView; label: string; icon: React.ElementType; 
   { view: 'home', label: 'Home', icon: Home },
   { view: 'explore', label: 'Explore', icon: Compass },
   { view: 'reels', label: 'Reels', icon: Clapperboard },
+  { view: 'spaces', label: 'Spaces', icon: Headphones, badge: 'NEW' },
   { view: 'live', label: 'Live', icon: Radio, badge: 'LIVE' },
+  { view: 'events', label: 'Events', icon: Calendar, badge: 'NEW' },
   { view: 'games', label: 'Game Arena', icon: Gamepad2 },
   { view: 'hub', label: 'Hub', icon: Users },
   { view: 'messages', label: 'Messages', icon: Send },
+  { view: 'collections', label: 'Collections', icon: Bookmark },
   { view: 'activity', label: 'Activity', icon: Heart },
   { view: 'wellness', label: 'Wellness', icon: Leaf },
   { view: 'marketplace', label: 'Market', icon: ShoppingBag },
@@ -172,7 +178,7 @@ export function Sidebar() {
                 <span className="font-medium">{item.label}</span>
                 {badge && (
                   <span className={`ml-auto px-1.5 py-0.5 rounded-md text-[9px] font-bold ${
-                    badge === 'LIVE' ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-violet-500/20 text-violet-400'
+                    badge === 'LIVE' ? 'bg-red-500/20 text-red-400 animate-pulse' : badge === 'NEW' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-violet-500/20 text-violet-400'
                   }`}>
                     {badge}
                   </span>

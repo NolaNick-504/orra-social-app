@@ -100,6 +100,33 @@ model User {
   sentTips     Tip[]    @relation("SentTips")
   receivedTips Tip[]    @relation("ReceivedTips")
 
+  // Events
+  createdEvents    Event[]          @relation("CreatedEvents")
+  eventRSVPs       EventRSVP[]      @relation("UserRSVPs")
+
+  // Subscriptions (Creator Monetization)
+  subscriberTier   SubscriberTier?  @relation("CreatorTier")
+  subscriptions    Subscription[]   @relation("UserSubscriptions")
+  subscribers      Subscription[]   @relation("CreatorSubscribers")
+
+  // Close Friends
+  closeFriendOf    CloseFriend[]    @relation("CloseFriendOf")
+  closeFriends     CloseFriend[]    @relation("UserCloseFriends")
+
+  // Collections
+  collections      Collection[]
+
+  // Pinned Posts
+  pinnedPosts      PinnedPost[]
+
+  // Scheduled Posts
+  scheduledPosts   ScheduledPost[]
+
+  // Spaces (Audio Rooms)
+  hostedSpaces     Space[]          @relation("SpaceHost")
+  spaceSpeakers    SpaceSpeaker[]
+  spaceListeners   SpaceListener[]
+
   // NextAuth
   accounts      Account[]
   sessions      Session[]
@@ -166,12 +193,19 @@ model Post {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Collab co-author
+  coAuthorId  String?
+
+  // Close Friends only
+  closeFriendsOnly Boolean @default(false)
+
   // Relations
   comments    Comment[]
   reposts     Repost[]
   postSaves   Save[]        @relation("PostSaves")
   sharedPosts SharedPost[]
   poll        Poll?
+  pinnedBy    PinnedPost[]
 
   @@index([authorId])
   @@index([vibeTag])
@@ -877,4 +911,245 @@ model Tip {
   @@index([receiverId])
   @@index([postId])
   @@index([createdAt])
+}
+
+// ============================================
+// EVENTS
+// ============================================
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  coverImage  String   @default("")
+  location    String   @default("")
+  isVirtual   Boolean  @default(false)
+  meetLink    String   @default("")    // Zoom/Meet link for virtual events
+  category    String   @default("social") // social, music, art, tech, fitness, party, meetup, other
+  startDate   DateTime
+  endDate     DateTime?
+  maxAttendees Int     @default(0)     // 0 = unlimited
+  tokenCost   Int      @default(0)     // 0 = free event, or tokens to attend
+  isActive    Boolean  @default(true)
+
+  creatorId   String
+  creator     User     @relation("CreatedEvents", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  rsvps       EventRSVP[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([creatorId])
+  @@index([category])
+  @@index([startDate])
+  @@index([isActive])
+}
+
+model EventRSVP {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("UserRSVPs", fields: [userId], references: [id], onDelete: Cascade)
+  status    String   @default("going") // going, interested, maybe
+
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+// ============================================
+// CREATOR SUBSCRIPTIONS (Monetization)
+// ============================================
+
+model SubscriberTier {
+  id          String   @id @default(cuid())
+  creatorId   String   @unique
+  creator     User     @relation("CreatorTier", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  tierName    String   @default("Exclusive") // Name of the tier
+  price       Int      @default(50)          // ORRA tokens per month
+  description String   @default("")          // What subscribers get
+  perks       String   @default("[]")        // JSON array of perk strings
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subscribers Subscription[]
+}
+
+model Subscription {
+  id          String   @id @default(cuid())
+  subscriberId String
+  subscriber  User     @relation("UserSubscriptions", fields: [subscriberId], references: [id], onDelete: Cascade)
+  creatorId   String
+  creator     User     @relation("CreatorSubscribers", fields: [creatorId], references: [id], onDelete: Cascade)
+  tierId      String
+  tier        SubscriberTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+
+  isActive    Boolean  @default(true)
+  expiresAt   DateTime
+
+  createdAt   DateTime @default(now())
+
+  @@unique([subscriberId, creatorId])
+  @@index([subscriberId])
+  @@index([creatorId])
+  @@index([expiresAt])
+}
+
+// ============================================
+// CLOSE FRIENDS
+// ============================================
+
+model CloseFriend {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation("UserCloseFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friendId   String
+  friend     User     @relation("CloseFriendOf", fields: [friendId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
+// ============================================
+// COLLECTIONS (Organize Saves)
+// ============================================
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  coverImage  String   @default("")
+  isPrivate   Boolean  @default(false)
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  items       CollectionItem[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model CollectionItem {
+  id           String   @id @default(cuid())
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  postId       String   // Reference to saved post
+  addedAt      DateTime @default(now())
+
+  @@unique([collectionId, postId])
+  @@index([collectionId])
+}
+
+// ============================================
+// PINNED POSTS
+// ============================================
+
+model PinnedPost {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([userId])
+}
+
+// ============================================
+// SCHEDULED POSTS
+// ============================================
+
+model ScheduledPost {
+  id          String   @id @default(cuid())
+  text        String
+  images      String   @default("[]")   // JSON array
+  vibeTag     String   @default("hyped")
+  type        String   @default("text") // text, image, poll, voice
+  audioUrl    String   @default("")
+  closeFriendsOnly Boolean @default(false)
+  coAuthorId  String?
+
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  scheduledAt DateTime  // When to publish
+  isPublished Boolean   @default(false)
+
+  createdAt   DateTime @default(now())
+
+  @@index([authorId])
+  @@index([scheduledAt])
+  @@index([isPublished])
+}
+
+// ============================================
+// SPACES (Audio Rooms)
+// ============================================
+
+model Space {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @default("")
+  category    String   @default("chill") // chill, music, debate, ama, gaming, creative, tech
+  coverImage  String   @default("")
+  isActive    Boolean  @default(true)
+  isRecording Boolean  @default(false)
+  maxSpeakers Int      @default(10)
+  listenerCount Int    @default(0)
+
+  hostId      String
+  host        User     @relation("SpaceHost", fields: [hostId], references: [id], onDelete: Cascade)
+
+  speakers    SpaceSpeaker[]
+  listeners   SpaceListener[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([hostId])
+  @@index([isActive])
+  @@index([category])
+}
+
+model SpaceSpeaker {
+  id        String   @id @default(cuid())
+  spaceId   String
+  space     Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isMuted   Boolean  @default(false)
+
+  joinedAt  DateTime @default(now())
+
+  @@unique([spaceId, userId])
+  @@index([spaceId])
+}
+
+model SpaceListener {
+  id        String   @id @default(cuid())
+  spaceId   String
+  space     Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isHandRaised Boolean @default(false)
+
+  joinedAt  DateTime @default(now())
+
+  @@unique([spaceId, userId])
+  @@index([spaceId])
 }

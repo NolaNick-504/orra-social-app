@@ -97,6 +97,9 @@ const Profile = dynamic(retryImport(() => import('@/components/aura/profile').th
 const WellnessDashboard = dynamic(retryImport(() => import('@/components/aura/wellness-dashboard').then(m => ({ default: m.WellnessDashboard }))), { loading: () => <LoadingScreen /> });
 const TokenMarketplace = dynamic(retryImport(() => import('@/components/aura/token-marketplace').then(m => ({ default: m.TokenMarketplace }))), { loading: () => <LoadingScreen /> });
 const SettingsPage = dynamic(retryImport(() => import('@/components/aura/settings-page').then(m => ({ default: m.SettingsPage }))), { loading: () => <LoadingScreen /> });
+const EventsPage = dynamic(retryImport(() => import('@/components/aura/events-page').then(m => ({ default: m.EventsPage }))), { loading: () => <LoadingScreen /> });
+const SpacesPage = dynamic(retryImport(() => import('@/components/aura/spaces-page').then(m => ({ default: m.SpacesPage }))), { loading: () => <LoadingScreen /> });
+const CollectionsPage = dynamic(retryImport(() => import('@/components/aura/collections-page').then(m => ({ default: m.CollectionsPage }))), { loading: () => <LoadingScreen /> });
 const PrismCompanion = dynamic(retryImport(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanion }))), { ssr: false });
 const PrismCompanionButton = dynamic(retryImport(() => import('@/components/aura/prism-companion').then(m => ({ default: m.PrismCompanionButton }))), { ssr: false });
 import { Toaster } from 'sonner';
@@ -281,6 +284,12 @@ function MainContent() {
       return <TokenMarketplace />;
     case 'settings':
       return <SettingsPage />;
+    case 'events':
+      return <EventsPage />;
+    case 'spaces':
+      return <SpacesPage />;
+    case 'collections':
+      return <CollectionsPage />;
     default:
       return <PulseFeed />;
   }
@@ -326,6 +335,9 @@ function AuthenticatedApp() {
       '/wellness': 'wellness',
       '/marketplace': 'marketplace',
       '/settings': 'settings',
+      '/events': 'events',
+      '/spaces': 'spaces',
+      '/collections': 'collections',
     };
     const path = window.location.pathname;
     const viewFromUrl = pathMap[path];

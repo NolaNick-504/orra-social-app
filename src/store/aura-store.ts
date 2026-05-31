@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type NavView = 'home' | 'explore' | 'reels' | 'live' | 'dance' | 'games' | 'hub' | 'messages' | 'activity' | 'postDetail' | 'profile' | 'wellness' | 'marketplace' | 'settings';
+export type NavView = 'home' | 'explore' | 'reels' | 'live' | 'dance' | 'games' | 'hub' | 'messages' | 'activity' | 'postDetail' | 'profile' | 'wellness' | 'marketplace' | 'settings' | 'events' | 'spaces' | 'collections';
 
 export interface UserSettings {
   // Notifications
